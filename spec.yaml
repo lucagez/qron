@@ -1,0 +1,75 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: TinyQ
+  description: TinyQ server
+  # termsOfService: http://swagger.io/terms/
+  # contact:
+  #   name: TinyQ team
+  #   email: hey@tinyq.com
+  #   url: http://swagger.io
+  # license:
+  #   name: Apache 2.0
+  #   url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://localhost:1234/api
+paths:
+  /schedule:
+    post:
+      summary: Schedule job
+      description: Schedule job
+      operationId: scheduleJob
+      requestBody:
+        description: Job parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewJob'
+      responses:
+        '200':
+          description: Schedule response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Job:
+      allOf:
+        - $ref: '#/components/schemas/NewJob'
+        - required:
+            - id
+          properties:
+            id:
+              type: integer
+              format: int64
+              description: Unique id of the job
+
+    NewJob:
+      required:
+        - run_at
+      properties:
+        run_at:
+          type: string
+          description: When to run the job
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
+  

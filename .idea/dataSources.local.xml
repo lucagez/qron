@@ -13,6 +13,7 @@
           <node kind="database" qname="postgres">
             <node kind="schema">
               <name qname="public" />
+              <name qname="cronexp" />
               <name qname="tiny" />
             </node>
           </node>

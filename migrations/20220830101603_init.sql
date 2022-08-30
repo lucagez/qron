@@ -1,5 +1,5 @@
--- Schema
-drop schema if exists tiny cascade;
+-- +goose Up
+-- +goose StatementBegin
 create schema tiny;
 
 CREATE TYPE tiny.status AS ENUM ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
@@ -27,46 +27,46 @@ CREATE DOMAIN tiny.cron AS TEXT CHECK (
     );
 
 -- last run default should be creation date
-CREATE OR REPLACE FUNCTION tiny.is_due(cron text, last_run_at timestamptz)
+CREATE OR REPLACE FUNCTION tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
     RETURNS boolean AS
 $CODE$
 begin
     return case
                when substr(cron, 1, 6) IN ('@every', '@after')
-                   and (last_run_at + substr(cron, 7)::interval) <= now()
+                   and (last_run_at + substr(cron, 7)::interval) <= by
                    then true
                when substr(cron, 1, 3) = '@at'
-                   and substr(cron, 4)::timestamp <= now()
-                   and last_run_at < now()
+                   and substr(cron, 4)::timestamp <= by
+                   and last_run_at < by
                    then true
                when cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
-                    then case
+                   then case
                             when cron in ('@annually', '@yearly')
-                                and (last_run_at + '1 year'::interval) <= now()
-                                    then true
+                                and (last_run_at + '1 year'::interval) <= by
+                                then true
                             when cron = '@monthly'
-                                and (last_run_at + '1 month'::interval) <= now()
-                                    then true
+                                and (last_run_at + '1 month'::interval) <= by
+                                then true
                             when cron = '@weekly'
-                                and (last_run_at + '1 week'::interval) <= now()
+                                and (last_run_at + '1 week'::interval) <= by
                                 then true
                             when cron = '@daily'
-                                and (last_run_at + '1 day'::interval) <= now()
+                                and (last_run_at + '1 day'::interval) <= by
                                 then true
                             when cron = '@hourly'
-                                and (last_run_at + '1 hour'::interval) <= now()
+                                and (last_run_at + '1 hour'::interval) <= by
                                 then true
                             when cron = '@minutely'
-                                and (last_run_at + '1 minute'::interval) <= now()
+                                and (last_run_at + '1 minute'::interval) <= by
                                 then true
                             else false
-                        end
+                   end
                when cron ~ tiny.crontab()
-                   and cronexp.match(now(), cron)
+                   and cronexp.match(by, cron)
                    -- can't be more granular than minute for cron jobs
-                   and date_trunc('minute', last_run_at) < date_trunc('minute', now())
+                   and date_trunc('minute', last_run_at) < date_trunc('minute', by)
                    then true
-           else false
+               else false
         end;
 END;
 $CODE$
@@ -81,10 +81,11 @@ CREATE OR REPLACE FUNCTION tiny.find_kind(cron text)
 $CODE$
 begin
     return case
-               when substr(cron, 1, 6) IN ('@every', '@after')
+               when substr(cron, 1, 6) = '@every'
                    or cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
                    then 'INTERVAL'::tiny.kind
                when substr(cron, 1, 3) = '@at'
+                   or substr(cron, 1, 6) = '@after'
                    then 'TASK'::tiny.kind
                when cron ~ tiny.crontab()
                    then 'CRON'::tiny.kind
@@ -104,10 +105,16 @@ CREATE table tiny.job
     created_at       timestamptz  not null default now(),
     execution_amount integer               default 0,
     timeout          INTEGER               DEFAULT 0,
-    status           tiny.status not null,
+    status           tiny.status not null default 'READY',
     state            text,
     kind             tiny.kind
 );
 
 CREATE INDEX idx_job_name
     ON tiny.job (name);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+drop schema if exists tiny cascade;
+-- +goose StatementEnd

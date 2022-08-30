@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=password
+    ports:
+      - 5435:5432
+  pyroscope:
+    image: 'pyroscope/pyroscope:latest'
+    ports:
+      - '4040:4040'
+    command:
+      - 'server'

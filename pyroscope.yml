@@ -1,0 +1,18 @@
+---
+# A list of scrape configurations.
+scrape-configs:
+  # The job name assigned to scraped profiles by default.
+  - job-name: pyroscope
+
+    # The list of profiles to be scraped from the targets.
+    enabled-profiles: [cpu, mem, goroutines, mutex, block]
+
+    # List of labeled statically configured targets for this job.
+    static-configs:
+      - application: my-application-name
+        spy-name: gospy
+        targets:
+          # Should be inside docker container
+          - hostname:6060
+        labels:
+          env: dev

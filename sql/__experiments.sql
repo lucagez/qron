@@ -7,27 +7,26 @@
 insert into tiny.job (run_at)
 values ('@annually');
 
-INSERT INTO tiny.job(run_at, status)
-SELECT '@every 1 minute', 'READY'
+INSERT INTO tiny.job(run_at, status, state, kind)
+SELECT '@every 1 minute', 'READY', '{"hello": "world"}', tiny.find_kind('@every 1 minute')
 FROM generate_series(1, 1000000)
 
 -- demo transaction
 begin;
 
-with jobs as (select *
+with due_jobs as (select *
               from tiny.job
               where tiny.is_due(run_at, coalesce(last_run_at, created_at))
-                -- useful for @at jobs
-                and status = 'READY'
-                -- worker limit
+              and status = 'READY'
+              -- worker limit
               limit 100 for update
                   skip locked)
-update tiny.job as a
+update tiny.job
 set status      = 'PENDING',
     last_run_at = now()
-from jobs b
-where a.id = b.id
-returning a.*;
+from due_jobs
+where due_jobs.id = tiny.job.id
+returning due_jobs.*;
 
 commit;
 
@@ -37,7 +36,9 @@ vacuum;
 
 select count(*)
 from tiny.job
-where status = 'PENDING';
+where status = 'READY';
+
+select * from tiny.job limit 10;
 
 
 /*
