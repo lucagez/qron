@@ -5,25 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/api/api.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/loadserver/main.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/server/main.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/magefile.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/migrations/fs.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pyroscope.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/schema_test.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/spec.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/status.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/__experiments.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/__experiments.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/schema.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyque.iml" beforeDir="false" afterPath="$PROJECT_DIR$/tinyque.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -198,7 +180,7 @@
       <workItem from="1661253884273" duration="5209000" />
       <workItem from="1661265846333" duration="10464000" />
       <workItem from="1661506056211" duration="687000" />
-      <workItem from="1661506751187" duration="52256000" />
+      <workItem from="1661506751187" duration="52317000" />
     </task>
     <servers />
   </component>
