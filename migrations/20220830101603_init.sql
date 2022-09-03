@@ -2,12 +2,12 @@
 -- +goose StatementBegin
 create schema tiny;
 
-CREATE TYPE tiny.status AS ENUM ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
+create type tiny.status as enum ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
 
 -- INTERVAL: @every x time ::interval
 -- EXACT: @at x time ::timestamptz
 -- CRON: {cron expr} ::text
-CREATE TYPE tiny.job_kind AS ENUM ('INTERVAL', 'EXACT', 'CRON');
+create type tiny.job_kind as enum ('INTERVAL', 'EXACT', 'CRON');
 
 create or replace function tiny.crontab(expr text)
     returns bool as
@@ -17,29 +17,29 @@ declare
 --     c text := '^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5})';
 begin
     return case
-        when expr ~ c then true
+               when expr ~ c then true
         -- TODO: terrible but keeps monster regex complexity low for now
-        when expr ~ 'MON|TUE|WED|THU|FRI|SAT|SUN' then true
-        when expr ~ 'JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC' then true
-        else false
-    end;
+               when expr ~ 'MON|TUE|WED|THU|FRI|SAT|SUN' then true
+               when expr ~ 'JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC' then true
+               else false
+        end;
 end
 $$ language 'plpgsql' immutable;
 
-CREATE DOMAIN tiny.cron AS TEXT CHECK (
-                substr(VALUE, 1, 6) IN ('@every', '@after') AND (substr(VALUE, 7)::INTERVAL) IS NOT null
-        or VALUE ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
-        or substr(VALUE, 1, 3) = '@at' AND (substr(VALUE, 4)::timestamptz) IS NOT null
-        OR tiny.crontab(VALUE)
+create domain tiny.cron as text check (
+                substr(value, 1, 6) in ('@every', '@after') and (substr(value, 7)::interval) is not null
+        or value ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+        or substr(value, 1, 3) = '@at' and (substr(value, 4)::timestamptz) is not null
+        or tiny.crontab(value)
     );
 
 -- last run default should be creation date
-CREATE OR REPLACE FUNCTION tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
-    RETURNS boolean AS
+create or replace function tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
+    returns boolean as
 $CODE$
 begin
     return case
-               when substr(cron, 1, 6) IN ('@every', '@after')
+               when substr(cron, 1, 6) in ('@every', '@after')
                    and (last_run_at + substr(cron, 7)::interval) <= by
                    then true
                when substr(cron, 1, 3) = '@at'
@@ -75,16 +75,16 @@ begin
                    then true
                else false
         end;
-END;
+end;
 $CODE$
-    STRICT
-    LANGUAGE plpgsql;
+    strict
+    language plpgsql;
 
 create type tiny.kind as enum ('INTERVAL', 'TASK', 'CRON');
 
 -- format while inserting job
-CREATE OR REPLACE FUNCTION tiny.find_kind(cron tiny.cron)
-    RETURNS tiny.kind AS
+create or replace function tiny.find_kind(cron tiny.cron)
+    returns tiny.kind as
 $CODE$
 begin
     return case
@@ -97,21 +97,21 @@ begin
                when tiny.crontab(cron)
                    then 'CRON'::tiny.kind
         end;
-END;
+end;
 $CODE$
-    STRICT
-    LANGUAGE plpgsql;
+    strict
+    language plpgsql;
 
 
-CREATE table tiny.job
+create table tiny.job
 (
-    id               BIGSERIAL PRIMARY KEY,
+    id               bigserial primary key,
     run_at           tiny.cron,
     name             text,
     last_run_at      timestamptz not null default now(),
     created_at       timestamptz not null default now(),
-    execution_amount integer               default 0,
-    timeout          INTEGER               DEFAULT 0,
+    execution_amount integer              default 0,
+    timeout          integer              default 0,
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data
@@ -123,8 +123,8 @@ CREATE table tiny.job
     executor         text
 );
 
-CREATE INDEX idx_job_name
-    ON tiny.job (name);
+create index idx_job_name
+    on tiny.job (name);
 -- +goose StatementEnd
 
 -- +goose Down
