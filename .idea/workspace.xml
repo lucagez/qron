@@ -5,24 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/go.imports.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/executor/http.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/server/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/magefile.go" beforeDir="false" afterPath="$PROJECT_DIR$/magefile.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/20220830101420_crontab.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101420_crontab.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/20220830101603_init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101603_init.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/schema_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/schema_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/__experiments.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/crontab.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/testutil/postgres.go" beforeDir="false" afterPath="$PROJECT_DIR$/testutil/postgres.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tiny_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -220,7 +204,7 @@
       <workItem from="1661506056211" duration="687000" />
       <workItem from="1661506751187" duration="52588000" />
       <workItem from="1661943613563" duration="32299000" />
-      <workItem from="1662211475548" duration="13428000" />
+      <workItem from="1662211475548" duration="13794000" />
     </task>
     <servers />
   </component>

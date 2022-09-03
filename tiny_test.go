@@ -71,10 +71,10 @@ func (c CounterExecutor) Run(job *Job) error {
 }
 
 func TestTiny(t *testing.T) {
-	db, cleanup := testutil.PG.CreateDb("tiny_test")
-	defer cleanup()
-
 	t.Run("Should fetch jobs", func(t *testing.T) {
+		db, cleanup := testutil.PG.CreateDb("fetch_jobs")
+		defer cleanup()
+
 		q := NewTinyQ(Config{
 			Db:            db,
 			FlushInterval: 1 * time.Second,
@@ -104,6 +104,9 @@ func TestTiny(t *testing.T) {
 	})
 
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {
+		db, cleanup := testutil.PG.CreateDb("no_overlaps")
+		defer cleanup()
+
 		q0 := NewTinyQ(Config{
 			Db:            db,
 			FlushInterval: 1 * time.Second,
@@ -160,6 +163,8 @@ func TestTiny(t *testing.T) {
 	})
 
 	t.Run("Should process jobs concurrently without overlap", func(t *testing.T) {
+		db, cleanup := testutil.PG.CreateDb("concurrent_process")
+		defer cleanup()
 
 		c := 0
 		executor := CounterExecutor{count: &c, mu: &sync.Mutex{}}
@@ -204,6 +209,9 @@ func TestTiny(t *testing.T) {
 	})
 
 	t.Run("Should flush jobs while they get completed", func(t *testing.T) {
+		db, cleanup := testutil.PG.CreateDb("flush_test")
+		defer cleanup()
+
 		c := 0
 		executor := CounterExecutor{count: &c, mu: &sync.Mutex{}}
 		q := NewTinyQ(Config{

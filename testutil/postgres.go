@@ -99,7 +99,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 	dbUrl := fmt.Sprintf(
 		"postgres://postgres:postgres@%s/%s?sslmode=disable",
 		p.MaintainanceDb.GetHostPort("5432/tcp"),
-		"postgres",
+		name,
 	)
 
 	migrationClient, err := sql.Open("pgx", dbUrl)
