@@ -5,70 +5,80 @@ package tinyq
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/lucagez/tinyq/api"
-	"net/http"
+	"log"
+	"os"
+	"os/signal"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type TinyQ struct {
 	Db            *pgxpool.Pool
 	MaxInFlight   uint64
-	Limiter       chan int
 	mu            sync.Mutex
 	FlushInterval time.Duration
 	PollInterval  time.Duration
-
-	// Experiment
-	httpClient   *http.Client
-	limiter      chan int
-	finishedJobs chan Job
+	Executors     map[string]Executor
+	finishedJobs  chan Job
 }
 
-func NewTinyQ(db *pgxpool.Pool, poll, flushInterval time.Duration, maxInFlight uint64) TinyQ {
+// ExecResponse
+// TODO: Response should have:
+// - state, as it should update existing state
+type ExecResponse struct {
+	// TODO: How should the response from a job look like?
+	Status string `json:"status"`
+}
 
-	transport := &http.Transport{
-		MaxIdleConns:        10, // global number of idle conns
-		MaxIdleConnsPerHost: 5,  // subset of MaxIdleConns, per-host
-		// declare a conn idle after 10 seconds. too low and conns are recycled too much, too high and conns aren't recycled enough
-		IdleConnTimeout: 10 * time.Second,
-		// DisableKeepAlives: true, // this means create a new connection per request. not recommended
-	}
-	httpClient := &http.Client{
-		Transport: transport,
-		Timeout:   30 * time.Second,
-	}
+type Executor interface {
+	// Run should return any payload as result of the run
+	// TODO: Improve signature when architecture is working
+	Run(*Job) error
+}
 
+type Config struct {
+	Db            *pgxpool.Pool
+	FlushInterval time.Duration
+	PollInterval  time.Duration
+	MaxInFlight   uint64
+	Executors     map[string]Executor
+}
+
+func NewTinyQ(config Config) TinyQ {
 	return TinyQ{
-		Db:            db,
-		MaxInFlight:   maxInFlight,
-		FlushInterval: flushInterval,
-		PollInterval:  poll,
-		Limiter:       make(chan int, maxInFlight),
+		Db:            config.Db,
+		MaxInFlight:   config.MaxInFlight,
+		FlushInterval: config.FlushInterval,
+		PollInterval:  config.PollInterval,
 		mu:            sync.Mutex{},
-		httpClient:    httpClient,
-		limiter:       make(chan int, 50), // TODO: test limiter for httpclient
+		Executors:     config.Executors,
 		finishedJobs:  make(chan Job),
 	}
 }
 
 func (t *TinyQ) IncreaseInFlight() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.MaxInFlight++
+	// TODO: Use atomics
+	//t.mu.Lock()
+	//defer t.mu.Unlock()
+	//t.MaxInFlight++
+	atomic.AddUint64(&t.MaxInFlight, 1)
 }
 
 func (t *TinyQ) DecreaseInFlight() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.MaxInFlight--
+	//t.mu.Lock()
+	//defer t.mu.Unlock()
+	//t.MaxInFlight--
+	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
 }
 
 type Job struct {
@@ -81,7 +91,9 @@ type Job struct {
 	ExecutionAmount int            `json:"execution_amount" db:"execution_amount"`
 	Timeout         int            `json:"timeout" db:"timeout"`
 	State           string         `json:"state" db:"state"`
+	Config          string         `json:"config" db:"config"`
 	Kind            Kind           `json:"kind" db:"kind"`
+	ExecutorType    string         `json:"executor" db:"executor"`
 }
 
 func (t *TinyQ) Process(ctx context.Context, job Job) {
@@ -91,69 +103,45 @@ func (t *TinyQ) Process(ctx context.Context, job Job) {
 	// TODO: Use timeout
 	// TODO: In case of failure use max_attempts
 	// TODO: Pick executor (HTTP)
-
-	// Process and get next state + status
-	//duration := time.Duration(rand.Intn(20)) * time.Second
-	//time.Sleep(duration)
-	//fmt.Println("Processed:", job.Id, "in", duration, "seconds")
-	//t.httpClient.Get(nil, "http://localhost:8081/counter")
-
-	// Limit amount of in-flight http requests
-	//fmt.Println("Pushing")
-	t.limiter <- 0
-
-	err := backoff.Retry(func() error {
-		res, err := t.httpClient.Get("http://localhost:8081/counter")
-		if err != nil {
-			fmt.Println("Http error!", err)
-			return err
-		}
-		return res.Body.Close()
-	}, backoff.NewExponentialBackOff())
-
-	<-t.limiter
-	//fmt.Println("Unpushing")
-
-	job.Status = READY
-	if job.Kind == TASK {
-		// TODO: compute based on result of processing
-		job.Status = SUCCESS
-	}
-
-	if err != nil {
-		// Handle error.
-		fmt.Println("Http UNRECOVERABLE!")
-		//status = FAILURE
+	executor, ok := t.Executors[job.ExecutorType]
+	if !ok {
+		log.Println("no executor found for current job:", job)
 		return
 	}
+
+	err := backoff.Retry(func() error {
+		// TODO: keep an eye on this. ideally better to pass by value
+		// to minimize heap allocations
+		return executor.Run(&job)
+	}, backoff.NewExponentialBackOff())
 
 	t.finishedJobs <- job
 
 	if err != nil {
-		fmt.Println("There's an error! do something", err)
+		// Handle error.
+		log.Println("unrecoverable. max attempts finished")
+		//status = FAILURE
+		return
 	}
-
 }
 
 func (t *TinyQ) Fetch() ([]Job, error) {
 	time.Sleep(t.PollInterval)
-	fmt.Println("Fetching", t.MaxInFlight, "jobs...")
 
-	//tx, err := t.Db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable})
-	tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{IsoLevel: pgx.Serializable})
-	fmt.Println("Something happened right after")
+	//tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{IsoLevel: pgx.Serializable})
+	tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		fmt.Println("Something was an for TX", err)
 		return nil, err
 	}
-	fmt.Println("Something was NOT an err for TX")
 
+	// TODO: Add check for not running ever a job if
+	// `last_run_at` happened less than x seconds ago
 	var jobs []Job
 	result, err := tx.Query(context.Background(), `
 		with due_jobs as (
 			select *
 			from tiny.job
-			where tiny.is_due(run_at, coalesce(last_run_at, created_at))
+			where tiny.is_due(run_at, coalesce(last_run_at, created_at), now())
 			and status = 'READY'
 			-- worker limit
 			limit $1 for update
@@ -171,7 +159,6 @@ func (t *TinyQ) Fetch() ([]Job, error) {
 		return nil, err
 	}
 
-	//err = sqlx.StructScan(result, &jobs)
 	err = pgxscan.ScanAll(&jobs, result)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -185,7 +172,7 @@ func (t *TinyQ) Fetch() ([]Job, error) {
 	return jobs, nil
 }
 
-func (t *TinyQ) flush() {
+func (t *TinyQ) flush(ctx context.Context) {
 	// TODO: Make sure only error rows are ignored not the whole batch
 	// keep track of errors!
 	// TODO: Check if behavior is correct but should be fine.
@@ -197,6 +184,8 @@ func (t *TinyQ) flush() {
 		shouldFlush := false
 
 		select {
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 			shouldFlush = true
 		case job := <-t.finishedJobs:
@@ -214,19 +203,22 @@ func (t *TinyQ) flush() {
 		}
 
 		if shouldFlush {
-			fmt.Printf("====== FLUSHING JOBS: %d ======\n", batch.Len())
-			// TODO: Check for errors
 			tx, err := t.Db.Begin(context.Background())
 			if err != nil {
-				fmt.Println("error while acquiring tx", err)
+				log.Println("error while acquiring tx", err)
+				continue
 			}
+
+			// TODO: Check for errors inside batch
 			br := tx.SendBatch(context.Background(), batch)
-			if br.Close() != nil {
-				fmt.Println("error while closing batch", err)
+			err = br.Close()
+			if err != nil {
+				log.Println("error while closing batch", err)
 			}
-			if tx.Commit(context.Background()) != nil {
-				tx.Rollback(context.Background())
-				fmt.Println("error while committing tx")
+
+			err = tx.Commit(context.Background())
+			if err != nil {
+				log.Println("error while committing tx", err, tx.Rollback(context.Background()))
 			}
 
 			// reset
@@ -235,21 +227,52 @@ func (t *TinyQ) flush() {
 	}
 }
 
-func (t *TinyQ) Listen() {
+func (t *TinyQ) start(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(t.PollInterval):
+			result, err := t.Fetch()
+			if err != nil {
+				log.Println("error:", err)
+			}
 
+			for _, job := range result {
+				go t.Process(context.Background(), job)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (t *TinyQ) Listen() {
 	e := echo.New()
 
-	e.GET("/demo", func(c echo.Context) error {
-		var result string
-		return c.JSON(http.StatusOK, result)
-	})
+	spec, err := api.GetSwagger()
+	if err != nil {
+		log.Fatalln("error while loading openapi spec")
+	}
 
+	spec.Servers = nil
+
+	e.Use(echomiddleware.Logger())
+	e.Use(middleware.OapiRequestValidator(spec))
 	api.RegisterHandlers(e, api.Api{})
 
-	fmt.Println("Listening 🦕")
+	ctx, cancel := context.WithCancel(context.Background())
 
-	// Batch save in the background
-	go t.flush()
+	go t.start(ctx)
+	go t.flush(ctx)
+	go e.Start(":1234")
 
-	e.Start(":1234")
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+
+	cancel()
+
+	err = e.Shutdown(ctx)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

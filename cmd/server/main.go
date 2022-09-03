@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lucagez/tinyq"
+	"github.com/lucagez/tinyq/executor"
 	"github.com/pyroscope-io/client/pyroscope"
 	"log"
 	_ "net/http/pprof"
@@ -17,12 +18,15 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	tiny := tinyq.NewTinyQ(
-		db,
-		1*time.Second,
-		1*time.Second,
-		1000,
-	)
+	tiny := tinyq.NewTinyQ(tinyq.Config{
+		Db:            db,
+		FlushInterval: 1 * time.Second,
+		PollInterval:  1 * time.Second,
+		MaxInFlight:   1000,
+		Executors: map[string]tinyq.Executor{
+			"HTTP": executor.NewHttpExecutor(50),
+		},
+	})
 
 	// Profiling
 	_, err = pyroscope.Start(pyroscope.Config{

@@ -14,9 +14,9 @@ import (
 )
 
 type PgFactory struct {
-	docker             *dockertest.Pool
-	maintainanceDb     *dockertest.Resource
-	maintainanceClient *pgxpool.Pool
+	Docker             *dockertest.Pool
+	MaintainanceDb     *dockertest.Resource
+	MaintainanceClient *pgxpool.Pool
 }
 
 var PG PgFactory
@@ -56,29 +56,41 @@ func NewPgFactory() PgFactory {
 	}
 
 	// TODO: find a best way if waiting for pg to be ready
-	time.Sleep(1 * time.Second)
 
-	client, err := pgxpool.Connect(
-		context.Background(),
-		fmt.Sprintf(
-			"postgres://postgres:postgres@%s/%s?sslmode=disable",
-			resource.GetHostPort("5432/tcp"),
-			"postgres",
-		),
-	)
-	if err != nil {
-		log.Fatalln("could not connect to maintenance db:", err)
+	var client *pgxpool.Pool
+	counter := 0
+
+	for {
+		time.Sleep(500 * time.Millisecond)
+
+		client, err = pgxpool.Connect(
+			context.Background(),
+			fmt.Sprintf(
+				"postgres://postgres:postgres@%s/%s?sslmode=disable",
+				resource.GetHostPort("5432/tcp"),
+				"postgres",
+			),
+		)
+		if client != nil {
+			log.Println("pool is up and running")
+			break
+		}
+		if err != nil && counter > 5 {
+			log.Fatalln("could not connect to maintenance db:", err)
+		}
+
+		counter++
 	}
 
 	return PgFactory{
-		docker:             pool,
-		maintainanceDb:     resource,
-		maintainanceClient: client,
+		Docker:             pool,
+		MaintainanceDb:     resource,
+		MaintainanceClient: client,
 	}
 }
 
 func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
-	_, err := p.maintainanceClient.Exec(
+	_, err := p.MaintainanceClient.Exec(
 		context.Background(), fmt.Sprintf("create database %s", name))
 	if err != nil {
 		log.Fatalln("failed to created db", name, ":", err)
@@ -86,7 +98,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 
 	dbUrl := fmt.Sprintf(
 		"postgres://postgres:postgres@%s/%s?sslmode=disable",
-		p.maintainanceDb.GetHostPort("5432/tcp"),
+		p.MaintainanceDb.GetHostPort("5432/tcp"),
 		"postgres",
 	)
 
@@ -111,7 +123,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 
 	return client, func() {
 		client.Close()
-		_, err = p.maintainanceClient.Exec(
+		_, err = p.MaintainanceClient.Exec(
 			context.Background(), fmt.Sprintf("drop database %s", name))
 		if err != nil {
 			log.Fatalln("failed to drop db", name, ":", err)
@@ -120,5 +132,5 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 }
 
 func (p PgFactory) Teardown() error {
-	return p.maintainanceDb.Close()
+	return p.MaintainanceDb.Close()
 }

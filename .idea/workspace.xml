@@ -5,7 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/go.imports.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/executor/http.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/server/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/magefile.go" beforeDir="false" afterPath="$PROJECT_DIR$/magefile.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/20220830101420_crontab.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101420_crontab.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/20220830101603_init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101603_init.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/schema_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/schema_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/__experiments.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/crontab.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/testutil/postgres.go" beforeDir="false" afterPath="$PROJECT_DIR$/testutil/postgres.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tiny_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,63 +45,63 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectId" id="2DkrNSHyrD4OHEoLgVu3H8cuWkV" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultGoTemplateProperty": "Go File",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.format.on.save.advertiser.fired": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "configurable..is.expanded": "false",
-    "configurable.GoLibrariesConfigurable.is.expanded": "true",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "/Users/gez/cose/tinyq",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "go"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.format.on.save.advertiser.fired&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;configurable..is.expanded&quot;: &quot;false&quot;,
+    &quot;configurable.GoLibrariesConfigurable.is.expanded&quot;: &quot;true&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/gez/cose/tinyq&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;go&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "postgresql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
     ],
-    "com.intellij.ide.scratch.LRUPopupBuilder$1/": [
-      "PostgreSQL"
+    &quot;com.intellij.ide.scratch.LRUPopupBuilder$1/&quot;: [
+      &quot;PostgreSQL&quot;
     ],
-    "com.intellij.ide.scratch.LRUPopupBuilder$1/SQL Dialect": [
-      "PostgreSQL"
+    &quot;com.intellij.ide.scratch.LRUPopupBuilder$1/SQL Dialect&quot;: [
+      &quot;PostgreSQL&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestSchema/Should_find_due_jobs in github.com/lucagez/tinyq">
-    <configuration name="TestSchema in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Go Test.TestTiny in github.com/lucagez/tinyq">
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq" />
+      <kind value="FILE" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestSchema\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestSchema/Should_create_@after_&lt;interval&gt;_expressions in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestTiny in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
@@ -91,10 +109,10 @@
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestSchema\E$/^\QShould_create_@after_&lt;interval&gt;_expressions\E$" />
+      <pattern value="^\QTestTiny\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestSchema/Should_create_@every_&lt;interval&gt;_expressions in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestTiny/Should_fetch_jobs in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
@@ -102,10 +120,10 @@
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestSchema\E$/^\QShould_create_@every_&lt;interval&gt;_expressions\E$" />
+      <pattern value="^\QTestTiny\E$/^\QShould_fetch_jobs\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestSchema/Should_find_correct_kind in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestTiny/Should_fetch_jobs_in_parallel_without_overlaps in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
@@ -113,10 +131,10 @@
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestSchema\E$/^\QShould_find_correct_kind\E$" />
+      <pattern value="^\QTestTiny\E$/^\QShould_fetch_jobs_in_parallel_without_overlaps\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestSchema/Should_find_due_jobs in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
@@ -124,7 +142,27 @@
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestSchema\E$/^\QShould_find_due_jobs\E$" />
+      <pattern value="^\QTestTiny\E$/^\QShould_flush_jobs_while_they_get_completed\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestTiny/Should_process_jobs_concurrently_without_overlap in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestTiny\E$/^\QShould_process_jobs_concurrently_without_overlap\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="SwaggerCodegen">
@@ -161,11 +199,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestSchema/Should_find_due_jobs in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestSchema in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestSchema/Should_find_correct_kind in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestSchema/Should_create_@after_&lt;interval&gt;_expressions in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestSchema/Should_create_@every_&lt;interval&gt;_expressions in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestTiny in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestTiny/Should_fetch_jobs_in_parallel_without_overlaps in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestTiny/Should_process_jobs_concurrently_without_overlap in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestTiny/Should_fetch_jobs in github.com/lucagez/tinyq" />
       </list>
     </recent_temporary>
   </component>
@@ -180,7 +218,9 @@
       <workItem from="1661253884273" duration="5209000" />
       <workItem from="1661265846333" duration="10464000" />
       <workItem from="1661506056211" duration="687000" />
-      <workItem from="1661506751187" duration="52317000" />
+      <workItem from="1661506751187" duration="52588000" />
+      <workItem from="1661943613563" duration="32299000" />
+      <workItem from="1662211475548" duration="13428000" />
     </task>
     <servers />
   </component>

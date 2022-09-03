@@ -9,13 +9,20 @@ CREATE TYPE tiny.status AS ENUM ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
 -- CRON: {cron expr} ::text
 CREATE TYPE tiny.job_kind AS ENUM ('INTERVAL', 'EXACT', 'CRON');
 
-create or replace function tiny.crontab()
-    returns text as
+create or replace function tiny.crontab(expr text)
+    returns bool as
 $$
 declare
     c text := '^(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) +){4}(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) ?)$';
+--     c text := '^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5})';
 begin
-    return c;
+    return case
+        when expr ~ c then true
+        -- TODO: terrible but keeps monster regex complexity low for now
+        when expr ~ 'MON|TUE|WED|THU|FRI|SAT|SUN' then true
+        when expr ~ 'JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC' then true
+        else false
+    end;
 end
 $$ language 'plpgsql' immutable;
 
@@ -23,7 +30,7 @@ CREATE DOMAIN tiny.cron AS TEXT CHECK (
                 substr(VALUE, 1, 6) IN ('@every', '@after') AND (substr(VALUE, 7)::INTERVAL) IS NOT null
         or VALUE ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
         or substr(VALUE, 1, 3) = '@at' AND (substr(VALUE, 4)::timestamptz) IS NOT null
-        OR VALUE ~ tiny.crontab()
+        OR tiny.crontab(VALUE)
     );
 
 -- last run default should be creation date
@@ -61,7 +68,7 @@ begin
                                 then true
                             else false
                    end
-               when cron ~ tiny.crontab()
+               when tiny.crontab(cron)
                    and cronexp.match(by, cron)
                    -- can't be more granular than minute for cron jobs
                    and date_trunc('minute', last_run_at) < date_trunc('minute', by)
@@ -76,7 +83,7 @@ $CODE$
 create type tiny.kind as enum ('INTERVAL', 'TASK', 'CRON');
 
 -- format while inserting job
-CREATE OR REPLACE FUNCTION tiny.find_kind(cron text)
+CREATE OR REPLACE FUNCTION tiny.find_kind(cron tiny.cron)
     RETURNS tiny.kind AS
 $CODE$
 begin
@@ -87,7 +94,7 @@ begin
                when substr(cron, 1, 3) = '@at'
                    or substr(cron, 1, 6) = '@after'
                    then 'TASK'::tiny.kind
-               when cron ~ tiny.crontab()
+               when tiny.crontab(cron)
                    then 'CRON'::tiny.kind
         end;
 END;
@@ -101,13 +108,19 @@ CREATE table tiny.job
     id               BIGSERIAL PRIMARY KEY,
     run_at           tiny.cron,
     name             text,
-    last_run_at      timestamptz,
-    created_at       timestamptz  not null default now(),
+    last_run_at      timestamptz not null default now(),
+    created_at       timestamptz not null default now(),
     execution_amount integer               default 0,
     timeout          INTEGER               DEFAULT 0,
     status           tiny.status not null default 'READY',
+    -- state is e2e encrypted so this is never
+    -- visible from tinyq. this can hold sensitive data
     state            text,
-    kind             tiny.kind
+    -- config is not encrypted as it holds info for the
+    -- worker on how to perform the job
+    config           text,
+    kind             tiny.kind,
+    executor         text
 );
 
 CREATE INDEX idx_job_name

@@ -68,7 +68,30 @@ begin
 
     -- step 3: handle generic expression with values, lists or ranges
 
-    -- TODO: Add dow support https://github.com/sorentwo/oban/blob/main/lib/oban/cron/expression.ex#L15
+    if field ~ 'JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC' then
+        field = replace(field, 'JAN', '1');
+        field = replace(field, 'FEB', '2');
+        field = replace(field, 'MAR', '3');
+        field = replace(field, 'APR', '4');
+        field = replace(field, 'MAY', '5');
+        field = replace(field, 'JUN', '6');
+        field = replace(field, 'JUL', '7');
+        field = replace(field, 'AUG', '8');
+        field = replace(field, 'SEP', '9');
+        field = replace(field, 'OCT', '10');
+        field = replace(field, 'NOV', '11');
+        field = replace(field, 'DEC', '12');
+    end if;
+
+    if field ~ 'SUN|MON|TUE|WED|THU|FRI|SAT' then
+        field = replace(field, 'SUN', '0');
+        field = replace(field, 'MON', '1');
+        field = replace(field, 'TUE', '2');
+        field = replace(field, 'WED', '3');
+        field = replace(field, 'THU', '4');
+        field = replace(field, 'FRI', '5');
+        field = replace(field, 'SAT', '6');
+    end if;
 
     ret := '{}'::int[];
     for part in select * from regexp_split_to_table(field, ',')
@@ -120,7 +143,6 @@ begin
 end;
 $$ language 'plpgsql' immutable;
 
--- TODO: Add timezone
 create or replace function cronexp.match(ts timestamptz, exp text)
     returns boolean as
 $$
@@ -145,6 +167,16 @@ begin
     if array_length(groups, 1) != 5 then
         raise exception 'invalid parameter "exp": five space-separated fields expected';
     end if;
+
+    -- TODO: Build date parts to find next run.
+    -- Only matching is not effective.
+    -- e.g. 0 21 * * MON - runs at 21.00 on each Monday. But what if the scheduler
+    -- for any reason picks that job up at 21.01? It's going to be ignored for a week 🤯
+    -- EASY SOLUTION: Keep blind check + add a next_runs table that just every now and then
+    -- takes jobs and calculate bunch of next runs. downside -> table is going to grow huge
+    -- PROBLEM: How to ensure delayed execution if an outage fucks up db + app for
+    -- a prolonged period of time?
+    -- Just use everything in HA setup and hope for the best?
 
     ts_parts[1] := date_part('minute', ts);
     ts_parts[2] := date_part('hour', ts);

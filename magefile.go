@@ -25,13 +25,13 @@ func CreateMigration(name string) error {
 }
 
 // Up
-func UpMigrations() error {
-	return goose.Up(connectDb(), "migrations")
+func UpMigrations() {
+	log.Fatalln(goose.Up(connectDb(), "migrations"))
 }
 
 // Down
-func DownMigrations() error {
-	return goose.Down(connectDb(), "migrations")
+func DownMigrations() {
+	log.Fatalln(goose.Down(connectDb(), "migrations"))
 }
 
 func connectDb() *sql.DB {

@@ -40,18 +40,25 @@ func TestSchema(t *testing.T) {
 
 	// Mainly to track what's supported and what's not. Ideally
 	// these expressions should move to the list above over time
+	// TODO: Improve cron parser checks at api layer
+	// until proper sql checks are implemented
 	t.Run("Should create supported cron expressions", func(t *testing.T) {
 		expressions := map[string]bool{
-			"* * * * *":      true,
-			"0 12 * * *":     true,
-			"15 10 */5 * *":  true,
-			"15 10 * * 1":    true,
-			"5 0 * 8 *":      true,
-			"15 14 1 * *":    true,
-			"0 22 * * 1-5":   true,
-			"0 0,12 1 */2 *": true,
-			"0 4 8-14 * *":   true,
-			"0 0 1,15 * 3":   true,
+			"* * * * *":            true,
+			"0 12 * * *":           true,
+			"15 10 */5 * *":        true,
+			"15 10 * * 1":          true,
+			"5 0 * 8 *":            true,
+			"15 14 1 * *":          true,
+			"0 22 * * 1-5":         true,
+			"0 0,12 1 */2 *":       true,
+			"0 4 8-14 * *":         true,
+			"0 0 1,15 * 3":         true,
+			"0 0 1,15 * MON":       true,
+			"0 0 1,15 * MON-FRI":   true,
+			"0 0 1,15 AUG MON-FRI": true,
+			"0 0 1,15 JAN-FEB SUN": true,
+			"0 0 1,15 JAN-FEB *":   true,
 
 			"23 0-20/2 * * *":        false,
 			"15 10 * * ? *":          false,
@@ -60,8 +67,6 @@ func TestSchema(t *testing.T) {
 			"0/5 14 * * ?":           false,
 			"0/5 14,18 * * ?":        false,
 			"0-5 14 * * ?":           false,
-			"10,44 14 ? 3 WED":       false,
-			"15 10 ? * MON-FRI":      false,
 			"15 10 15 * ?":           false,
 			"15 10 L * ?":            false,
 			"15 10 ? * 6L 2002-2005": false,
@@ -76,15 +81,15 @@ func TestSchema(t *testing.T) {
 			`, expr)
 
 			if valid {
-				assert.Nil(t, err)
+				assert.Nil(t, err, expr)
 			} else {
-				assert.Error(t, err)
+				assert.Error(t, err, expr)
 			}
 		}
 	})
 
 	// TODO: Tell people to set timezone and communicate default timezone
-	t.Run("Should create @at expressions", func(t *testing.T) {
+	t.Run("Should create @at <timestamp> expressions", func(t *testing.T) {
 		expressions := map[string]bool{
 			"@at 2022-08-30T11:14:22.607Z":     true,
 			"@at 2004-10-19 10:23:54+02":       true,
@@ -230,10 +235,59 @@ func TestSchema(t *testing.T) {
 		}
 	})
 
+	// Only for modified cronexp
+	t.Run("Should match cron execution time", func(t *testing.T) {
+		type IsMatch struct {
+			Expr  string
+			Ts    time.Time
+			Match bool
+		}
+		parseTime := func(t string) time.Time {
+			parsed, err := time.Parse(time.RFC3339, t)
+			if err != nil {
+				log.Fatalln("invalid date format", t)
+			}
+			return parsed
+		}
+		jobs := []IsMatch{
+			{Expr: "* * * * *", Ts: time.Now(), Match: true},
+			{Expr: "* * * * *", Ts: time.Now().Add(-1 * time.Minute), Match: true},
+			{Expr: "5 4 * * *", Ts: parseTime("2021-08-31T02:05:00.000Z"), Match: false},
+			{Expr: "5 0 * * MON", Ts: parseTime("2022-09-05T00:05:00.000Z"), Match: true},
+			{Expr: "5 0 * AUG MON", Ts: parseTime("2023-08-07T00:05:00.000Z"), Match: true},
+			{Expr: "5 0 * AUG SUN", Ts: parseTime("2023-08-06T00:05:00.000Z"), Match: true},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-04-02T00:00:00.000Z"), Match: true},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-04-02T01:02:23.000Z"), Match: true},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-04-03T01:02:23.000Z"), Match: false},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-04-09T01:02:23.000Z"), Match: true},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-07-16T01:02:23.000Z"), Match: true},
+			{Expr: "* * * APR-AUG SUN", Ts: parseTime("2023-07-17T01:02:23.000Z"), Match: false},
+			{Expr: "* * * * MON-TUE", Ts: parseTime("2022-09-05T01:02:23.000Z"), Match: true},
+			{Expr: "* * * * MON-TUE", Ts: parseTime("2022-09-06T01:02:23.000Z"), Match: true},
+			{Expr: "* * * * MON-TUE", Ts: parseTime("2022-09-07T01:02:23.000Z"), Match: false},
+			{Expr: "5 0 * 8 *", Ts: parseTime("2023-08-01T00:05:00.000Z"), Match: true},
+			{Expr: "5 0 * AUG *", Ts: parseTime("2023-08-01T00:05:00.000Z"), Match: true},
+			{Expr: "5 0 * FEB *", Ts: parseTime("2023-08-01T00:05:00.000Z"), Match: false},
+		}
+
+		for _, job := range jobs {
+			rows, err := db.Query(context.Background(), `
+				select cronexp.match($1, $2)
+			`, job.Ts, job.Expr)
+
+			var result bool
+			err = pgxscan.ScanOne(&result, rows)
+
+			assert.Nil(t, err)
+			assert.Equal(t, job.Match, result, job.Expr, job.Ts.String())
+		}
+	})
+
 	t.Run("Should find due jobs", func(t *testing.T) {
 		type IsDue struct {
 			Expr      string
 			LastRunAt time.Time
+			By        time.Time
 			Due       bool
 		}
 		parseTime := func(t string) time.Time {
@@ -243,27 +297,42 @@ func TestSchema(t *testing.T) {
 			}
 			return parsed
 		}
-		// RIPARTIRE QUI! <--
-		// - Test is due stuff..https://codeberg.org/chris-mair/postgres-cronexp
-		// - add `by` in jobs to check
-		// - test cron due dates with https://github.com/adhocore/gronx
 		jobs := []IsDue{
-			{Expr: "* * * * *", LastRunAt: time.Now(), Due: false},
-			{Expr: "* * * * *", LastRunAt: time.Now().Add(-1 * time.Minute), Due: true},
-			{Expr: "5 4 * * *", LastRunAt: parseTime("2021-08-31T02:05:00.000Z"), Due: false},
-			{Expr: "5 4 * * *", LastRunAt: parseTime("2021-08-30T00:05:00.000Z"), Due: true},
+			{Expr: "* * * * *", LastRunAt: time.Now(), By: time.Now(), Due: false},
+			{Expr: "* * * * *", LastRunAt: time.Now().Add(-1 * time.Minute), By: time.Now(), Due: true},
+			{Expr: "@every 10 minutes", LastRunAt: time.Now().Add(-5 * time.Minute), By: time.Now(), Due: false},
+			{Expr: "@every 10 minutes", LastRunAt: time.Now().Add(-10 * time.Minute), By: time.Now(), Due: true},
+			{Expr: "@after 18 hours", LastRunAt: time.Now().Add(-5 * time.Hour), By: time.Now(), Due: false},
+			{Expr: "@after 18 hours", LastRunAt: time.Now().Add(-24 * time.Hour), By: time.Now(), Due: true},
+			{Expr: "@at 2023-01-01T00:00:00.000Z", LastRunAt: time.Now(), By: time.Date(2023, 1, 1, 1, 0, 0, 0, time.Local), Due: true},
+			{Expr: "@at 2023-01-01T00:00:00.000Z", LastRunAt: time.Now(), By: parseTime("2023-01-01T00:01:00.000Z"), Due: true},
+			{Expr: "@annually", LastRunAt: time.Now(), By: time.Now().Add(10000 * time.Hour), Due: true},
+			{Expr: "@annually", LastRunAt: time.Now(), By: time.Now().Add(10 * time.Hour), Due: false},
+			{Expr: "@yearly", LastRunAt: time.Now(), By: time.Now().Add(10000 * time.Hour), Due: true},
+			{Expr: "@yearly", LastRunAt: time.Now(), By: time.Now().Add(10 * time.Hour), Due: false},
+			{Expr: "@monthly", LastRunAt: time.Now(), By: time.Now().Add(31 * 24 * time.Hour), Due: true},
+			{Expr: "@monthly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-31T00:00:00.000Z"), Due: false},
+			{Expr: "@monthly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-02-01T00:00:00.000Z"), Due: true},
+			{Expr: "@weekly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-07T00:00:00.000Z"), Due: false},
+			{Expr: "@weekly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-08T00:00:00.000Z"), Due: true},
+			{Expr: "@daily", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-01T23:23:00.000Z"), Due: false},
+			{Expr: "@daily", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-02T00:00:00.000Z"), Due: true},
+			{Expr: "@hourly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-01T00:59:00.000Z"), Due: false},
+			{Expr: "@hourly", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-01T01:00:00.000Z"), Due: true},
+			{Expr: "@minutely", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-01T00:00:59.000Z"), Due: false},
+			{Expr: "@minutely", LastRunAt: parseTime("2022-01-01T00:00:00.000Z"), By: parseTime("2022-01-01T00:01:00.000Z"), Due: true},
 		}
 
 		for _, job := range jobs {
 			rows, err := db.Query(context.Background(), `
-				select tiny.is_due($1, $2, now())
-			`, job.Expr, job.LastRunAt)
+				select tiny.is_due($1, $2, $3)
+			`, job.Expr, job.LastRunAt, job.By)
 
 			var result bool
 			err = pgxscan.ScanOne(&result, rows)
 
 			assert.Nil(t, err)
-			assert.Equal(t, job.Due, result, job.Expr, job.LastRunAt.String())
+			assert.Equal(t, job.Due, result, job.Expr, job.LastRunAt, job.By)
 		}
 	})
 }
