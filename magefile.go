@@ -19,6 +19,15 @@ func Gen() error {
 	return cmd.Run()
 }
 
+func Sqlc() error {
+	pwd, _ := os.Getwd()
+	log.Println("pwd", pwd)
+	cmd := exec.Command("docker", "run", "--rm", "-v", pwd+":/src", "-w", "/src", "kjconroy/sqlc", "generate")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
 // Create migration
 func CreateMigration(name string) error {
 	return goose.Create(nil, "migrations", name, "sql")

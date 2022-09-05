@@ -11,6 +11,8 @@ resolver:
   dir: graph
   package: graph
   filename_template: "{name}.resolvers.go"
+autobind:
+  - "github.com/lucagez/tinyq/sqlc"
 models:
   ID:
     model:

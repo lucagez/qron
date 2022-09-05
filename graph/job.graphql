@@ -1,35 +1,25 @@
 scalar Time
 
-enum Status {
-  READY
-  PENDING
-  SUCCESS
-  FAILURE
-}
+directive @goModel(
+  model: String
+  models: [String!]
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 
-enum HttpMethod {
-  GET
-  POST
-  PUT
-  DELETE
-  HEAD
-  PATCH
-}
-
-type Job {
-  id: ID!
-  status: Status!
-  last_run_at: Time
-  created_at: Time!
-  run_at: String!
+directive @goField(
+  forceResolver: Boolean
   name: String
-  state: String!
-  config: String!
-  # execution_amount: Int
-  # timeout: Int
-  # executor_type: String!
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @goTag(
+  key: String!
+  value: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
+  id: ID!
 }
 
+# TODO: These values should be optional in update queries
 input HttpJobArgs {
   run_at: Time!
   name: String!
@@ -39,15 +29,13 @@ input HttpJobArgs {
 }
 
 type Mutation {
-  createJob(args: HttpJobArgs): Job!
-  updateJobByName(name: String!, args: HttpJobArgs): Boolean!
-  updateJobById(id: ID!, args: HttpJobArgs): Boolean!
-  deleteJobByName(name: String!): Boolean!
-  deleteJobByID(id: ID!): Boolean!
+  createJob(args: HttpJobArgs): TinyJob!
+  updateJobByName(name: String!, args: HttpJobArgs): TinyJob!
+  updateJobById(id: ID!, args: HttpJobArgs): TinyJob!
+  deleteJobByName(name: String!): TinyJob!
+  deleteJobByID(id: ID!): TinyJob!
 }
 
-# RIPARTIRE QUI!<--
-# - Simplify gqlgen crud operations. They do not have to be high performance
 input QueryJobsArgs {
   limit: Int! = 50
   skip: Int! = 0
@@ -55,7 +43,7 @@ input QueryJobsArgs {
 }
 
 type Query {
-  searchJobs(args: QueryJobsArgs!): Job!
-  queryJobByName(name: String!): Job!
-  queryJobByID(id: ID!): Job!
+  searchJobs(args: QueryJobsArgs!): [TinyJob]!
+  queryJobByName(name: String!): TinyJob!
+  queryJobByID(id: ID!): TinyJob!
 }

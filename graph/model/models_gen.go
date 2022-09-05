@@ -3,9 +3,6 @@
 package model
 
 import (
-	"fmt"
-	"io"
-	"strconv"
 	"time"
 )
 
@@ -17,113 +14,8 @@ type HTTPJobArgs struct {
 	Method string    `json:"method"`
 }
 
-type Job struct {
-	ID        string     `json:"id"`
-	Status    Status     `json:"status"`
-	LastRunAt *time.Time `json:"last_run_at"`
-	CreatedAt time.Time  `json:"created_at"`
-	RunAt     string     `json:"run_at"`
-	Name      *string    `json:"name"`
-	State     string     `json:"state"`
-	Config    string     `json:"config"`
-}
-
 type QueryJobsArgs struct {
 	Limit  int     `json:"limit"`
 	Skip   int     `json:"skip"`
 	Filter *string `json:"filter"`
-}
-
-type HTTPMethod string
-
-const (
-	HTTPMethodGet    HTTPMethod = "GET"
-	HTTPMethodPost   HTTPMethod = "POST"
-	HTTPMethodPut    HTTPMethod = "PUT"
-	HTTPMethodDelete HTTPMethod = "DELETE"
-	HTTPMethodHead   HTTPMethod = "HEAD"
-	HTTPMethodPatch  HTTPMethod = "PATCH"
-)
-
-var AllHTTPMethod = []HTTPMethod{
-	HTTPMethodGet,
-	HTTPMethodPost,
-	HTTPMethodPut,
-	HTTPMethodDelete,
-	HTTPMethodHead,
-	HTTPMethodPatch,
-}
-
-func (e HTTPMethod) IsValid() bool {
-	switch e {
-	case HTTPMethodGet, HTTPMethodPost, HTTPMethodPut, HTTPMethodDelete, HTTPMethodHead, HTTPMethodPatch:
-		return true
-	}
-	return false
-}
-
-func (e HTTPMethod) String() string {
-	return string(e)
-}
-
-func (e *HTTPMethod) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = HTTPMethod(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid HttpMethod", str)
-	}
-	return nil
-}
-
-func (e HTTPMethod) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type Status string
-
-const (
-	StatusReady   Status = "READY"
-	StatusPending Status = "PENDING"
-	StatusSuccess Status = "SUCCESS"
-	StatusFailure Status = "FAILURE"
-)
-
-var AllStatus = []Status{
-	StatusReady,
-	StatusPending,
-	StatusSuccess,
-	StatusFailure,
-}
-
-func (e Status) IsValid() bool {
-	switch e {
-	case StatusReady, StatusPending, StatusSuccess, StatusFailure:
-		return true
-	}
-	return false
-}
-
-func (e Status) String() string {
-	return string(e)
-}
-
-func (e *Status) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = Status(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Status", str)
-	}
-	return nil
-}
-
-func (e Status) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
