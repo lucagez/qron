@@ -16,6 +16,5 @@ type Job struct {
 	Timeout         int            `json:"timeout" db:"timeout"`
 	State           string         `json:"state" db:"state"`
 	Config          string         `json:"config" db:"config"`
-	Kind            Kind           `json:"kind" db:"kind"`
 	ExecutorType    string         `json:"executor" db:"executor"`
 }

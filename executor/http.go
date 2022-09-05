@@ -2,7 +2,6 @@ package executor
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -37,19 +36,19 @@ type HttpConfig struct {
 	Method string `json:"method"`
 }
 
-func (h HttpExecutor) Run(job *Job) error {
+func (h HttpExecutor) Run(job Job) (Job, error) {
 	var config HttpConfig
 	err := json.Unmarshal([]byte(job.Config), &config)
 	if err != nil {
 		log.Panicln("error while decoding config payload:", err)
-		return err
+		return job, err
 	}
 
 	// TODO: Check null readers do not cause issues
 	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State))
 	if err != nil {
 		log.Println("error while assembling http request", err)
-		return err
+		return job, err
 	}
 
 	h.limiter <- 0
@@ -57,24 +56,18 @@ func (h HttpExecutor) Run(job *Job) error {
 	res, err := h.client.Do(req)
 	if err != nil {
 		log.Println("http error:", err)
-		return err
+		return job, err
 	}
 	defer res.Body.Close()
 
 	<-h.limiter
 
-	// TODO: Should encode response?
-	// can just mutate job for now ...
+	var execRes Job
+	err = json.NewDecoder(res.Body).Decode(&execRes)
+	if err != nil {
+		log.Println("invalid response payload:", err)
+		return job, err
+	}
 
-	buf, _ := io.ReadAll(res.Body)
-	log.Println("http response:", string(buf))
-
-	//var execRes tinyq.ExecResponse
-	//err = json.NewDecoder(res.Body).Decode(&res)
-	//if err != nil {
-	//	log.Println("invalid response payload:", err)
-	//	return err
-	//}
-
-	return nil
+	return execRes, nil
 }

@@ -4,11 +4,6 @@ create schema tiny;
 
 create type tiny.status as enum ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
 
--- INTERVAL: @every x time ::interval
--- EXACT: @at x time ::timestamptz
--- CRON: {cron expr} ::text
-create type tiny.job_kind as enum ('INTERVAL', 'EXACT', 'CRON');
-
 create or replace function tiny.crontab(expr text)
     returns bool as
 $$
@@ -80,29 +75,6 @@ $CODE$
     strict
     language plpgsql;
 
-create type tiny.kind as enum ('INTERVAL', 'TASK', 'CRON');
-
--- format while inserting job
-create or replace function tiny.find_kind(cron tiny.cron)
-    returns tiny.kind as
-$CODE$
-begin
-    return case
-               when substr(cron, 1, 6) = '@every'
-                   or cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
-                   then 'INTERVAL'::tiny.kind
-               when substr(cron, 1, 3) = '@at'
-                   or substr(cron, 1, 6) = '@after'
-                   then 'TASK'::tiny.kind
-               when tiny.crontab(cron)
-                   then 'CRON'::tiny.kind
-        end;
-end;
-$CODE$
-    strict
-    language plpgsql;
-
-
 create table tiny.job
 (
     id               bigserial primary key,
@@ -119,7 +91,6 @@ create table tiny.job
     -- config is not encrypted as it holds info for the
     -- worker on how to perform the job
     config           text,
-    kind             tiny.kind,
     executor         text
 );
 

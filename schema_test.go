@@ -3,7 +3,6 @@ package tinyq
 import (
 	"context"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -183,56 +182,6 @@ func TestSchema(t *testing.T) {
 			} else {
 				assert.Error(t, err)
 			}
-		}
-	})
-
-	t.Run("Should find correct kind", func(t *testing.T) {
-		expressions := map[string]executor.Kind{
-			"@annually": executor.INTERVAL,
-			"@yearly":   executor.INTERVAL,
-			"@monthly":  executor.INTERVAL,
-			"@weekly":   executor.INTERVAL,
-			"@daily":    executor.INTERVAL,
-			"@hourly":   executor.INTERVAL,
-			"@minutely": executor.INTERVAL,
-
-			"@after 1 hours":     executor.TASK,
-			"@after 234 minutes": executor.TASK,
-			"@after 4 year":      executor.TASK,
-			"@after 3 week":      executor.TASK,
-
-			"@every 1 hours":     executor.INTERVAL,
-			"@every 234 minutes": executor.INTERVAL,
-			"@every 4 year":      executor.INTERVAL,
-			"@every 3 week":      executor.INTERVAL,
-
-			"@at 2022-08-30T11:14:22.607Z":     executor.TASK,
-			"@at 2004-10-19 10:23:54+02":       executor.TASK,
-			"@at 12/17/1997 07:37:16.00 PST":   executor.TASK,
-			"@at Wed Dec 17 07:37:16 1997 PST": executor.TASK,
-
-			"* * * * *":      executor.CRON,
-			"0 12 * * *":     executor.CRON,
-			"15 10 */5 * *":  executor.CRON,
-			"15 10 * * 1":    executor.CRON,
-			"5 0 * 8 *":      executor.CRON,
-			"15 14 1 * *":    executor.CRON,
-			"0 22 * * 1-5":   executor.CRON,
-			"0 0,12 1 */2 *": executor.CRON,
-			"0 4 8-14 * *":   executor.CRON,
-			"0 0 1,15 * 3":   executor.CRON,
-		}
-
-		for expr, kind := range expressions {
-			rows, err := db.Query(context.Background(), `
-				select tiny.find_kind($1)
-			`, expr)
-
-			var result executor.Kind
-			err = pgxscan.ScanOne(&result, rows)
-
-			assert.Nil(t, err)
-			assert.Equal(t, kind, result, expr)
 		}
 	})
 

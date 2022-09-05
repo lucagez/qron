@@ -28,8 +28,8 @@ func TestMain(m *testing.M) {
 
 func insertJob(db *pgxpool.Pool, n int, expr, state, executor string) {
 	_, err := db.Exec(context.Background(), `
-		insert into tiny.job(run_at, status, state, kind, executor, config)
-		select $1, 'READY', $2, tiny.find_kind($1), $3, '{}'
+		insert into tiny.job(run_at, status, state, executor, config)
+		select $1, 'READY', $2, $3, '{}'
 		from generate_series(1, $4)
 	`, expr, state, executor, n)
 	if err != nil {
