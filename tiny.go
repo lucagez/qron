@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
-	"github.com/lucagez/tinyq/api"
 	"github.com/lucagez/tinyq/executor"
 	"log"
 	"os"
@@ -230,19 +229,7 @@ func (t *TinyQ) start(ctx context.Context) {
 func (t *TinyQ) Listen() {
 	e := echo.New()
 
-	spec, err := api.GetSwagger()
-	if err != nil {
-		log.Fatalln("error while loading openapi spec")
-	}
-
-	spec.Servers = nil
-
 	e.Use(echomiddleware.Logger())
-	//e.Use(middleware.OapiRequestValidator(spec))
-	//api.RegisterHandlers(e, api.Api{})
-	e.GET("/schema.json", func(c echo.Context) error {
-		return c.JSON(200, spec)
-	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -252,13 +239,16 @@ func (t *TinyQ) Listen() {
 	go t.flush(ctx)
 	go e.Start(":1234")
 
+	// TODO: Load gql server here
+	// TODO: Switch echo for chi at this point? Or just basic net/http
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 
 	cancel()
 
-	err = e.Shutdown(ctx)
+	err := e.Shutdown(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}

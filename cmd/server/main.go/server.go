@@ -11,7 +11,7 @@ import (
 	"github.com/lucagez/tinyq/graph/generated"
 )
 
-const defaultPort = "8080"
+const defaultPort = "1234"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -21,9 +21,9 @@ func main() {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))
+	http.Handle("/graphql", srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Printf("starting qron on http://localhost:%s/ 🦕", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
