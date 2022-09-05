@@ -65,6 +65,8 @@ func (h HttpExecutor) Run(job Job) (Job, error) {
 	var execRes Job
 	err = json.NewDecoder(res.Body).Decode(&execRes)
 	if err != nil {
+		// TODO: In case body arrives but it's null
+		// it should just not update job and NOT retrun an error
 		log.Println("invalid response payload:", err)
 		return job, err
 	}

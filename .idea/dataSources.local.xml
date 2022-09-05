@@ -13,9 +13,9 @@
           <node kind="database" qname="postgres">
             <node kind="schema">
               <name qname="public" />
-              <name qname="tiny" />
               <name qname="cron" />
               <name qname="cronexp" />
+              <name qname="tiny" />
             </node>
           </node>
         </introspection-scope>

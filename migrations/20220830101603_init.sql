@@ -80,7 +80,7 @@ create table tiny.job
     id               bigserial primary key,
     run_at           tiny.cron,
     name             text,
-    last_run_at      timestamptz not null default now(),
+    last_run_at      timestamptz,
     created_at       timestamptz not null default now(),
     execution_amount integer              default 0,
     timeout          integer              default 0,

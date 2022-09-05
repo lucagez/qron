@@ -1,0 +1,61 @@
+scalar Time
+
+enum Status {
+  READY
+  PENDING
+  SUCCESS
+  FAILURE
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  HEAD
+  PATCH
+}
+
+type Job {
+  id: ID!
+  status: Status!
+  last_run_at: Time
+  created_at: Time!
+  run_at: String!
+  name: String
+  state: String!
+  config: String!
+  # execution_amount: Int
+  # timeout: Int
+  # executor_type: String!
+}
+
+input HttpJobArgs {
+  run_at: Time!
+  name: String!
+  state: String!
+  url: String!
+  method: String!
+}
+
+type Mutation {
+  createJob(args: HttpJobArgs): Job!
+  updateJobByName(name: String!, args: HttpJobArgs): Boolean!
+  updateJobById(id: ID!, args: HttpJobArgs): Boolean!
+  deleteJobByName(name: String!): Boolean!
+  deleteJobByID(id: ID!): Boolean!
+}
+
+# RIPARTIRE QUI!<--
+# - Simplify gqlgen crud operations. They do not have to be high performance
+input QueryJobsArgs {
+  limit: Int! = 50
+  skip: Int! = 0
+  filter: String
+}
+
+type Query {
+  searchJobs(args: QueryJobsArgs!): Job!
+  queryJobByName(name: String!): Job!
+  queryJobByID(id: ID!): Job!
+}

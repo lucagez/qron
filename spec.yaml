@@ -14,28 +14,102 @@ info:
 servers:
   - url: http://localhost:1234/api
 paths:
-  /schedule/{id}:
+  /schedule:
     post:
       summary: Schedule job
-      description: Schedule job
+      description: Schedule initial job
       operationId: scheduleJob
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of the schedule
       requestBody:
         description: Job parameters
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewJob'
+              $ref: '#/components/schemas/JobProps'
       responses:
         '200':
           description: Schedule response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /schedule/{name}:
+    get:
+      summary: Get job properties
+      operationId: getJob
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Job response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update job by name
+      operationId: updateJob
+      requestBody:
+        description: Job parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobProps'
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Job response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete job by name
+      operationId: deleteJob
+      requestBody:
+        description: Job parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobProps'
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Job response
           content:
             application/json:
               schema:
@@ -50,22 +124,51 @@ components:
   schemas:
     Job:
       allOf:
-        - $ref: '#/components/schemas/NewJob'
+        - $ref: '#/components/schemas/JobProps'
         - required:
             - id
           properties:
             id:
               type: integer
+              # TODO: Should use uuid formats for job id
               format: int64
               description: Unique id of the job
+            last_run_at:
+              type: string
+              format: date-time
+              nullable: true
+            created_at:
+              type: string
+              format: date-time
+            # TODO: add updated_at
+            # TODO: unused for now
+            # execution_amount:
+            timeout:
+              type: integer
+            # only HTTP is allowed
+            # executor_type:
 
-    NewJob:
+    JobProps:
       required:
         - run_at
+        - name
+        - state
       properties:
         run_at:
           type: string
           description: When to run the job
+        name:
+          type: string
+          description: Name used to identify the job
+        state:
+          type: string
+          description: Initial state of the job
+        config:
+          properties:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/HttpConfig'
+
 
     Error:
       required:
@@ -80,3 +183,15 @@ components:
           type: string
           description: Error message
 
+    HttpConfig:
+      required:
+        - url
+      properties:
+        method:
+          type: string
+          description: Method supplied to http request
+          default: POST
+        url:
+          type: string
+          format: uri
+          description: Where to execute your http requests

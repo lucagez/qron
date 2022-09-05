@@ -5,7 +5,6 @@ package tinyq
 import (
 	"context"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4"
@@ -239,8 +238,11 @@ func (t *TinyQ) Listen() {
 	spec.Servers = nil
 
 	e.Use(echomiddleware.Logger())
-	e.Use(middleware.OapiRequestValidator(spec))
-	api.RegisterHandlers(e, api.Api{})
+	//e.Use(middleware.OapiRequestValidator(spec))
+	//api.RegisterHandlers(e, api.Api{})
+	e.GET("/schema.json", func(c echo.Context) error {
+		return c.JSON(200, spec)
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 

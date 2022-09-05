@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -27,32 +28,85 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// Job defines model for Job.
-type Job struct {
-	// Unique id of the job
-	Id int64 `json:"id"`
+// HttpConfig defines model for HttpConfig.
+type HttpConfig struct {
+	// Method supplied to http request
+	Method *string `json:"method,omitempty"`
 
-	// When to run the job
-	RunAt string `json:"run_at"`
+	// Where to execute your http requests
+	Url string `json:"url"`
 }
 
-// NewJob defines model for NewJob.
-type NewJob struct {
+// Job defines model for Job.
+type Job struct {
+	Config *struct {
+		Schema *interface{} `json:"schema,omitempty"`
+	} `json:"config,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// Unique id of the job
+	Id        int64      `json:"id"`
+	LastRunAt *time.Time `json:"last_run_at"`
+
+	// Name used to identify the job
+	Name string `json:"name"`
+
 	// When to run the job
 	RunAt string `json:"run_at"`
+
+	// Initial state of the job
+	State   string `json:"state"`
+	Timeout *int   `json:"timeout,omitempty"`
+}
+
+// JobProps defines model for JobProps.
+type JobProps struct {
+	Config *struct {
+		Schema *interface{} `json:"schema,omitempty"`
+	} `json:"config,omitempty"`
+
+	// Name used to identify the job
+	Name string `json:"name"`
+
+	// When to run the job
+	RunAt string `json:"run_at"`
+
+	// Initial state of the job
+	State string `json:"state"`
 }
 
 // ScheduleJobJSONBody defines parameters for ScheduleJob.
-type ScheduleJobJSONBody = NewJob
+type ScheduleJobJSONBody = JobProps
+
+// DeleteJobJSONBody defines parameters for DeleteJob.
+type DeleteJobJSONBody = JobProps
+
+// UpdateJobJSONBody defines parameters for UpdateJob.
+type UpdateJobJSONBody = JobProps
 
 // ScheduleJobJSONRequestBody defines body for ScheduleJob for application/json ContentType.
 type ScheduleJobJSONRequestBody = ScheduleJobJSONBody
 
+// DeleteJobJSONRequestBody defines body for DeleteJob for application/json ContentType.
+type DeleteJobJSONRequestBody = DeleteJobJSONBody
+
+// UpdateJobJSONRequestBody defines body for UpdateJob for application/json ContentType.
+type UpdateJobJSONRequestBody = UpdateJobJSONBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Schedule job
-	// (POST /schedule/{id})
-	ScheduleJob(ctx echo.Context, id int) error
+	// (POST /schedule)
+	ScheduleJob(ctx echo.Context) error
+	// Delete job by name
+	// (DELETE /schedule/{name})
+	DeleteJob(ctx echo.Context, name string) error
+	// Get job properties
+	// (GET /schedule/{name})
+	GetJob(ctx echo.Context, name string) error
+	// Update job by name
+	// (PUT /schedule/{name})
+	UpdateJob(ctx echo.Context, name string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -63,16 +117,57 @@ type ServerInterfaceWrapper struct {
 // ScheduleJob converts echo context to params.
 func (w *ServerInterfaceWrapper) ScheduleJob(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ScheduleJob(ctx)
+	return err
+}
+
+// DeleteJob converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteJob(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "name", runtime.ParamLocationPath, ctx.Param("name"), &name)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter name: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ScheduleJob(ctx, id)
+	err = w.Handler.DeleteJob(ctx, name)
+	return err
+}
+
+// GetJob converts echo context to params.
+func (w *ServerInterfaceWrapper) GetJob(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "name", runtime.ParamLocationPath, ctx.Param("name"), &name)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter name: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetJob(ctx, name)
+	return err
+}
+
+// UpdateJob converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateJob(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "name", runtime.ParamLocationPath, ctx.Param("name"), &name)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter name: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateJob(ctx, name)
 	return err
 }
 
@@ -104,22 +199,29 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/schedule/:id", wrapper.ScheduleJob)
+	router.POST(baseURL+"/schedule", wrapper.ScheduleJob)
+	router.DELETE(baseURL+"/schedule/:name", wrapper.DeleteJob)
+	router.GET(baseURL+"/schedule/:name", wrapper.GetJob)
+	router.PUT(baseURL+"/schedule/:name", wrapper.UpdateJob)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6xUwW7bOhD8FWLfOxKRYwc98Fi0h/iQomiLHgKjoMWVxUAimSWZ1jD47wUpKVVkp+gh",
-	"J8vc0ewMZ6AT1LZ31qAJHsQJfN1iL8vjRyJL+cGRdUhBYzmurcL8q9DXpF3Q1oAYwKzMODSWehlAgDZh",
-	"swYO4ehw+IsHJEgcevReHl4lmsbPr/pA2hwgJQ6Ej1ETKhD3MC6c4LvEYWv3mVV23acGxP0J/idsQMB/",
-	"1R+n1WizusOfGZ/40qVW59K+Gf0YkWnFbMNCi+zB7hdu391ccLvQrBXsUlY6Lj+7YYrmRyZc7v/eomHB",
-	"Mopmtv7vFzRy7VIeaNPYc9qv2hw/M4/0hJT5dOhwOgYOT0h+AF5fra5WOTzr0EinQcCmHHFwMrRFe7lZ",
-	"FTusTlql4s36C16+jLDRRLYv8+hWzYbbMnOSZI8ByZc4X/LcxR5J1+z2wxTKJACyXxBFGnAwsi+hKJhf",
-	"UKCIfCx9FnkW3W5Aow/vrToO/TcBTbEknet0XXRXDz7rOc24/qV3OZWXhrZ2z2aOl2JLvN5Z44eurFer",
-	"NxP1iqLnqKbFUCCNjF14s93Dx+bC9mjwl8M6oGI4Yjj42PeSjsseldeHIg9didSBgDYEJ6qqs7XsWuuD",
-	"uF5vbqpc4LRLvwMAAP//zeRf0QEFAAA=",
+	"H4sIAAAAAAAC/+xWTW/bOBD9K8TsHrWR84E96LgfaGOgTYok6CEwAloc2QwkkiGHQQRD/70gKceypaY5",
+	"pECB5mSZHM68ee+NxA2UujFaoSIHxQZcucaGx8f/rdU2PBirDVqSGJdLLTD8CnSllYakVlCkYBb3Mqi0",
+	"bThBAVLR6QlkQK3B9BdXaKHLoEHn+Oq7ibbbz0cdWalW0HUZWHzw0qKA4hb6gtvwRZfBRyLzr1aVXI2x",
+	"N0hrLVLRivs6YLy8uLqG7ADFpxjInDemligYabYmMizURkdjXBl4W4+7+bpGi+E0PmHpCVmrvd1L5YZ8",
+	"eSt/2HKoE/qc62Wox+v6ooLidgN/WqyggD/ynaJ5L2c+18tLq42DLhvpaZETirsAYLODIjjhXyQbnOpV",
+	"inGrN0o+eGRSMF0xWiO718sDL/x9NumFmju6s169BEH5uubLGqEg63ECUojTPiY4rHBAoBSw6HoGEykT",
+	"Hp/2T6IzPGmFr6B94MVu0QUgijcTpv/MG2TeJaNJgYpk1Q5IHHW7Y2vkNxVyWK9eOu6I0wSMcyVJ8prF",
+	"7X0ZX/ZkD6dvb5s/dSxVpcelrqVqvzCH9hFtSC8paJuWIYNHtC4FHh/NjmYBszaouJFQwGlcysBwWkdZ",
+	"It/C17Elo90EMVd9BJN9j6mtIC4PIediEDSPe/2A/qNF23uCUMXUPLwVynguv3ch/9Aar5vDQM0+xLle",
+	"MsMtb5DQOhgyHDwfKXdGK5e8eDKbvSWsKUTPpG0LQwzp35xvVDt9Ziaqe4VPBktCwbCPycD5puG2HYK7",
+	"j+CznQvyTbBhl0xQY3L6vtL/xfWk84DzMM8y1A7W2tq52Lp6X49s0N/hdCze3ZMQ/YrGSdoH27Bly6K2",
+	"XQYrpLFNPiD9XI+8K9ImmqMcg49tl4HxE4rcmHAreB/c39EmSfv9wY0R8RaRTBBv4RAu2EWe17rk9Vo7",
+	"Ko5PTs/ycHvoFt23AAAA///7Coy08wwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
