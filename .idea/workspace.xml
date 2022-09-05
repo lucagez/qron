@@ -5,7 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/executor/http_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/api.go" beforeDir="false" afterPath="$PROJECT_DIR$/api/api.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/gen.go" beforeDir="false" afterPath="$PROJECT_DIR$/api/gen.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/executor/http.go" beforeDir="false" afterPath="$PROJECT_DIR$/executor/http.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/spec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/spec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tiny_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,13 +87,25 @@
       <recent name="$PROJECT_DIR$/executor" />
     </key>
   </component>
-  <component name="RunManager" selected="npm.dev">
+  <component name="RunManager" selected="Go Test.TestTiny in github.com/lucagez/tinyq">
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
       <kind value="FILE" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestHttpExecutor/Should_perform_http_requests in github.com/lucagez/tinyq/executor" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$/executor" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq/executor" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestHttpExecutor\E$/^\QShould_perform_http_requests\E$" />
       <method v="2" />
     </configuration>
     <configuration name="TestTiny in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -107,17 +128,6 @@
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
       <pattern value="^\QTestTiny\E$/^\QShould_fetch_jobs_in_parallel_without_overlaps\E$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestTiny\E$/^\QShould_flush_jobs_while_they_get_completed\E$" />
       <method v="2" />
     </configuration>
     <configuration name="TestTiny/Should_process_jobs_concurrently_without_overlap in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -184,11 +194,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestTiny in github.com/lucagez/tinyq" />
+        <item itemvalue="Go Test.TestHttpExecutor/Should_perform_http_requests in github.com/lucagez/tinyq/executor" />
         <item itemvalue="npm.dev" />
         <item itemvalue="Go Test.TestTiny/Should_process_jobs_concurrently_without_overlap in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestTiny in github.com/lucagez/tinyq" />
         <item itemvalue="Go Test.TestTiny/Should_fetch_jobs_in_parallel_without_overlaps in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" />
       </list>
     </recent_temporary>
   </component>
@@ -205,7 +215,7 @@
       <workItem from="1661506056211" duration="687000" />
       <workItem from="1661506751187" duration="52588000" />
       <workItem from="1661943613563" duration="32299000" />
-      <workItem from="1662211475548" duration="17631000" />
+      <workItem from="1662211475548" duration="20847000" />
     </task>
     <servers />
   </component>

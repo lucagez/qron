@@ -63,12 +63,12 @@ type CounterExecutor struct {
 	mu    *sync.Mutex
 }
 
-func (c CounterExecutor) Run(job *executor.Job) error {
+func (c CounterExecutor) Run(job executor.Job) (executor.Job, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	*c.count++
 	job.Status = executor.SUCCESS
-	return nil
+	return job, nil
 }
 
 func TestTiny(t *testing.T) {

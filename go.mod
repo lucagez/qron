@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3
+	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/georgysavva/scany v1.1.0
 	github.com/getkin/kin-openapi v0.98.0
 	github.com/jackc/pgx v3.6.2+incompatible
@@ -22,12 +23,12 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/deepmap/oapi-codegen v1.11.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/invopop/yaml v0.1.0 // indirect

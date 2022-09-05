@@ -2,8 +2,10 @@ package executor
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -35,19 +37,16 @@ type HttpConfig struct {
 	Method string `json:"method"`
 }
 
-// TODO: This is leading to a circular dependency
 func (h HttpExecutor) Run(job *Job) error {
 	var config HttpConfig
-	// TODO: Should receive job as input
-	//err := json.Unmarshal([]byte(job.Config), &config)
-	err := json.Unmarshal([]byte(`{"method":"GET", "url":"https://www.google.com"}`), &config)
+	err := json.Unmarshal([]byte(job.Config), &config)
 	if err != nil {
 		log.Panicln("error while decoding config payload:", err)
 		return err
 	}
 
-	// TODO: should pass job state. How to pass encrypted? How to set headers?
-	req, err := http.NewRequest(config.Method, config.Url, nil)
+	// TODO: Check null readers do not cause issues
+	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State))
 	if err != nil {
 		log.Println("error while assembling http request", err)
 		return err
@@ -64,12 +63,16 @@ func (h HttpExecutor) Run(job *Job) error {
 
 	<-h.limiter
 
-	// TODO: Should encode response
+	// TODO: Should encode response?
+	// can just mutate job for now ...
+
+	buf, _ := io.ReadAll(res.Body)
+	log.Println("http response:", string(buf))
+
 	//var execRes tinyq.ExecResponse
-	//err = json.NewDecoder(res.Body).Decode(&execRes)
+	//err = json.NewDecoder(res.Body).Decode(&res)
 	//if err != nil {
 	//	log.Println("invalid response payload:", err)
-	//	// TODO: What to do here? Job should be retried until max attempts?
 	//	return err
 	//}
 

@@ -14,11 +14,18 @@ info:
 servers:
   - url: http://localhost:1234/api
 paths:
-  /schedule:
+  /schedule/{id}:
     post:
       summary: Schedule job
       description: Schedule job
       operationId: scheduleJob
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the schedule
       requestBody:
         description: Job parameters
         required: true
@@ -72,4 +79,4 @@ components:
         message:
           type: string
           description: Error message
-  
+

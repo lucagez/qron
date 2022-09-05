@@ -8,10 +8,12 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 )
@@ -49,8 +51,8 @@ type ScheduleJobJSONRequestBody = ScheduleJobJSONBody
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Schedule job
-	// (POST /schedule)
-	ScheduleJob(ctx echo.Context) error
+	// (POST /schedule/{id})
+	ScheduleJob(ctx echo.Context, id int) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -61,9 +63,16 @@ type ServerInterfaceWrapper struct {
 // ScheduleJob converts echo context to params.
 func (w *ServerInterfaceWrapper) ScheduleJob(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ScheduleJob(ctx)
+	err = w.Handler.ScheduleJob(ctx, id)
 	return err
 }
 
@@ -95,21 +104,22 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/schedule", wrapper.ScheduleJob)
+	router.POST(baseURL+"/schedule/:id", wrapper.ScheduleJob)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6xTz47TPBB/FWu+7xhtuu2Kg49IHOgBhABxWFXIjSeNV4nHOx4vVFXeHdlJl9J2EYc9",
-	"1fWMf/9mcoCGhkAevUTQB4hNh4Mpx3fMxPkQmAKyOCzXDVnMvxZjwy6IIw96alalVkFLPBgBDc7LagkV",
-	"yD7g9Bd3yDBWMGCMZvci0LH8/DQKO7+DcayA8TE5Rgv6HmbCY/tmrGBN24xq+v5jC/r+AP8ztqDhv/q3",
-	"03q2WX/AH7l/rM5dOnsp7at3jwmVs4paJR2qB9qeuX1zd8XtmWZnYTNmpTP5RcKc/PcMeM7/rUOvhBQn",
-	"f0L/94BmrM2YC863dAn7xfn9JxWRn5AznpMej9dQwRNynBpvbxY3izw8CuhNcKBhVa4qCEa6or0ka1Nf",
-	"JhsoXrHxee6Y9WfnJpfe25PiutSyE4zylux+Wj0v6AukCaF3TXlXP8SMe9zdfPqXkedA/hS2pq0Khs2A",
-	"ghzhNEjhhCXZGMjHaUzLxeLVRL2g6DmqIzGUltakXl6Ne/rOr7Anjz8DNoJW4dxTQUzDYHh/PsfyfNqh",
-	"WL66xD1o6ESCruueGtN3FEXfLld3dd6dcTP+CgAA//8RrimifAQAAA==",
+	"H4sIAAAAAAAC/6xUwW7bOhD8FWLfOxKRYwc98Fi0h/iQomiLHgKjoMWVxUAimSWZ1jD47wUpKVVkp+gh",
+	"J8vc0ewMZ6AT1LZ31qAJHsQJfN1iL8vjRyJL+cGRdUhBYzmurcL8q9DXpF3Q1oAYwKzMODSWehlAgDZh",
+	"swYO4ehw+IsHJEgcevReHl4lmsbPr/pA2hwgJQ6Ej1ETKhD3MC6c4LvEYWv3mVV23acGxP0J/idsQMB/",
+	"1R+n1WizusOfGZ/40qVW59K+Gf0YkWnFbMNCi+zB7hdu391ccLvQrBXsUlY6Lj+7YYrmRyZc7v/eomHB",
+	"Mopmtv7vFzRy7VIeaNPYc9qv2hw/M4/0hJT5dOhwOgYOT0h+AF5fra5WOTzr0EinQcCmHHFwMrRFe7lZ",
+	"FTusTlql4s36C16+jLDRRLYv8+hWzYbbMnOSZI8ByZc4X/LcxR5J1+z2wxTKJACyXxBFGnAwsi+hKJhf",
+	"UKCIfCx9FnkW3W5Aow/vrToO/TcBTbEknet0XXRXDz7rOc24/qV3OZWXhrZ2z2aOl2JLvN5Z44eurFer",
+	"NxP1iqLnqKbFUCCNjF14s93Dx+bC9mjwl8M6oGI4Yjj42PeSjsseldeHIg9didSBgDYEJ6qqs7XsWuuD",
+	"uF5vbqpc4LRLvwMAAP//zeRf0QEFAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

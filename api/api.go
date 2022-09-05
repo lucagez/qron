@@ -7,7 +7,7 @@ import (
 
 type Api struct{}
 
-func (Api) ScheduleJob(ctx echo.Context) error {
+func (Api) ScheduleJob(ctx echo.Context, id int) error {
 	//TODO implement me
 	return ctx.JSON(http.StatusOK, Job{
 		Id:    0,

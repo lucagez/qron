@@ -32,18 +32,10 @@ type TinyQ struct {
 	finishedJobs  chan executor.Job
 }
 
-// ExecResponse
-// TODO: Response should have:
-// - state, as it should update existing state
-type ExecResponse struct {
-	// TODO: How should the response from a job look like?
-	Status string `json:"status"`
-}
-
 type Executor interface {
-	// Run should return any payload as result of the run
-	// TODO: Improve signature when architecture is working
-	Run(*executor.Job) error
+	// Run Invoke job as defined by executor.
+	// Updating job state / status is up to the sdk
+	Run(executor.Job) (executor.Job, error)
 }
 
 type Config struct {
@@ -67,17 +59,10 @@ func NewTinyQ(config Config) TinyQ {
 }
 
 func (t *TinyQ) IncreaseInFlight() {
-	// TODO: Use atomics
-	//t.mu.Lock()
-	//defer t.mu.Unlock()
-	//t.MaxInFlight++
 	atomic.AddUint64(&t.MaxInFlight, 1)
 }
 
 func (t *TinyQ) DecreaseInFlight() {
-	//t.mu.Lock()
-	//defer t.mu.Unlock()
-	//t.MaxInFlight--
 	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
 }
 
@@ -87,18 +72,31 @@ func (t *TinyQ) Process(ctx context.Context, job executor.Job) {
 
 	// TODO: Use timeout
 	// TODO: In case of failure use max_attempts
-	// TODO: Pick executor (HTTP)
-	executor, ok := t.Executors[job.ExecutorType]
+	exe, ok := t.Executors[job.ExecutorType]
 	if !ok {
 		log.Println("no executor found for current job:", job)
 		return
 	}
 
+	var updatedJob executor.Job
 	err := backoff.Retry(func() error {
-		// TODO: keep an eye on this. ideally better to pass by value
-		// to minimize heap allocations
-		return executor.Run(&job)
+		var execErr error
+		updatedJob, execErr = exe.Run(job)
+		return execErr
 	}, backoff.NewExponentialBackOff())
+
+	// update job to be saved with outcome from
+	// sdk execution:
+
+	// a user can choose if terminate their jobs
+	job.Status = updatedJob.Status
+
+	// tinyq can never read job sensitive info
+	job.State = updatedJob.State
+
+	// user can decide to update execution method
+	// e.g. Delay next run by 50 minutes
+	job.RunAt = updatedJob.RunAt
 
 	t.finishedJobs <- job
 
