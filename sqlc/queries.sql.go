@@ -8,6 +8,7 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createHttpJob = `-- name: CreateHttpJob :one
@@ -31,7 +32,7 @@ type CreateHttpJobParams struct {
 }
 
 func (q *Queries) CreateHttpJob(ctx context.Context, arg CreateHttpJobParams) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, createHttpJob,
+	row := q.db.QueryRow(ctx, createHttpJob,
 		arg.RunAt,
 		arg.Name,
 		arg.State,
@@ -61,7 +62,7 @@ returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, 
 `
 
 func (q *Queries) DeleteJobByID(ctx context.Context, id int64) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, deleteJobByID, id)
+	row := q.db.QueryRow(ctx, deleteJobByID, id)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
@@ -86,7 +87,7 @@ returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, 
 `
 
 func (q *Queries) DeleteJobByName(ctx context.Context, name sql.NullString) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, deleteJobByName, name)
+	row := q.db.QueryRow(ctx, deleteJobByName, name)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
@@ -104,13 +105,77 @@ func (q *Queries) DeleteJobByName(ctx context.Context, name sql.NullString) (Tin
 	return i, err
 }
 
+const fetchDueJobs = `-- name: FetchDueJobs :many
+with due_jobs as (
+    select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
+    from tiny.job
+    where tiny.is_due(run_at, coalesce(last_run_at, created_at), now())
+    and status = 'READY'
+    -- worker limit
+    limit $1 for update
+    skip locked
+)
+update tiny.job
+set status      = 'PENDING',
+    last_run_at = now()
+from due_jobs
+where due_jobs.id = tiny.job.id
+returning due_jobs.id, due_jobs.run_at, due_jobs.name, due_jobs.last_run_at, due_jobs.created_at, due_jobs.execution_amount, due_jobs.timeout, due_jobs.status, due_jobs.state, due_jobs.config, due_jobs.executor
+`
+
+type FetchDueJobsRow struct {
+	ID              int64
+	RunAt           interface{}
+	Name            sql.NullString
+	LastRunAt       sql.NullTime
+	CreatedAt       time.Time
+	ExecutionAmount sql.NullInt32
+	Timeout         sql.NullInt32
+	Status          TinyStatus
+	State           sql.NullString
+	Config          sql.NullString
+	Executor        sql.NullString
+}
+
+func (q *Queries) FetchDueJobs(ctx context.Context, limit int32) ([]FetchDueJobsRow, error) {
+	rows, err := q.db.Query(ctx, fetchDueJobs, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchDueJobsRow
+	for rows.Next() {
+		var i FetchDueJobsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RunAt,
+			&i.Name,
+			&i.LastRunAt,
+			&i.CreatedAt,
+			&i.ExecutionAmount,
+			&i.Timeout,
+			&i.Status,
+			&i.State,
+			&i.Config,
+			&i.Executor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getJobByID = `-- name: GetJobByID :one
 select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor from tiny.job
 where id = $1 limit 1
 `
 
 func (q *Queries) GetJobByID(ctx context.Context, id int64) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, getJobByID, id)
+	row := q.db.QueryRow(ctx, getJobByID, id)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
@@ -134,7 +199,7 @@ where name = $1 limit 1
 `
 
 func (q *Queries) GetJobByName(ctx context.Context, name sql.NullString) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, getJobByName, name)
+	row := q.db.QueryRow(ctx, getJobByName, name)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
@@ -168,7 +233,7 @@ type SearchJobsParams struct {
 
 // TODO: This query is not working wit dynamic params 🤔
 func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJob, error) {
-	rows, err := q.db.QueryContext(ctx, searchJobs, arg.Offset, arg.Limit, arg.Query)
+	rows, err := q.db.Query(ctx, searchJobs, arg.Offset, arg.Limit, arg.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +257,6 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -221,7 +283,7 @@ type UpdateJobByIDParams struct {
 
 // TODO: Should refactor usage of `name`
 func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, updateJobByID,
+	row := q.db.QueryRow(ctx, updateJobByID,
 		arg.ID,
 		arg.Column2,
 		arg.Column3,
@@ -263,7 +325,7 @@ type UpdateJobByNameParams struct {
 
 // TODO: Implement search
 func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams) (TinyJob, error) {
-	row := q.db.QueryRowContext(ctx, updateJobByName,
+	row := q.db.QueryRow(ctx, updateJobByName,
 		arg.Name,
 		arg.Column2,
 		arg.Column3,

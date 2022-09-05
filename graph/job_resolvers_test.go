@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
@@ -32,16 +31,8 @@ func TestJobResolvers(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("job_resolvers")
 	defer cleanup()
 
-	dbUrl := fmt.Sprintf(
-		"postgres://postgres:postgres@%s/%s?sslmode=disable",
-		testutil.PG.MaintainanceDb.GetHostPort("5432/tcp"),
-		"job_resolvers",
-	)
-
-	db, _ := sql.Open("pgx", dbUrl)
-	defer db.Close()
-
-	resolver := Resolver{Queries: sqlc.New(db)}
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries}
 
 	t.Run("Should create job", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(context.Background(), &model.HTTPJobArgs{

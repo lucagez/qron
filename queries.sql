@@ -55,3 +55,28 @@ where name like concat(sqlc.arg('query')::text, '%')
 or name like concat('%', sqlc.arg('query')::text)
 offset $1
 limit $2;
+
+-- name: BatchUpdateJobs :batchexec
+update tiny.job
+set last_run_at = $1,
+    -- TODO: update
+    state = $2,
+    status = $3
+where id = $4;
+
+-- name: FetchDueJobs :many
+with due_jobs as (
+    select *
+    from tiny.job
+    where tiny.is_due(run_at, coalesce(last_run_at, created_at), now())
+    and status = 'READY'
+    -- worker limit
+    limit $1 for update
+    skip locked
+)
+update tiny.job
+set status      = 'PENDING',
+    last_run_at = now()
+from due_jobs
+where due_jobs.id = tiny.job.id
+returning due_jobs.*;

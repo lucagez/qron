@@ -6,12 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/api.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/gen.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/server/main.go/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server/main.go/server.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graph/job_resolvers_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job_resolvers_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graph/resolver.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/resolver.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/spec.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/queries.sql" beforeDir="false" afterPath="$PROJECT_DIR$/queries.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sqlc.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sqlc/db.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/db.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sqlc/queries.sql.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/queries.sql.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +34,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectId" id="2DkrNSHyrD4OHEoLgVu3H8cuWkV" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -203,7 +203,7 @@
       <workItem from="1661943613563" duration="32299000" />
       <workItem from="1662211475548" duration="21069000" />
       <workItem from="1662368579896" duration="6786000" />
-      <workItem from="1662375848653" duration="16878000" />
+      <workItem from="1662375848653" duration="17967000" />
     </task>
     <servers />
   </component>
