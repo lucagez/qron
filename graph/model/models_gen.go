@@ -2,20 +2,16 @@
 
 package model
 
-import (
-	"time"
-)
-
 type HTTPJobArgs struct {
-	RunAt  time.Time `json:"run_at"`
-	Name   string    `json:"name"`
-	State  string    `json:"state"`
-	URL    string    `json:"url"`
-	Method string    `json:"method"`
+	RunAt  string `json:"run_at"`
+	Name   string `json:"name"`
+	State  string `json:"state"`
+	URL    string `json:"url"`
+	Method string `json:"method"`
 }
 
 type QueryJobsArgs struct {
-	Limit  int     `json:"limit"`
-	Skip   int     `json:"skip"`
-	Filter *string `json:"filter"`
+	Limit  int    `json:"limit"`
+	Skip   int    `json:"skip"`
+	Filter string `json:"filter"`
 }

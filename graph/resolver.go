@@ -11,5 +11,5 @@ import (
 // - If it works, remove openapi stuff
 // - Start working on SDK
 type Resolver struct {
-	Queries sqlc.Queries
+	Queries *sqlc.Queries
 }

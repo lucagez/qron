@@ -5,16 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/queries.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/sqlc.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/graph/job_resolvers_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gqlgen.yml" beforeDir="false" afterPath="$PROJECT_DIR$/gqlgen.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graph/generated/generated.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/generated/generated.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graph/job.graphql" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job.graphql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/job.resolvers.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/graph/job.resolvers.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job_resolvers.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graph/model/models_gen.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/model/models_gen.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graph/resolver.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/resolver.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/magefile.go" beforeDir="false" afterPath="$PROJECT_DIR$/magefile.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/queries.sql" beforeDir="false" afterPath="$PROJECT_DIR$/queries.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sqlc/queries.sql.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/queries.sql.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,7 +37,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectId" id="2DkrNSHyrD4OHEoLgVu3H8cuWkV" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -88,49 +88,65 @@
       <recent name="$PROJECT_DIR$/executor" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestTiny in github.com/lucagez/tinyq">
-    <configuration name="go build github.com/lucagez/tinyq/cmd/server" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Go Test.TestJobResolvers in github.com/lucagez/tinyq/graph">
+    <configuration name="TestJobResolvers in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq/cmd/server" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$/cmd/server/main.go" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestHttpExecutor in github.com/lucagez/tinyq/executor" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$/executor" />
+      <working_directory value="$PROJECT_DIR$/graph" />
       <root_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq/executor" />
+      <package value="github.com/lucagez/tinyq/graph" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestHttpExecutor\E$" />
+      <pattern value="^\QTestJobResolvers\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestHttpExecutor/Should_perform_http_requests in github.com/lucagez/tinyq/executor" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestJobResolvers/Should_query_job_by_ID in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$/executor" />
+      <working_directory value="$PROJECT_DIR$/graph" />
       <root_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq/executor" />
+      <package value="github.com/lucagez/tinyq/graph" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestHttpExecutor\E$/^\QShould_perform_http_requests\E$" />
+      <pattern value="^\QTestJobResolvers\E$/^\QShould_query_job_by_ID\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestTiny in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestJobResolvers/Should_query_job_by_name in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$" />
+      <working_directory value="$PROJECT_DIR$/graph" />
+      <root_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq" />
+      <package value="github.com/lucagez/tinyq/graph" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
-      <pattern value="^\QTestTiny\E$" />
+      <pattern value="^\QTestJobResolvers\E$/^\QShould_query_job_by_name\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestJobResolvers/Should_search_jobs in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$/graph" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq/graph" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestJobResolvers\E$/^\QShould_search_jobs\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestJobResolvers/Should_update_job_by_name in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$/graph" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq/graph" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestJobResolvers\E$/^\QShould_update_job_by_name\E$" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="SwaggerCodegen">
@@ -165,26 +181,13 @@
       <option name="specificationPath" value="$PROJECT_DIR$/spec.yaml" />
       <method v="2" />
     </configuration>
-    <configuration name="docker-compose.yml.postgres: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
-      <deployment type="docker-compose.yml">
-        <settings>
-          <option name="services">
-            <list>
-              <option value="postgres" />
-            </list>
-          </option>
-          <option name="sourceFilePath" value="docker-compose.yml" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestTiny in github.com/lucagez/tinyq" />
-        <item itemvalue="Docker.docker-compose.yml.postgres: Compose Deployment" />
-        <item itemvalue="Go Build.go build github.com/lucagez/tinyq/cmd/server" />
-        <item itemvalue="Go Test.TestHttpExecutor in github.com/lucagez/tinyq/executor" />
-        <item itemvalue="Go Test.TestHttpExecutor/Should_perform_http_requests in github.com/lucagez/tinyq/executor" />
+        <item itemvalue="Go Test.TestJobResolvers in github.com/lucagez/tinyq/graph" />
+        <item itemvalue="Go Test.TestJobResolvers/Should_search_jobs in github.com/lucagez/tinyq/graph" />
+        <item itemvalue="Go Test.TestJobResolvers/Should_query_job_by_name in github.com/lucagez/tinyq/graph" />
+        <item itemvalue="Go Test.TestJobResolvers/Should_query_job_by_ID in github.com/lucagez/tinyq/graph" />
+        <item itemvalue="Go Test.TestJobResolvers/Should_update_job_by_name in github.com/lucagez/tinyq/graph" />
       </list>
     </recent_temporary>
   </component>
@@ -203,7 +206,7 @@
       <workItem from="1661943613563" duration="32299000" />
       <workItem from="1662211475548" duration="21069000" />
       <workItem from="1662368579896" duration="6786000" />
-      <workItem from="1662375848653" duration="9759000" />
+      <workItem from="1662375848653" duration="16374000" />
     </task>
     <servers />
   </component>

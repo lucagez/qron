@@ -81,15 +81,15 @@ func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs
 	}
 	jobs, err := r.Queries.SearchJobs(ctx, sqlc.SearchJobsParams{
 		// Search term
-		Concat: args.Filter,
+		Query:  args.Filter,
 		Offset: int32(args.Skip),
 		Limit:  int32(args.Limit),
 	})
-	var j []*sqlc.TinyJob
-	for _, job := range jobs {
-		j = append(j, &job)
+	var refs []*sqlc.TinyJob
+	for i := range jobs {
+		refs = append(refs, &jobs[i])
 	}
-	return j, err
+	return refs, err
 }
 
 // QueryJobByName is the resolver for the queryJobByName field.

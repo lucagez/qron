@@ -21,7 +21,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
 
 # TODO: These values should be optional in update queries
 input HttpJobArgs {
-  run_at: Time!
+  run_at: String!
   name: String!
   state: String!
   url: String!
@@ -39,7 +39,7 @@ type Mutation {
 input QueryJobsArgs {
   limit: Int! = 50
   skip: Int! = 0
-  filter: String
+  filter: String!
 }
 
 type Query {

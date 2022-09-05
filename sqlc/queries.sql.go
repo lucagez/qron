@@ -154,20 +154,21 @@ func (q *Queries) GetJobByName(ctx context.Context, name sql.NullString) (TinyJo
 
 const searchJobs = `-- name: SearchJobs :many
 select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor from tiny.job
-where run_at like concat($1, '%')
-or run_at like concat('%', $1)
-offset $2
-limit $3
+where name like concat($3::text, '%')
+or name like concat('%', $3::text)
+offset $1
+limit $2
 `
 
 type SearchJobsParams struct {
-	Concat interface{}
 	Offset int32
 	Limit  int32
+	Query  string
 }
 
+// TODO: This query is not working wit dynamic params 🤔
 func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJob, error) {
-	rows, err := q.db.QueryContext(ctx, searchJobs, arg.Concat, arg.Offset, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, searchJobs, arg.Offset, arg.Limit, arg.Query)
 	if err != nil {
 		return nil, err
 	}

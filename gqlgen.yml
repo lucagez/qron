@@ -10,9 +10,10 @@ resolver:
   layout: follow-schema
   dir: graph
   package: graph
-  filename_template: "{name}.resolvers.go"
+  filename_template: "{name}_resolvers.go"
 autobind:
   - "github.com/lucagez/tinyq/sqlc"
+omit_slice_element_pointers: false
 models:
   ID:
     model:

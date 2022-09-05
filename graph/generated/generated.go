@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -289,7 +288,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
 
 # TODO: These values should be optional in update queries
 input HttpJobArgs {
-  run_at: Time!
+  run_at: String!
   name: String!
   state: String!
   url: String!
@@ -307,7 +306,7 @@ type Mutation {
 input QueryJobsArgs {
   limit: Int! = 50
   skip: Int! = 0
-  filter: String
+  filter: String!
 }
 
 type Query {
@@ -2950,7 +2949,7 @@ func (ec *executionContext) unmarshalInputHttpJobArgs(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("run_at"))
-			it.RunAt, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			it.RunAt, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3033,7 +3032,7 @@ func (ec *executionContext) unmarshalInputQueryJobsArgs(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-			it.Filter, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Filter, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3655,21 +3654,6 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	res, err := graphql.UnmarshalTime(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

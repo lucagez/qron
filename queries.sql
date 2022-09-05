@@ -48,9 +48,10 @@ values (
 )
 returning *;
 
+-- TODO: This query is not working wit dynamic params 🤔
 -- name: SearchJobs :many
 select * from tiny.job
-where run_at like concat($1, '%')
-or run_at like concat('%', $1)
-offset $2
-limit $3;
+where name like concat(sqlc.arg('query')::text, '%')
+or name like concat('%', sqlc.arg('query')::text)
+offset $1
+limit $2;
