@@ -4,7 +4,6 @@ package tinyq
 
 import (
 	"context"
-	"database/sql"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/georgysavva/scany/pgxscan"
@@ -14,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/lucagez/tinyq/api"
+	"github.com/lucagez/tinyq/executor"
 	"log"
 	"os"
 	"os/signal"
@@ -29,7 +29,7 @@ type TinyQ struct {
 	FlushInterval time.Duration
 	PollInterval  time.Duration
 	Executors     map[string]Executor
-	finishedJobs  chan Job
+	finishedJobs  chan executor.Job
 }
 
 // ExecResponse
@@ -43,7 +43,7 @@ type ExecResponse struct {
 type Executor interface {
 	// Run should return any payload as result of the run
 	// TODO: Improve signature when architecture is working
-	Run(*Job) error
+	Run(*executor.Job) error
 }
 
 type Config struct {
@@ -62,7 +62,7 @@ func NewTinyQ(config Config) TinyQ {
 		PollInterval:  config.PollInterval,
 		mu:            sync.Mutex{},
 		Executors:     config.Executors,
-		finishedJobs:  make(chan Job),
+		finishedJobs:  make(chan executor.Job),
 	}
 }
 
@@ -81,22 +81,7 @@ func (t *TinyQ) DecreaseInFlight() {
 	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
 }
 
-type Job struct {
-	Id              int            `json:"id" db:"id"`
-	Status          Status         `json:"status" db:"status"`
-	LastRunAt       sql.NullTime   `json:"last_run_at" db:"last_run_at"`
-	CreatedAt       time.Time      `json:"created_at" db:"created_at"`
-	RunAt           string         `json:"run_at" db:"run_at"`
-	Name            sql.NullString `json:"name" db:"name"`
-	ExecutionAmount int            `json:"execution_amount" db:"execution_amount"`
-	Timeout         int            `json:"timeout" db:"timeout"`
-	State           string         `json:"state" db:"state"`
-	Config          string         `json:"config" db:"config"`
-	Kind            Kind           `json:"kind" db:"kind"`
-	ExecutorType    string         `json:"executor" db:"executor"`
-}
-
-func (t *TinyQ) Process(ctx context.Context, job Job) {
+func (t *TinyQ) Process(ctx context.Context, job executor.Job) {
 	t.DecreaseInFlight()
 	defer t.IncreaseInFlight()
 
@@ -125,7 +110,7 @@ func (t *TinyQ) Process(ctx context.Context, job Job) {
 	}
 }
 
-func (t *TinyQ) Fetch() ([]Job, error) {
+func (t *TinyQ) Fetch() ([]executor.Job, error) {
 	time.Sleep(t.PollInterval)
 
 	//tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{IsoLevel: pgx.Serializable})
@@ -136,7 +121,7 @@ func (t *TinyQ) Fetch() ([]Job, error) {
 
 	// TODO: Add check for not running ever a job if
 	// `last_run_at` happened less than x seconds ago
-	var jobs []Job
+	var jobs []executor.Job
 	result, err := tx.Query(context.Background(), `
 		with due_jobs as (
 			select *
@@ -261,6 +246,8 @@ func (t *TinyQ) Listen() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// TODO: they should be different contexts as behavior should
+	// be: stop polling, keep flushing. Then exit
 	go t.start(ctx)
 	go t.flush(ctx)
 	go e.Start(":1234")

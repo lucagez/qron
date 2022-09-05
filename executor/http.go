@@ -2,7 +2,6 @@ package executor
 
 import (
 	"encoding/json"
-	"github.com/lucagez/tinyq"
 	"log"
 	"net/http"
 	"time"
@@ -37,7 +36,7 @@ type HttpConfig struct {
 }
 
 // TODO: This is leading to a circular dependency
-func (h HttpExecutor) Run(job *tinyq.Job) error {
+func (h HttpExecutor) Run(job *Job) error {
 	var config HttpConfig
 	// TODO: Should receive job as input
 	//err := json.Unmarshal([]byte(job.Config), &config)

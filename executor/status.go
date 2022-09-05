@@ -1,4 +1,4 @@
-package tinyq
+package executor
 
 import (
 	"database/sql/driver"

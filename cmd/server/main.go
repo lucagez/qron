@@ -56,7 +56,7 @@ func main() {
 
 				for _, job := range result {
 					// profiler
-					go func(j tinyq.Job) {
+					go func(j executor.Job) {
 						pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
 							tiny.Process(ctx, j)
 						})

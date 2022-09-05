@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -62,11 +63,11 @@ type CounterExecutor struct {
 	mu    *sync.Mutex
 }
 
-func (c CounterExecutor) Run(job *Job) error {
+func (c CounterExecutor) Run(job *executor.Job) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	*c.count++
-	job.Status = SUCCESS
+	job.Status = executor.SUCCESS
 	return nil
 }
 
@@ -128,8 +129,8 @@ func TestTiny(t *testing.T) {
 		time.Sleep(11 * time.Millisecond)
 
 		// check that jobs are not fetched twice
-		var q0jobs []Job
-		var q1jobs []Job
+		var q0jobs []executor.Job
+		var q1jobs []executor.Job
 		var wg sync.WaitGroup
 		wg.Add(2)
 
@@ -167,14 +168,14 @@ func TestTiny(t *testing.T) {
 		defer cleanup()
 
 		c := 0
-		executor := CounterExecutor{count: &c, mu: &sync.Mutex{}}
+		exe := CounterExecutor{count: &c, mu: &sync.Mutex{}}
 		q0 := NewTinyQ(Config{
 			Db:            db,
 			FlushInterval: 1 * time.Second,
 			PollInterval:  1 * time.Millisecond,
 			MaxInFlight:   10,
 			Executors: map[string]Executor{
-				"INCREMENT": executor,
+				"INCREMENT": exe,
 			},
 		})
 		q1 := NewTinyQ(Config{
@@ -183,7 +184,7 @@ func TestTiny(t *testing.T) {
 			PollInterval:  1 * time.Millisecond,
 			MaxInFlight:   15,
 			Executors: map[string]Executor{
-				"INCREMENT": executor,
+				"INCREMENT": exe,
 			},
 		})
 		defer clearJob(db)
@@ -192,7 +193,7 @@ func TestTiny(t *testing.T) {
 
 		assert.Equal(t, 110, countJobs(db, "READY"))
 
-		time.Sleep(11 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		// concurrent processing
 		ctx, cancel := context.WithCancel(context.Background())
@@ -201,11 +202,11 @@ func TestTiny(t *testing.T) {
 		go q0.start(ctx)
 		go q1.start(ctx)
 
-		time.Sleep(11 * time.Millisecond)
+		time.Sleep(15 * time.Millisecond)
 
 		assert.Equal(t, 85, countJobs(db, "READY"))
 		assert.Equal(t, 25, countJobs(db, "PENDING"))
-		assert.Equal(t, 25, *executor.count)
+		assert.Equal(t, 25, *exe.count)
 	})
 
 	t.Run("Should flush jobs while they get completed", func(t *testing.T) {
@@ -213,14 +214,14 @@ func TestTiny(t *testing.T) {
 		defer cleanup()
 
 		c := 0
-		executor := CounterExecutor{count: &c, mu: &sync.Mutex{}}
+		exe := CounterExecutor{count: &c, mu: &sync.Mutex{}}
 		q := NewTinyQ(Config{
 			Db:            db,
 			FlushInterval: 5 * time.Millisecond,
 			PollInterval:  1 * time.Millisecond,
 			MaxInFlight:   10,
 			Executors: map[string]Executor{
-				"INCREMENT": executor,
+				"INCREMENT": exe,
 			},
 		})
 		defer clearJob(db)
@@ -239,13 +240,13 @@ func TestTiny(t *testing.T) {
 		assert.Equal(t, 30, countJobs(db, "READY"))
 		assert.Equal(t, 0, countJobs(db, "PENDING"))
 		assert.Equal(t, 0, countJobs(db, "SUCCESS"))
-		assert.Equal(t, 0, *executor.count)
+		assert.Equal(t, 0, *exe.count)
 
 		time.Sleep(40 * time.Millisecond)
 
 		assert.Equal(t, 0, countJobs(db, "READY"))
 		assert.Equal(t, 0, countJobs(db, "PENDING"))
 		assert.Equal(t, 30, countJobs(db, "SUCCESS"))
-		assert.Equal(t, 30, *executor.count)
+		assert.Equal(t, 30, *exe.count)
 	})
 }
