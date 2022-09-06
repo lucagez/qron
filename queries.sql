@@ -12,10 +12,8 @@ where id = $1 limit 1;
 update tiny.job
 set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
     state = coalesce(nullif(sqlc.arg('state'), ''), state),
-    config = coalesce(
-        nullif(sqlc.arg('config'), '{}') || nullif(sqlc.arg('config'), ''),
-        config
-    )
+    -- Hack for sqlc compiler
+    config = cast(config::jsonb || cast(sqlc.arg('config') as text)::jsonb as text)
 where name = $1
 returning *;
 
@@ -25,11 +23,8 @@ returning *;
 update tiny.job
 set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
     state = coalesce(nullif(sqlc.arg('state'), ''), state),
-    config = config::json || sqlc.arg('config')::json
---     config = coalesce(
---         nullif(sqlc.arg('config'), '{}'),
---         config
---     )
+    -- Hack for sqlc compiler
+    config = cast(config::jsonb || cast(sqlc.arg('config') as text)::jsonb as text)
 where id = $1
 returning *;
 

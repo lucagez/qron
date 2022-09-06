@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/jackc/pgtype"
 	"github.com/lucagez/tinyq/executor"
 	"strconv"
 
@@ -68,12 +67,8 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *m
 	}
 	buf, _ := json.Marshal(config)
 	params := sqlc.UpdateJobByIDParams{
-		ID: i,
-		//Config: string(buf),
-		Config: pgtype.JSON{
-			Bytes:  buf,
-			Status: pgtype.Present,
-		},
+		ID:     i,
+		Config: string(buf),
 	}
 	if args.RunAt != nil {
 		params.RunAt = args.RunAt

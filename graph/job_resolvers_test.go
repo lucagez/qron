@@ -78,7 +78,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@yearly", updated.RunAt)
 		assert.Equal(t, "update-lmao", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
-		assert.Contains(t, updated.Config, `"method":"POST"`)
+		assert.Contains(t, updated.Config, `"method": "POST"`)
 	})
 
 	t.Run("Should update job by name", func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@yearly", updated.RunAt)
 		assert.Equal(t, "update-lmao-by-name", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
-		assert.Contains(t, updated.Config, `"method":"POST"`)
+		assert.Contains(t, updated.Config, `"method": "POST"`)
 	})
 
 	t.Run("Should conditionally update job config by name", func(t *testing.T) {
@@ -120,14 +120,13 @@ func TestJobResolvers(t *testing.T) {
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
-		log.Println("config 0:", updated0.Config)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated0.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
-		assert.Contains(t, updated0.Config, `"method":"GET"`)
-		assert.Contains(t, updated0.Config, `"url":"http://localhost:1234"`)
+		assert.Contains(t, updated0.Config, `"method": "GET"`)
+		assert.Contains(t, updated0.Config, `"url": "http://localhost:1234"`)
 
 		updated1, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
 			URL: ptrstring("http://localhost:9876"),
@@ -138,9 +137,8 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated1.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
-		log.Println("config 1:", updated1.Config)
-		assert.Contains(t, updated1.Config, `"method":"GET"`)
-		assert.Contains(t, updated1.Config, `"url":"http://localhost:9876"`)
+		assert.Contains(t, updated1.Config, `"method": "GET"`)
+		assert.Contains(t, updated1.Config, `"url": "http://localhost:9876"`)
 
 		updated2, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
 			Method: ptrstring("DELETE"),
@@ -151,15 +149,14 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated2.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated2.State.String)
-		log.Println("config 2:", updated2.Config)
-		assert.Contains(t, updated2.Config, `"method":"DELETE"`)
-		assert.Contains(t, updated2.Config, `"url":"http://localhost:9876"`)
+		assert.Contains(t, updated2.Config, `"method": "DELETE"`)
+		assert.Contains(t, updated2.Config, `"url": "http://localhost:9876"`)
 	})
 
 	t.Run("Should conditionally update job config by ID", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
 			RunAt:  "@weekly",
-			Name:   "update-cond-lmao-by-name",
+			Name:   "update-cond-lmao-by-id",
 			State:  "{}",
 			URL:    "http://localhost:1234",
 			Method: "GET",
@@ -171,36 +168,36 @@ func TestJobResolvers(t *testing.T) {
 		})
 
 		assert.Nil(t, err)
-		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
+		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-id"))
 		assert.Equal(t, "@weekly", updated0.RunAt)
-		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-id", updated0.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
-		assert.Contains(t, updated0.Config, `"method":"GET"`)
-		assert.Contains(t, updated0.Config, `"url":"http://localhost:1234"`)
+		assert.Contains(t, updated0.Config, `"method": "GET"`)
+		assert.Contains(t, updated0.Config, `"url": "http://localhost:1234"`)
 
 		updated1, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
 			URL: ptrstring("http://localhost:9876"),
 		})
 
 		assert.Nil(t, err)
-		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
+		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-id"))
 		assert.Equal(t, "@weekly", updated1.RunAt)
-		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-id", updated1.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
-		assert.Contains(t, updated1.Config, `"method":"GET"`)
-		assert.Contains(t, updated1.Config, `"url":"http://localhost:9876"`)
+		assert.Contains(t, updated1.Config, `"method": "GET"`)
+		assert.Contains(t, updated1.Config, `"url": "http://localhost:9876"`)
 
 		updated2, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
 			Method: ptrstring("DELETE"),
 		})
 
 		assert.Nil(t, err)
-		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
+		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-id"))
 		assert.Equal(t, "@weekly", updated2.RunAt)
-		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-id", updated2.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated2.State.String)
-		assert.Contains(t, updated2.Config, `"method":"DELETE"`)
-		assert.Contains(t, updated2.Config, `"url":"http://localhost:9876"`)
+		assert.Contains(t, updated2.Config, `"method": "DELETE"`)
+		assert.Contains(t, updated2.Config, `"url": "http://localhost:9876"`)
 	})
 
 	t.Run("Should delete job by name", func(t *testing.T) {

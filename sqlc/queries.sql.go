@@ -8,8 +8,6 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-
-	"github.com/jackc/pgtype"
 )
 
 const createHttpJob = `-- name: CreateHttpJob :one
@@ -257,7 +255,8 @@ const updateJobByID = `-- name: UpdateJobByID :one
 update tiny.job
 set run_at = coalesce(nullif($2, ''), run_at),
     state = coalesce(nullif($3, ''), state),
-    config = to_json(config) || to_json($4::text)
+    -- Hack for sqlc compiler
+    config = cast(config::jsonb || cast($4 as text)::jsonb as text)
 where id = $1
 returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
 `
@@ -266,15 +265,10 @@ type UpdateJobByIDParams struct {
 	ID     int64
 	RunAt  interface{}
 	State  interface{}
-	Config pgtype.JSON
+	Config string
 }
 
 // TODO: Should refactor usage of `name`
-//
-//	config = coalesce(
-//	    nullif(sqlc.arg('config'), '{}'),
-//	    config
-//	)
 func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, updateJobByID,
 		arg.ID,
@@ -304,10 +298,8 @@ const updateJobByName = `-- name: UpdateJobByName :one
 update tiny.job
 set run_at = coalesce(nullif($2, ''), run_at),
     state = coalesce(nullif($3, ''), state),
-    config = coalesce(
-        nullif($4, '{}') || nullif($4, ''),
-        config
-    )
+    -- Hack for sqlc compiler
+    config = cast(config::jsonb || cast($4 as text)::jsonb as text)
 where name = $1
 returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
 `
@@ -316,7 +308,7 @@ type UpdateJobByNameParams struct {
 	Name   sql.NullString
 	RunAt  interface{}
 	State  interface{}
-	Config interface{}
+	Config string
 }
 
 // TODO: Implement search

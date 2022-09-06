@@ -7,8 +7,6 @@
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/testserver/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/testserver/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/executor/http.go" beforeDir="false" afterPath="$PROJECT_DIR$/executor/http.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/executor/http_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/executor/http_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/executor/job.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/executor/status.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
@@ -22,7 +20,6 @@
       <change beforePath="$PROJECT_DIR$/migrations/20220830101603_init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101603_init.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/queries.sql" beforeDir="false" afterPath="$PROJECT_DIR$/queries.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/schema_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/schema_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sqlc/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/models.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sqlc/queries.sql.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/queries.sql.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tiny_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
@@ -56,41 +53,41 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultGoTemplateProperty": "Go File",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.format.on.save.advertiser.fired": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "configurable..is.expanded": "false",
-    "configurable.GoLibrariesConfigurable.is.expanded": "true",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "/Users/gez/cose/tinyq",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "preferences.sourceCode.PostgreSQL, Greenplum, Redshift",
-    "ts.external.directory.path": "/Users/gez/cose/tinyq/web/node_modules/typescript/lib"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.format.on.save.advertiser.fired&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;configurable..is.expanded&quot;: &quot;false&quot;,
+    &quot;configurable.GoLibrariesConfigurable.is.expanded&quot;: &quot;true&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/gez/cose/tinyq&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.sourceCode.PostgreSQL, Greenplum, Redshift&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/gez/cose/tinyq/web/node_modules/typescript/lib&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "postgresql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
     ],
-    "com.intellij.ide.scratch.LRUPopupBuilder$1/": [
-      "PostgreSQL"
+    &quot;com.intellij.ide.scratch.LRUPopupBuilder$1/&quot;: [
+      &quot;PostgreSQL&quot;
     ],
-    "com.intellij.ide.scratch.LRUPopupBuilder$1/SQL Dialect": [
-      "PostgreSQL"
+    &quot;com.intellij.ide.scratch.LRUPopupBuilder$1/SQL Dialect&quot;: [
+      &quot;PostgreSQL&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -100,7 +97,31 @@
       <recent name="$PROJECT_DIR$/executor" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.TestJobResolvers/Should_conditionally_update_job_config_by_ID in github.com/lucagez/tinyq/graph">
+  <component name="RunManager" selected="Go Test.TestJobResolvers in github.com/lucagez/tinyq/graph">
+    <configuration name="TestHttpExecutor in github.com/lucagez/tinyq/executor" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$/executor" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq/executor" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestHttpExecutor\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestJobResolvers in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="tinyque" />
+      <working_directory value="$PROJECT_DIR$/graph" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/lucagez/tinyq/graph" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestJobResolvers\E$" />
+      <method v="2" />
+    </configuration>
     <configuration name="TestJobResolvers/Should_conditionally_update_job_config_by_ID in github.com/lucagez/tinyq/graph" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$/graph" />
@@ -125,17 +146,6 @@
       <pattern value="^\QTestJobResolvers\E$/^\QShould_conditionally_update_job_config_by_name\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestTiny\E$/^\QShould_flush_jobs_while_they_get_completed\E$" />
-      <method v="2" />
-    </configuration>
     <configuration name="TestTiny/Should_flush_jobs_while_they_get_completed_ok in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="tinyque" />
       <working_directory value="$PROJECT_DIR$" />
@@ -145,17 +155,6 @@
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
       <pattern value="^\QTestTiny\E$/^\QShould_flush_jobs_while_they_get_completed_ok\E$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestTiny/sleeper in github.com/lucagez/tinyq" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="tinyque" />
-      <working_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="github.com/lucagez/tinyq" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestTiny\E$/^\Qsleeper\E$" />
       <method v="2" />
     </configuration>
     <configuration default="true" type="SwaggerCodegen">
@@ -192,11 +191,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestJobResolvers in github.com/lucagez/tinyq/graph" />
         <item itemvalue="Go Test.TestJobResolvers/Should_conditionally_update_job_config_by_ID in github.com/lucagez/tinyq/graph" />
+        <item itemvalue="Go Test.TestHttpExecutor in github.com/lucagez/tinyq/executor" />
         <item itemvalue="Go Test.TestJobResolvers/Should_conditionally_update_job_config_by_name in github.com/lucagez/tinyq/graph" />
         <item itemvalue="Go Test.TestTiny/Should_flush_jobs_while_they_get_completed_ok in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestTiny/sleeper in github.com/lucagez/tinyq" />
-        <item itemvalue="Go Test.TestTiny/Should_flush_jobs_while_they_get_completed in github.com/lucagez/tinyq" />
       </list>
     </recent_temporary>
   </component>
