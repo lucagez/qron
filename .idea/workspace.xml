@@ -5,24 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="12d793b1-e976-470a-a214-2cedcb839cf8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/testserver/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/testserver/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/executor/job.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/executor/status.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/generated/generated.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/generated/generated.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/job.graphql" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job.graphql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/job_resolvers.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job_resolvers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/job_resolvers_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/job_resolvers_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/model/models_gen.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/model/models_gen.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/graph/resolver.go" beforeDir="false" afterPath="$PROJECT_DIR$/graph/resolver.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations/20220830101603_init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/20220830101603_init.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/queries.sql" beforeDir="false" afterPath="$PROJECT_DIR$/queries.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/schema_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/schema_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sqlc/queries.sql.go" beforeDir="false" afterPath="$PROJECT_DIR$/sqlc/queries.sql.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tiny.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tiny_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/tiny_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -215,6 +199,7 @@
       <workItem from="1662211475548" duration="21069000" />
       <workItem from="1662368579896" duration="6786000" />
       <workItem from="1662375848653" duration="30890000" />
+      <workItem from="1662463259859" duration="126000" />
     </task>
     <servers />
   </component>
