@@ -8,7 +8,8 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-	"time"
+
+	"github.com/jackc/pgtype"
 )
 
 const createHttpJob = `-- name: CreateHttpJob :one
@@ -28,7 +29,7 @@ type CreateHttpJobParams struct {
 	RunAt  interface{}
 	Name   sql.NullString
 	State  sql.NullString
-	Config sql.NullString
+	Config string
 }
 
 func (q *Queries) CreateHttpJob(ctx context.Context, arg CreateHttpJobParams) (TinyJob, error) {
@@ -106,7 +107,10 @@ func (q *Queries) DeleteJobByName(ctx context.Context, name sql.NullString) (Tin
 }
 
 const fetchDueJobs = `-- name: FetchDueJobs :many
-with due_jobs as (
+update tiny.job as updated_jobs
+set status      = 'PENDING',
+    last_run_at = now()
+from (
     select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
     from tiny.job
     where tiny.is_due(run_at, coalesce(last_run_at, created_at), now())
@@ -114,38 +118,22 @@ with due_jobs as (
     -- worker limit
     limit $1 for update
     skip locked
-)
-update tiny.job
-set status      = 'PENDING',
-    last_run_at = now()
-from due_jobs
-where due_jobs.id = tiny.job.id
-returning due_jobs.id, due_jobs.run_at, due_jobs.name, due_jobs.last_run_at, due_jobs.created_at, due_jobs.execution_amount, due_jobs.timeout, due_jobs.status, due_jobs.state, due_jobs.config, due_jobs.executor
+) as due_jobs
+where due_jobs.id = updated_jobs.id
+returning updated_jobs.id, updated_jobs.run_at, updated_jobs.name, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.execution_amount, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.config, updated_jobs.executor
 `
 
-type FetchDueJobsRow struct {
-	ID              int64
-	RunAt           interface{}
-	Name            sql.NullString
-	LastRunAt       sql.NullTime
-	CreatedAt       time.Time
-	ExecutionAmount sql.NullInt32
-	Timeout         sql.NullInt32
-	Status          TinyStatus
-	State           sql.NullString
-	Config          sql.NullString
-	Executor        sql.NullString
-}
-
-func (q *Queries) FetchDueJobs(ctx context.Context, limit int32) ([]FetchDueJobsRow, error) {
+// TODO: Add check for not running ever a job if
+// `last_run_at` happened less than x seconds ago
+func (q *Queries) FetchDueJobs(ctx context.Context, limit int32) ([]TinyJob, error) {
 	rows, err := q.db.Query(ctx, fetchDueJobs, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []FetchDueJobsRow
+	var items []TinyJob
 	for rows.Next() {
-		var i FetchDueJobsRow
+		var i TinyJob
 		if err := rows.Scan(
 			&i.ID,
 			&i.RunAt,
@@ -269,25 +257,30 @@ const updateJobByID = `-- name: UpdateJobByID :one
 update tiny.job
 set run_at = coalesce(nullif($2, ''), run_at),
     state = coalesce(nullif($3, ''), state),
-    config = coalesce(nullif($4, ''), config)
+    config = to_json(config) || to_json($4::text)
 where id = $1
 returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
 `
 
 type UpdateJobByIDParams struct {
-	ID      int64
-	Column2 interface{}
-	Column3 interface{}
-	Column4 interface{}
+	ID     int64
+	RunAt  interface{}
+	State  interface{}
+	Config pgtype.JSON
 }
 
 // TODO: Should refactor usage of `name`
+//
+//	config = coalesce(
+//	    nullif(sqlc.arg('config'), '{}'),
+//	    config
+//	)
 func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, updateJobByID,
 		arg.ID,
-		arg.Column2,
-		arg.Column3,
-		arg.Column4,
+		arg.RunAt,
+		arg.State,
+		arg.Config,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -311,25 +304,28 @@ const updateJobByName = `-- name: UpdateJobByName :one
 update tiny.job
 set run_at = coalesce(nullif($2, ''), run_at),
     state = coalesce(nullif($3, ''), state),
-    config = coalesce(nullif($4, ''), config)
+    config = coalesce(
+        nullif($4, '{}') || nullif($4, ''),
+        config
+    )
 where name = $1
 returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, config, executor
 `
 
 type UpdateJobByNameParams struct {
-	Name    sql.NullString
-	Column2 interface{}
-	Column3 interface{}
-	Column4 interface{}
+	Name   sql.NullString
+	RunAt  interface{}
+	State  interface{}
+	Config interface{}
 }
 
 // TODO: Implement search
 func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, updateJobByName,
 		arg.Name,
-		arg.Column2,
-		arg.Column3,
-		arg.Column4,
+		arg.RunAt,
+		arg.State,
+		arg.Config,
 	)
 	var i TinyJob
 	err := row.Scan(

@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lucagez/tinyq"
 	"github.com/lucagez/tinyq/executor"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/pyroscope-io/client/pyroscope"
 	"log"
 	_ "net/http/pprof"
@@ -56,7 +57,7 @@ func main() {
 
 				for _, job := range result {
 					// profiler
-					go func(j executor.Job) {
+					go func(j sqlc.TinyJob) {
 						pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
 							tiny.Process(ctx, j)
 						})

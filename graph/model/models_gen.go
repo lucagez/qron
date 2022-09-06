@@ -2,7 +2,7 @@
 
 package model
 
-type HTTPJobArgs struct {
+type CreateHTTPJobArgs struct {
 	RunAt  string `json:"run_at"`
 	Name   string `json:"name"`
 	State  string `json:"state"`
@@ -14,4 +14,11 @@ type QueryJobsArgs struct {
 	Limit  int    `json:"limit"`
 	Skip   int    `json:"skip"`
 	Filter string `json:"filter"`
+}
+
+type UpdateHTTPJobArgs struct {
+	RunAt  *string `json:"run_at"`
+	State  *string `json:"state"`
+	URL    *string `json:"url"`
+	Method *string `json:"method"`
 }

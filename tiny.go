@@ -1,21 +1,18 @@
 package tinyq
 
-//go:generate mage gen
-
 import (
 	"context"
+	"database/sql"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
-	"github.com/lucagez/tinyq/executor"
+	"github.com/lucagez/tinyq/sqlc"
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -23,17 +20,17 @@ import (
 type TinyQ struct {
 	Db            *pgxpool.Pool
 	MaxInFlight   uint64
-	mu            sync.Mutex
 	FlushInterval time.Duration
 	PollInterval  time.Duration
 	Executors     map[string]Executor
-	finishedJobs  chan executor.Job
+	finishedJobs  chan sqlc.TinyJob
+	queries       *sqlc.Queries
 }
 
 type Executor interface {
 	// Run Invoke job as defined by executor.
 	// Updating job state / status is up to the sdk
-	Run(executor.Job) (executor.Job, error)
+	Run(sqlc.TinyJob) (sqlc.TinyJob, error)
 }
 
 type Config struct {
@@ -50,9 +47,9 @@ func NewTinyQ(config Config) TinyQ {
 		MaxInFlight:   config.MaxInFlight,
 		FlushInterval: config.FlushInterval,
 		PollInterval:  config.PollInterval,
-		mu:            sync.Mutex{},
 		Executors:     config.Executors,
-		finishedJobs:  make(chan executor.Job),
+		finishedJobs:  make(chan sqlc.TinyJob),
+		queries:       sqlc.New(config.Db),
 	}
 }
 
@@ -64,19 +61,19 @@ func (t *TinyQ) DecreaseInFlight() {
 	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
 }
 
-func (t *TinyQ) Process(ctx context.Context, job executor.Job) {
+func (t *TinyQ) Process(ctx context.Context, job sqlc.TinyJob) {
 	t.DecreaseInFlight()
 	defer t.IncreaseInFlight()
 
 	// TODO: Use timeout
 	// TODO: In case of failure use max_attempts
-	exe, ok := t.Executors[job.ExecutorType]
+	exe, ok := t.Executors[job.Executor]
 	if !ok {
 		log.Println("no executor found for current job:", job)
 		return
 	}
 
-	var updatedJob executor.Job
+	var updatedJob sqlc.TinyJob
 	err := backoff.Retry(func() error {
 		var execErr error
 		updatedJob, execErr = exe.Run(job)
@@ -106,41 +103,14 @@ func (t *TinyQ) Process(ctx context.Context, job executor.Job) {
 	}
 }
 
-func (t *TinyQ) Fetch() ([]executor.Job, error) {
-	time.Sleep(t.PollInterval)
-
-	//tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{IsoLevel: pgx.Serializable})
+func (t *TinyQ) Fetch() ([]sqlc.TinyJob, error) {
 	tx, err := t.Db.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Add check for not running ever a job if
-	// `last_run_at` happened less than x seconds ago
-	var jobs []executor.Job
-	result, err := tx.Query(context.Background(), `
-		with due_jobs as (
-			select *
-			from tiny.job
-			where tiny.is_due(run_at, coalesce(last_run_at, created_at), now())
-			and status = 'READY'
-			-- worker limit
-			limit $1 for update
-			skip locked
-		)
-		update tiny.job
-		set status      = 'PENDING',
-			last_run_at = now()
-		from due_jobs
-		where due_jobs.id = tiny.job.id
-		returning due_jobs.*;
-	`, t.MaxInFlight)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	}
-
-	err = pgxscan.ScanAll(&jobs, result)
+	q := t.queries.WithTx(tx)
+	jobs, err := q.FetchDueJobs(context.Background(), int32(t.MaxInFlight))
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err
@@ -154,12 +124,11 @@ func (t *TinyQ) Fetch() ([]executor.Job, error) {
 }
 
 func (t *TinyQ) flush(ctx context.Context) {
-	// TODO: Make sure only error rows are ignored not the whole batch
-	// keep track of errors!
 	// TODO: Check if behavior is correct but should be fine.
 	// Until a job is updated (with this batch) it should not be acquired from
 	// any other worker
-	batch := &pgx.Batch{}
+
+	var batch []sqlc.BatchUpdateJobsParams
 	ticker := time.NewTicker(t.FlushInterval)
 	for {
 		shouldFlush := false
@@ -170,40 +139,30 @@ func (t *TinyQ) flush(ctx context.Context) {
 		case <-ticker.C:
 			shouldFlush = true
 		case job := <-t.finishedJobs:
-			batch.Queue(`
-				update tiny.job
-				set last_run_at = $1,
-					-- TODO: update
-					state = $2,
-					status = $3
-				where id = $4
-			`, time.Now(), job.State, job.Status, job.Id)
-			if batch.Len() > 100 {
+			batch = append(batch, sqlc.BatchUpdateJobsParams{
+				ID: job.ID,
+				LastRunAt: sql.NullTime{
+					Time:  time.Now(),
+					Valid: true,
+				},
+				State:  job.State,
+				Status: job.Status,
+			})
+			if len(batch) > 100 {
 				shouldFlush = true
 			}
 		}
 
-		if shouldFlush {
-			tx, err := t.Db.Begin(context.Background())
-			if err != nil {
-				log.Println("error while acquiring tx", err)
-				continue
-			}
-
-			// TODO: Check for errors inside batch
-			br := tx.SendBatch(context.Background(), batch)
-			err = br.Close()
-			if err != nil {
-				log.Println("error while closing batch", err)
-			}
-
-			err = tx.Commit(context.Background())
-			if err != nil {
-				log.Println("error while committing tx", err, tx.Rollback(context.Background()))
-			}
+		if shouldFlush && len(batch) > 0 {
+			t.queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+				// TODO: What to do in case of flush failures?
+				if err != nil {
+					log.Println("error while flushing job ", batch[i], ":", err)
+				}
+			})
 
 			// reset
-			batch = &pgx.Batch{}
+			batch = []sqlc.BatchUpdateJobsParams{}
 		}
 	}
 }
@@ -214,7 +173,8 @@ func (t *TinyQ) start(ctx context.Context) {
 		case <-time.After(t.PollInterval):
 			result, err := t.Fetch()
 			if err != nil {
-				log.Println("error:", err)
+				log.Println("error while fetching due jobs:", err)
+				return
 			}
 
 			for _, job := range result {

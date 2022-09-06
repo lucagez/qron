@@ -79,6 +79,7 @@ create table tiny.job
 (
     id               bigserial primary key,
     run_at           tiny.cron,
+    -- TODO: Should `name` ever be null??
     name             text,
     last_run_at      timestamptz,
     created_at       timestamptz not null default now(),
@@ -90,8 +91,8 @@ create table tiny.job
     state            text,
     -- config is not encrypted as it holds info for the
     -- worker on how to perform the job
-    config           text,
-    executor         text
+    config           text not null default '{}',
+    executor         text not null
 );
 
 create index idx_job_name

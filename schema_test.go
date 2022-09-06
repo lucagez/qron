@@ -77,7 +77,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at) values ($1::tiny.cron)
+				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -102,7 +102,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at) values ($1::tiny.cron)
+				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -125,7 +125,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at) values ($1::tiny.cron)
+				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -148,7 +148,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at) values ($1::tiny.cron)
+				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -174,7 +174,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at) values ($1::tiny.cron)
+				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
 			`, expr)
 
 			if valid {

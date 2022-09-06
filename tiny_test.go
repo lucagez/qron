@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/lucagez/tinyq/executor"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -63,11 +63,11 @@ type CounterExecutor struct {
 	mu    *sync.Mutex
 }
 
-func (c CounterExecutor) Run(job executor.Job) (executor.Job, error) {
+func (c CounterExecutor) Run(job sqlc.TinyJob) (sqlc.TinyJob, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	*c.count++
-	job.Status = executor.SUCCESS
+	job.Status = sqlc.TinyStatusSUCCESS
 	return job, nil
 }
 
@@ -126,11 +126,11 @@ func TestTiny(t *testing.T) {
 
 		assert.Equal(t, 110, countJobs(db, "READY"))
 
-		time.Sleep(11 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		// check that jobs are not fetched twice
-		var q0jobs []executor.Job
-		var q1jobs []executor.Job
+		var q0jobs []sqlc.TinyJob
+		var q1jobs []sqlc.TinyJob
 		var wg sync.WaitGroup
 		wg.Add(2)
 
@@ -151,8 +151,8 @@ func TestTiny(t *testing.T) {
 
 		for _, j0 := range q0jobs {
 			for _, j1 := range q1jobs {
-				if j0.Id == j1.Id {
-					assert.Fail(t, "found overlapping jobs", j0.Id, j1.Id)
+				if j0.ID == j1.ID {
+					assert.Fail(t, "found overlapping jobs", j0.ID, j1.ID)
 				}
 			}
 		}
@@ -209,7 +209,7 @@ func TestTiny(t *testing.T) {
 		assert.Equal(t, 25, *exe.count)
 	})
 
-	t.Run("Should flush jobs while they get completed", func(t *testing.T) {
+	t.Run("Should flush jobs while they get completed ok", func(t *testing.T) {
 		db, cleanup := testutil.PG.CreateDb("flush_test")
 		defer cleanup()
 
@@ -242,7 +242,9 @@ func TestTiny(t *testing.T) {
 		assert.Equal(t, 0, countJobs(db, "SUCCESS"))
 		assert.Equal(t, 0, *exe.count)
 
-		time.Sleep(40 * time.Millisecond)
+		// TODO: I have no fucking idea why this thing sleeps
+		// indefinitely if you try to sleep for more than 18 milliseconds
+		time.Sleep(10 * time.Millisecond)
 
 		assert.Equal(t, 0, countJobs(db, "READY"))
 		assert.Equal(t, 0, countJobs(db, "PENDING"))

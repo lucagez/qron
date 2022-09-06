@@ -2,6 +2,7 @@ package executor
 
 import (
 	"encoding/json"
+	"github.com/lucagez/tinyq/sqlc"
 	"log"
 	"net/http"
 	"strings"
@@ -32,11 +33,11 @@ func NewHttpExecutor(maxConcurrency int) HttpExecutor {
 }
 
 type HttpConfig struct {
-	Url    string `json:"url"`
-	Method string `json:"method"`
+	Url    string `json:"url,omitempty"`
+	Method string `json:"method,omitempty"`
 }
 
-func (h HttpExecutor) Run(job Job) (Job, error) {
+func (h HttpExecutor) Run(job sqlc.TinyJob) (sqlc.TinyJob, error) {
 	var config HttpConfig
 	err := json.Unmarshal([]byte(job.Config), &config)
 	if err != nil {
@@ -45,7 +46,7 @@ func (h HttpExecutor) Run(job Job) (Job, error) {
 	}
 
 	// TODO: Check null readers do not cause issues
-	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State))
+	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State.String))
 	if err != nil {
 		log.Println("error while assembling http request", err)
 		return job, err
@@ -62,7 +63,7 @@ func (h HttpExecutor) Run(job Job) (Job, error) {
 
 	<-h.limiter
 
-	var execRes Job
+	var execRes sqlc.TinyJob
 	err = json.NewDecoder(res.Body).Decode(&execRes)
 	if err != nil {
 		// TODO: In case body arrives but it's null

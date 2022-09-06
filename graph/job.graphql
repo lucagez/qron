@@ -19,8 +19,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
 }
 
-# TODO: These values should be optional in update queries
-input HttpJobArgs {
+input CreateHttpJobArgs {
   run_at: String!
   name: String!
   state: String!
@@ -28,10 +27,17 @@ input HttpJobArgs {
   method: String!
 }
 
+input UpdateHttpJobArgs {
+  run_at: String
+  state: String
+  url: String
+  method: String
+}
+
 type Mutation {
-  createJob(args: HttpJobArgs): TinyJob!
-  updateJobByName(name: String!, args: HttpJobArgs): TinyJob!
-  updateJobById(id: ID!, args: HttpJobArgs): TinyJob!
+  createJob(args: CreateHttpJobArgs): TinyJob!
+  updateJobByName(name: String!, args: UpdateHttpJobArgs): TinyJob!
+  updateJobById(id: ID!, args: UpdateHttpJobArgs): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
 }

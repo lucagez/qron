@@ -2,8 +2,10 @@ package executor
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"net"
@@ -43,7 +45,7 @@ func TestHttpExecutor(t *testing.T) {
 	t.Run("Should perform http requests", func(t *testing.T) {
 		baseUrl, stop := createTestServer(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(Job{Id: 1})
+			json.NewEncoder(w).Encode(sqlc.TinyJob{ID: 1})
 		})
 		defer stop()
 
@@ -53,26 +55,25 @@ func TestHttpExecutor(t *testing.T) {
 			Url:    baseUrl,
 			Method: "GET",
 		})
-		job := Job{
-			Status: PENDING,
+		job := sqlc.TinyJob{
+			Status: sqlc.TinyStatusPENDING,
 			Config: string(conf),
-			State:  "",
 		}
 
 		updated, err := exe.Run(job)
 
 		assert.Nil(t, err)
-		assert.Equal(t, 1, updated.Id)
+		assert.Equal(t, int64(1), updated.ID)
 	})
 
 	t.Run("Should mutate job properties", func(t *testing.T) {
 		baseUrl, stop := createTestServer(func(w http.ResponseWriter, r *http.Request) {
-			var request Job
+			var request sqlc.TinyJob
 			defer r.Body.Close()
 			json.NewDecoder(r.Body).Decode(&request)
 
-			request.State = `{"hello":"world"}`
-			request.Status = SUCCESS
+			request.State = sql.NullString{String: `{"hello":"world"}`, Valid: true}
+			request.Status = sqlc.TinyStatusSUCCESS
 			// TODO: Should add validation to make impossible
 			// to pass invalid qron types
 			request.RunAt = "bananas"
@@ -88,18 +89,17 @@ func TestHttpExecutor(t *testing.T) {
 			Url:    baseUrl,
 			Method: "GET",
 		})
-		job := Job{
-			Status: PENDING,
+		job := sqlc.TinyJob{
+			Status: sqlc.TinyStatusPENDING,
 			Config: string(conf),
-			State:  "",
 			RunAt:  "@yearly",
 		}
 
 		updated, err := exe.Run(job)
 
 		assert.Nil(t, err)
-		assert.Equal(t, SUCCESS, updated.Status)
-		assert.Equal(t, `{"hello":"world"}`, updated.State)
+		assert.Equal(t, sqlc.TinyStatusSUCCESS, updated.Status)
+		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
 		assert.Equal(t, "bananas", updated.RunAt)
 	})
 }

@@ -46,11 +46,11 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateJob       func(childComplexity int, args *model.HTTPJobArgs) int
+		CreateJob       func(childComplexity int, args *model.CreateHTTPJobArgs) int
 		DeleteJobByID   func(childComplexity int, id string) int
 		DeleteJobByName func(childComplexity int, name string) int
-		UpdateJobByID   func(childComplexity int, id string, args *model.HTTPJobArgs) int
-		UpdateJobByName func(childComplexity int, name string, args *model.HTTPJobArgs) int
+		UpdateJobByID   func(childComplexity int, id string, args *model.UpdateHTTPJobArgs) int
+		UpdateJobByName func(childComplexity int, name string, args *model.UpdateHTTPJobArgs) int
 	}
 
 	Query struct {
@@ -65,9 +65,9 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateJob(ctx context.Context, args *model.HTTPJobArgs) (*sqlc.TinyJob, error)
-	UpdateJobByName(ctx context.Context, name string, args *model.HTTPJobArgs) (*sqlc.TinyJob, error)
-	UpdateJobByID(ctx context.Context, id string, args *model.HTTPJobArgs) (*sqlc.TinyJob, error)
+	CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (*sqlc.TinyJob, error)
+	UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error)
+	UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error)
 	DeleteJobByName(ctx context.Context, name string) (*sqlc.TinyJob, error)
 	DeleteJobByID(ctx context.Context, id string) (*sqlc.TinyJob, error)
 }
@@ -102,7 +102,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateJob(childComplexity, args["args"].(*model.HTTPJobArgs)), true
+		return e.complexity.Mutation.CreateJob(childComplexity, args["args"].(*model.CreateHTTPJobArgs)), true
 
 	case "Mutation.deleteJobByID":
 		if e.complexity.Mutation.DeleteJobByID == nil {
@@ -138,7 +138,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateJobByID(childComplexity, args["id"].(string), args["args"].(*model.HTTPJobArgs)), true
+		return e.complexity.Mutation.UpdateJobByID(childComplexity, args["id"].(string), args["args"].(*model.UpdateHTTPJobArgs)), true
 
 	case "Mutation.updateJobByName":
 		if e.complexity.Mutation.UpdateJobByName == nil {
@@ -150,7 +150,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateJobByName(childComplexity, args["name"].(string), args["args"].(*model.HTTPJobArgs)), true
+		return e.complexity.Mutation.UpdateJobByName(childComplexity, args["name"].(string), args["args"].(*model.UpdateHTTPJobArgs)), true
 
 	case "Query.queryJobByID":
 		if e.complexity.Query.QueryJobByID == nil {
@@ -203,8 +203,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
-		ec.unmarshalInputHttpJobArgs,
+		ec.unmarshalInputCreateHttpJobArgs,
 		ec.unmarshalInputQueryJobsArgs,
+		ec.unmarshalInputUpdateHttpJobArgs,
 	)
 	first := true
 
@@ -286,8 +287,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
 }
 
-# TODO: These values should be optional in update queries
-input HttpJobArgs {
+input CreateHttpJobArgs {
   run_at: String!
   name: String!
   state: String!
@@ -295,10 +295,17 @@ input HttpJobArgs {
   method: String!
 }
 
+input UpdateHttpJobArgs {
+  run_at: String
+  state: String
+  url: String
+  method: String
+}
+
 type Mutation {
-  createJob(args: HttpJobArgs): TinyJob!
-  updateJobByName(name: String!, args: HttpJobArgs): TinyJob!
-  updateJobById(id: ID!, args: HttpJobArgs): TinyJob!
+  createJob(args: CreateHttpJobArgs): TinyJob!
+  updateJobByName(name: String!, args: UpdateHttpJobArgs): TinyJob!
+  updateJobById(id: ID!, args: UpdateHttpJobArgs): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
 }
@@ -325,10 +332,10 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.HTTPJobArgs
+	var arg0 *model.CreateHTTPJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg0, err = ec.unmarshalOHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐHTTPJobArgs(ctx, tmp)
+		arg0, err = ec.unmarshalOCreateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCreateHTTPJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -379,10 +386,10 @@ func (ec *executionContext) field_Mutation_updateJobById_args(ctx context.Contex
 		}
 	}
 	args["id"] = arg0
-	var arg1 *model.HTTPJobArgs
+	var arg1 *model.UpdateHTTPJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg1, err = ec.unmarshalOHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐHTTPJobArgs(ctx, tmp)
+		arg1, err = ec.unmarshalOUpdateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateHTTPJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -403,10 +410,10 @@ func (ec *executionContext) field_Mutation_updateJobByName_args(ctx context.Cont
 		}
 	}
 	args["name"] = arg0
-	var arg1 *model.HTTPJobArgs
+	var arg1 *model.UpdateHTTPJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg1, err = ec.unmarshalOHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐHTTPJobArgs(ctx, tmp)
+		arg1, err = ec.unmarshalOUpdateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateHTTPJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -527,7 +534,7 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["args"].(*model.HTTPJobArgs))
+		return ec.resolvers.Mutation().CreateJob(rctx, fc.Args["args"].(*model.CreateHTTPJobArgs))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -586,7 +593,7 @@ func (ec *executionContext) _Mutation_updateJobByName(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateJobByName(rctx, fc.Args["name"].(string), fc.Args["args"].(*model.HTTPJobArgs))
+		return ec.resolvers.Mutation().UpdateJobByName(rctx, fc.Args["name"].(string), fc.Args["args"].(*model.UpdateHTTPJobArgs))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -645,7 +652,7 @@ func (ec *executionContext) _Mutation_updateJobById(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateJobByID(rctx, fc.Args["id"].(string), fc.Args["args"].(*model.HTTPJobArgs))
+		return ec.resolvers.Mutation().UpdateJobByID(rctx, fc.Args["id"].(string), fc.Args["args"].(*model.UpdateHTTPJobArgs))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2931,8 +2938,8 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputHttpJobArgs(ctx context.Context, obj interface{}) (model.HTTPJobArgs, error) {
-	var it model.HTTPJobArgs
+func (ec *executionContext) unmarshalInputCreateHttpJobArgs(ctx context.Context, obj interface{}) (model.CreateHTTPJobArgs, error) {
+	var it model.CreateHTTPJobArgs
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -3033,6 +3040,58 @@ func (ec *executionContext) unmarshalInputQueryJobsArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
 			it.Filter, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateHttpJobArgs(ctx context.Context, obj interface{}) (model.UpdateHTTPJobArgs, error) {
+	var it model.UpdateHTTPJobArgs
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"run_at", "state", "url", "method"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "run_at":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("run_at"))
+			it.RunAt, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "state":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
+			it.State, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "url":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
+			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "method":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
+			it.Method, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3993,11 +4052,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐHTTPJobArgs(ctx context.Context, v interface{}) (*model.HTTPJobArgs, error) {
+func (ec *executionContext) unmarshalOCreateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCreateHTTPJobArgs(ctx context.Context, v interface{}) (*model.CreateHTTPJobArgs, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalInputHttpJobArgs(ctx, v)
+	res, err := ec.unmarshalInputCreateHttpJobArgs(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -4060,6 +4119,14 @@ func (ec *executionContext) marshalOTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋ
 		return graphql.Null
 	}
 	return ec._TinyJob(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUpdateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateHTTPJobArgs(ctx context.Context, v interface{}) (*model.UpdateHTTPJobArgs, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUpdateHttpJobArgs(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

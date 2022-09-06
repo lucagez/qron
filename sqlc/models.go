@@ -65,6 +65,6 @@ type TinyJob struct {
 	Timeout         sql.NullInt32
 	Status          TinyStatus
 	State           sql.NullString
-	Config          sql.NullString
-	Executor        sql.NullString
+	Config          string
+	Executor        string
 }
