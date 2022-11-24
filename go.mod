@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.16
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/georgysavva/scany v1.1.0
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v4 v4.17.1

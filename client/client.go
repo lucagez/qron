@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph"
@@ -21,17 +21,19 @@ import (
 var processedCh chan Job
 
 type Client struct {
-	resolver      graph.Resolver
-	MaxInFlight   uint64
-	FlushInterval time.Duration
-	PollInterval  time.Duration
+	resolver       graph.Resolver
+	MaxInFlight    uint64
+	FlushInterval  time.Duration
+	PollInterval   time.Duration
+	ExecutorSetter func(http.Handler) http.Handler
 }
 
 type Config struct {
-	Dsn           string
-	MaxInFlight   uint64
-	FlushInterval time.Duration
-	PollInterval  time.Duration
+	Dsn            string
+	MaxInFlight    uint64
+	FlushInterval  time.Duration
+	PollInterval   time.Duration
+	ExecutorSetter func(http.Handler) http.Handler
 }
 
 func NewClient(cfg Config) (Client, error) {
@@ -51,12 +53,16 @@ func NewClient(cfg Config) (Client, error) {
 	if cfg.PollInterval == 0 {
 		cfg.PollInterval = 1 * time.Second
 	}
+	if cfg.ExecutorSetter == nil {
+		cfg.ExecutorSetter = executor.ExecutorSetterMiddleware
+	}
 
 	return Client{
-		resolver:      resolver,
-		MaxInFlight:   cfg.MaxInFlight,
-		FlushInterval: cfg.FlushInterval,
-		PollInterval:  cfg.PollInterval,
+		resolver:       resolver,
+		MaxInFlight:    cfg.MaxInFlight,
+		FlushInterval:  cfg.FlushInterval,
+		PollInterval:   cfg.PollInterval,
+		ExecutorSetter: cfg.ExecutorSetter,
 	}, nil
 }
 
@@ -159,15 +165,16 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 }
 
 func (c *Client) Handler() http.Handler {
-	mux := http.NewServeMux()
+	router := chi.NewRouter()
 	api := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
 		Resolvers: &c.resolver,
 	}))
 
-	mux.Handle("/graphql", api)
-	mux.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))
+	router.Use(c.ExecutorSetter)
+	router.Handle("/graphql", api)
+	router.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))
 
-	return api
+	return router
 }
 
 type Job struct {
@@ -187,18 +194,4 @@ func (j Job) Fail() {
 func (j Job) Retry() {
 	j.Status = sqlc.TinyStatusREADY
 	processedCh <- j
-}
-
-func init() {
-	client, _ := NewClient(Config{
-		Dsn:         "",
-		MaxInFlight: 50,
-	})
-	jobs, close := client.Fetch("backup")
-	defer close()
-
-	for job := range jobs {
-		fmt.Println("processing:", job.ID)
-		job.Commit()
-	}
 }
