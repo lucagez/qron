@@ -46,13 +46,13 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CommitJobs         func(childComplexity int, jobs []string) int
+		CommitJobs         func(childComplexity int, ids []string) int
 		CreateJob          func(childComplexity int, args *model.CreateJobArgs) int
 		DeleteJobByID      func(childComplexity int, id string) int
 		DeleteJobByName    func(childComplexity int, name string) int
-		FailJobs           func(childComplexity int, jobs []string) int
+		FailJobs           func(childComplexity int, ids []string) int
 		FetchForProcessing func(childComplexity int, limit int) int
-		RetryJobs          func(childComplexity int, jobs []string) int
+		RetryJobs          func(childComplexity int, ids []string) int
 		UpdateJobByID      func(childComplexity int, id string, args *model.UpdateJobArgs) int
 		UpdateJobByName    func(childComplexity int, name string, args *model.UpdateJobArgs) int
 	}
@@ -75,9 +75,9 @@ type MutationResolver interface {
 	DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error)
 	DeleteJobByID(ctx context.Context, id string) (sqlc.TinyJob, error)
 	FetchForProcessing(ctx context.Context, limit int) ([]sqlc.TinyJob, error)
-	CommitJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error)
-	FailJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error)
-	RetryJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error)
+	CommitJobs(ctx context.Context, ids []string) ([]string, error)
+	FailJobs(ctx context.Context, ids []string) ([]string, error)
+	RetryJobs(ctx context.Context, ids []string) ([]string, error)
 }
 type QueryResolver interface {
 	SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]sqlc.TinyJob, error)
@@ -110,7 +110,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CommitJobs(childComplexity, args["jobs"].([]string)), true
+		return e.complexity.Mutation.CommitJobs(childComplexity, args["ids"].([]string)), true
 
 	case "Mutation.createJob":
 		if e.complexity.Mutation.CreateJob == nil {
@@ -158,7 +158,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.FailJobs(childComplexity, args["jobs"].([]string)), true
+		return e.complexity.Mutation.FailJobs(childComplexity, args["ids"].([]string)), true
 
 	case "Mutation.fetchForProcessing":
 		if e.complexity.Mutation.FetchForProcessing == nil {
@@ -182,7 +182,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RetryJobs(childComplexity, args["jobs"].([]string)), true
+		return e.complexity.Mutation.RetryJobs(childComplexity, args["ids"].([]string)), true
 
 	case "Mutation.updateJobById":
 		if e.complexity.Mutation.UpdateJobByID == nil {
@@ -356,20 +356,20 @@ input UpdateJobArgs {
 
 type Mutation {
   createJob(args: CreateJobArgs): TinyJob!
- updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
+  updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
   updateJobById(id: ID!, args: UpdateJobArgs): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
   fetchForProcessing(limit: Int! = 50): [TinyJob!]!
 
   # returns jobs that the server failed to commit
-  commitJobs(jobs: [ID!]!): [TinyJob!]!
+  commitJobs(ids: [ID!]!): [ID!]!
 
   # returns jobs that the server failed to mark as failed
-  failJobs(jobs: [ID!]!): [TinyJob!]!
+  failJobs(ids: [ID!]!): [ID!]!
 
   # returns jobs that the server failed to queue for retry
-  retryJobs(jobs: [ID!]!): [TinyJob!]!
+  retryJobs(ids: [ID!]!): [ID!]!
 }
 
 input QueryJobsArgs {
@@ -395,14 +395,14 @@ func (ec *executionContext) field_Mutation_commitJobs_args(ctx context.Context, 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []string
-	if tmp, ok := rawArgs["jobs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobs"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
 		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["jobs"] = arg0
+	args["ids"] = arg0
 	return args, nil
 }
 
@@ -455,14 +455,14 @@ func (ec *executionContext) field_Mutation_failJobs_args(ctx context.Context, ra
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []string
-	if tmp, ok := rawArgs["jobs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobs"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
 		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["jobs"] = arg0
+	args["ids"] = arg0
 	return args, nil
 }
 
@@ -485,14 +485,14 @@ func (ec *executionContext) field_Mutation_retryJobs_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 []string
-	if tmp, ok := rawArgs["jobs"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobs"))
+	if tmp, ok := rawArgs["ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
 		arg0, err = ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["jobs"] = arg0
+	args["ids"] = arg0
 	return args, nil
 }
 
@@ -1010,7 +1010,7 @@ func (ec *executionContext) _Mutation_commitJobs(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CommitJobs(rctx, fc.Args["jobs"].([]string))
+		return ec.resolvers.Mutation().CommitJobs(rctx, fc.Args["ids"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1022,9 +1022,9 @@ func (ec *executionContext) _Mutation_commitJobs(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]sqlc.TinyJob)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_commitJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1034,11 +1034,7 @@ func (ec *executionContext) fieldContext_Mutation_commitJobs(ctx context.Context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_TinyJob_id(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	defer func() {
@@ -1069,7 +1065,7 @@ func (ec *executionContext) _Mutation_failJobs(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().FailJobs(rctx, fc.Args["jobs"].([]string))
+		return ec.resolvers.Mutation().FailJobs(rctx, fc.Args["ids"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1081,9 +1077,9 @@ func (ec *executionContext) _Mutation_failJobs(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]sqlc.TinyJob)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_failJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1093,11 +1089,7 @@ func (ec *executionContext) fieldContext_Mutation_failJobs(ctx context.Context, 
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_TinyJob_id(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	defer func() {
@@ -1128,7 +1120,7 @@ func (ec *executionContext) _Mutation_retryJobs(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RetryJobs(rctx, fc.Args["jobs"].([]string))
+		return ec.resolvers.Mutation().RetryJobs(rctx, fc.Args["ids"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1140,9 +1132,9 @@ func (ec *executionContext) _Mutation_retryJobs(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]sqlc.TinyJob)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_retryJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1152,11 +1144,7 @@ func (ec *executionContext) fieldContext_Mutation_retryJobs(ctx context.Context,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_TinyJob_id(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	defer func() {

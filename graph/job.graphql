@@ -32,20 +32,20 @@ input UpdateJobArgs {
 
 type Mutation {
   createJob(args: CreateJobArgs): TinyJob!
- updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
+  updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
   updateJobById(id: ID!, args: UpdateJobArgs): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
   fetchForProcessing(limit: Int! = 50): [TinyJob!]!
 
   # returns jobs that the server failed to commit
-  commitJobs(jobs: [ID!]!): [TinyJob!]!
+  commitJobs(ids: [ID!]!): [ID!]!
 
   # returns jobs that the server failed to mark as failed
-  failJobs(jobs: [ID!]!): [TinyJob!]!
+  failJobs(ids: [ID!]!): [ID!]!
 
   # returns jobs that the server failed to queue for retry
-  retryJobs(jobs: [ID!]!): [TinyJob!]!
+  retryJobs(ids: [ID!]!): [ID!]!
 }
 
 input QueryJobsArgs {

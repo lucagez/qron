@@ -7,8 +7,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strconv"
+	"time"
 
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/lucagez/tinyq/graph/generated"
@@ -99,18 +99,84 @@ func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([
 }
 
 // CommitJobs is the resolver for the commitJobs field.
-func (r *mutationResolver) CommitJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
-	panic(fmt.Errorf("not implemented: CommitJobs - commitJobs"))
+func (r *mutationResolver) CommitJobs(ctx context.Context, ids []string) ([]string, error) {
+	var batch []sqlc.BatchUpdateJobsParams
+	for _, id := range ids {
+		i, _ := strconv.ParseInt(id, 10, 64)
+		batch = append(batch, sqlc.BatchUpdateJobsParams{
+			ID: i,
+			LastRunAt: sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			},
+			Status:   sqlc.TinyStatusSUCCESS,
+			Executor: "TODO",
+		})
+	}
+
+	// TODO: this does not ensure a job exists
+	var failed []string
+	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+		if err != nil {
+			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+		}
+	})
+
+	return failed, nil
 }
 
 // FailJobs is the resolver for the failJobs field.
-func (r *mutationResolver) FailJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
-	panic(fmt.Errorf("not implemented: FailJobs - failJobs"))
+func (r *mutationResolver) FailJobs(ctx context.Context, ids []string) ([]string, error) {
+	var batch []sqlc.BatchUpdateJobsParams
+	for _, id := range ids {
+		i, _ := strconv.ParseInt(id, 10, 64)
+		batch = append(batch, sqlc.BatchUpdateJobsParams{
+			ID: i,
+			LastRunAt: sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			},
+			Status:   sqlc.TinyStatusFAILURE,
+			Executor: "TODO",
+		})
+	}
+
+	// TODO: this does not ensure a job exists
+	var failed []string
+	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+		if err != nil {
+			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+		}
+	})
+
+	return failed, nil
 }
 
 // RetryJobs is the resolver for the retryJobs field.
-func (r *mutationResolver) RetryJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
-	panic(fmt.Errorf("not implemented: RetryJobs - retryJobs"))
+func (r *mutationResolver) RetryJobs(ctx context.Context, ids []string) ([]string, error) {
+	var batch []sqlc.BatchUpdateJobsParams
+	for _, id := range ids {
+		i, _ := strconv.ParseInt(id, 10, 64)
+		batch = append(batch, sqlc.BatchUpdateJobsParams{
+			ID: i,
+			LastRunAt: sql.NullTime{
+				Time:  time.Now(),
+				Valid: true,
+			},
+			Status:   sqlc.TinyStatusREADY,
+			Executor: "TODO",
+		})
+	}
+
+	// TODO: this does not ensure a job exists
+	var failed []string
+	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+		if err != nil {
+			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+		}
+	})
+
+	return failed, nil
 }
 
 // SearchJobs is the resolver for the searchJobs field.

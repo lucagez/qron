@@ -367,3 +367,193 @@ func TestConcurrentProcessing(t *testing.T) {
 		assert.Equal(t, 10, ready)
 	})
 }
+
+func TestCommit(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("commit_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+
+	t.Run("Should commit after processing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
+				RunAt: "@after 1 second",
+				Name:  fmt.Sprintf("search-%d", i),
+				State: "{}",
+			})
+			assert.Nil(t, err)
+		}
+
+		time.Sleep(1 * time.Second)
+
+		fetch, err := resolver.Mutation().FetchForProcessing(context.Background(), 5)
+		assert.Nil(t, err)
+		assert.Len(t, fetch, 5)
+
+		var commits []string
+		for _, job := range fetch {
+			commits = append(commits, strconv.FormatInt(job.ID, 10))
+		}
+
+		failedCommits, err := resolver.Mutation().CommitJobs(context.Background(), commits)
+		assert.Nil(t, err)
+		assert.Len(t, failedCommits, 0)
+
+		all, err := resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending := 0
+		success := 0
+		ready := 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "SUCCESS" {
+				success += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 0, pending)
+		assert.Equal(t, 5, success)
+		assert.Equal(t, 45, ready)
+	})
+}
+
+func TestFailure(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("failure_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+
+	t.Run("Should fail commit after processing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
+				RunAt: "@after 1 second",
+				Name:  fmt.Sprintf("search-%d", i),
+				State: "{}",
+			})
+			assert.Nil(t, err)
+		}
+
+		time.Sleep(1 * time.Second)
+
+		fetch, err := resolver.Mutation().FetchForProcessing(context.Background(), 5)
+		assert.Nil(t, err)
+		assert.Len(t, fetch, 5)
+
+		var commits []string
+		for _, job := range fetch {
+			commits = append(commits, strconv.FormatInt(job.ID, 10))
+		}
+
+		failedCommits, err := resolver.Mutation().FailJobs(context.Background(), commits)
+		assert.Nil(t, err)
+		assert.Len(t, failedCommits, 0)
+
+		all, err := resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending := 0
+		success := 0
+		failure := 0
+		ready := 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "SUCCESS" {
+				success += 1
+			}
+			if job.Status == "FAILURE" {
+				failure += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 0, pending)
+		assert.Equal(t, 0, success)
+		assert.Equal(t, 5, failure)
+		assert.Equal(t, 45, ready)
+	})
+}
+
+func TestRetry(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("retry_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+
+	t.Run("Should retry commit after processing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
+				RunAt: "@after 1 second",
+				Name:  fmt.Sprintf("search-%d", i),
+				State: "{}",
+			})
+			assert.Nil(t, err)
+		}
+
+		time.Sleep(1 * time.Second)
+
+		fetch, err := resolver.Mutation().FetchForProcessing(context.Background(), 5)
+		assert.Nil(t, err)
+		assert.Len(t, fetch, 5)
+
+		var commits []string
+		for _, job := range fetch {
+			commits = append(commits, strconv.FormatInt(job.ID, 10))
+		}
+
+		failedCommits, err := resolver.Mutation().RetryJobs(context.Background(), commits)
+		assert.Nil(t, err)
+		assert.Len(t, failedCommits, 0)
+
+		all, err := resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending := 0
+		success := 0
+		failure := 0
+		ready := 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "SUCCESS" {
+				success += 1
+			}
+			if job.Status == "FAILURE" {
+				failure += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 0, pending)
+		assert.Equal(t, 0, success)
+		assert.Equal(t, 0, failure)
+		assert.Equal(t, 50, ready)
+	})
+}
