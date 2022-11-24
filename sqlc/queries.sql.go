@@ -23,7 +23,7 @@ returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, 
 `
 
 type CreateJobParams struct {
-	RunAt    interface{}
+	RunAt    string
 	Name     sql.NullString
 	State    sql.NullString
 	Executor string

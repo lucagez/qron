@@ -15,6 +15,7 @@ import (
 	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph"
 	"github.com/lucagez/tinyq/graph/generated"
+	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
 )
 
@@ -175,6 +176,66 @@ func (c *Client) Handler() http.Handler {
 	router.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))
 
 	return router
+}
+
+func (c *Client) CreateJob(executorName string, args *model.CreateJobArgs) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().CreateJob(
+		executor.NewCtx(context.Background(), executorName),
+		args,
+	)
+}
+
+func (c *Client) UpdateJobByName(executorName, name string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().UpdateJobByName(
+		executor.NewCtx(context.Background(), executorName),
+		name,
+		args,
+	)
+}
+
+func (c *Client) UpdateJobByID(executorName, id string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().UpdateJobByID(
+		executor.NewCtx(context.Background(), executorName),
+		id,
+		args,
+	)
+}
+
+func (c *Client) DeleteJobByName(executorName, name string) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().DeleteJobByName(
+		executor.NewCtx(context.Background(), executorName),
+		name,
+	)
+}
+
+func (c *Client) DeleteJobByID(executorName, id string) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().DeleteJobByID(
+		executor.NewCtx(context.Background(), executorName),
+		id,
+	)
+}
+
+// TODO: Make args consistent. Should always be pointer or always value
+// e.g. SearchJobs use values, UpdateJobByName use pointer
+func (c *Client) SearchJobs(executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
+	return c.resolver.Query().SearchJobs(
+		executor.NewCtx(context.Background(), executorName),
+		args,
+	)
+}
+
+func (c *Client) QueryJobByName(executorName, name string) (sqlc.TinyJob, error) {
+	return c.resolver.Query().QueryJobByName(
+		executor.NewCtx(context.Background(), executorName),
+		name,
+	)
+}
+
+func (c *Client) QueryJobByID(executorName, id string) (sqlc.TinyJob, error) {
+	return c.resolver.Query().QueryJobByID(
+		executor.NewCtx(context.Background(), executorName),
+		id,
+	)
 }
 
 type Job struct {

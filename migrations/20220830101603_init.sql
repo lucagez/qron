@@ -21,13 +21,6 @@ begin
 end
 $$ language 'plpgsql' immutable;
 
-create domain tiny.cron as text check (
-                substr(value, 1, 6) in ('@every', '@after') and (substr(value, 7)::interval) is not null
-        or value ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
-        or substr(value, 1, 3) = '@at' and (substr(value, 4)::timestamptz) is not null
-        or tiny.crontab(value)
-    );
-
 -- last run default should be creation date
 create or replace function tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
     returns boolean as
@@ -78,7 +71,7 @@ $CODE$
 create table tiny.job
 (
     id               bigserial primary key,
-    run_at           tiny.cron,
+    run_at           text not null,
     -- TODO: Should `name` ever be null??
     name             text,
     last_run_at      timestamptz,
@@ -90,6 +83,13 @@ create table tiny.job
     -- visible from tinyq. this can hold sensitive data
     state            text,
     executor         text not null
+);
+
+alter table tiny.job add constraint run_format check (
+  substr(run_at, 1, 6) in ('@every', '@after') and (substr(run_at, 7)::interval) is not null
+  or value ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+  or substr(run_at, 1, 3) = '@at' and (substr(run_at, 4)::timestamptz) is not null
+  or tiny.crontab(run_at)
 );
 
 create index idx_job_name
