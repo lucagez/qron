@@ -3,6 +3,12 @@ package tinyq
 import (
 	"context"
 	"database/sql"
+	"log"
+	"os"
+	"os/signal"
+	"sync/atomic"
+	"time"
+
 	"github.com/cenkalti/backoff/v4"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4"
@@ -10,11 +16,6 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/lucagez/tinyq/sqlc"
-	"log"
-	"os"
-	"os/signal"
-	"sync/atomic"
-	"time"
 )
 
 type TinyQ struct {
@@ -110,7 +111,10 @@ func (t *TinyQ) Fetch() ([]sqlc.TinyJob, error) {
 	}
 
 	q := t.queries.WithTx(tx)
-	jobs, err := q.FetchDueJobs(context.Background(), int32(t.MaxInFlight))
+	jobs, err := q.FetchDueJobs(context.Background(), sqlc.FetchDueJobsParams{
+		Limit:    int32(t.MaxInFlight),
+		Executor: "TODO",
+	})
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err
