@@ -23,15 +23,11 @@ input CreateJobArgs {
   run_at: String!
   name: String!
   state: String!
-  url: String!
-  method: String!
 }
 
 input UpdateJobArgs {
   run_at: String
   state: String
-  url: String
-  method: String
 }
 
 type Mutation {

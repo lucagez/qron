@@ -291,15 +291,11 @@ input CreateJobArgs {
   run_at: String!
   name: String!
   state: String!
-  url: String!
-  method: String!
 }
 
 input UpdateJobArgs {
   run_at: String
   state: String
-  url: String
-  method: String
 }
 
 type Mutation {
@@ -2945,7 +2941,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"run_at", "name", "state", "url", "method"}
+	fieldsInOrder := [...]string{"run_at", "name", "state"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -2973,22 +2969,6 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
 			it.State, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "url":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
-			it.URL, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "method":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
-			it.Method, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3056,7 +3036,7 @@ func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"run_at", "state", "url", "method"}
+	fieldsInOrder := [...]string{"run_at", "state"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3076,22 +3056,6 @@ func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
 			it.State, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "url":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
-			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "method":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
-			it.Method, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

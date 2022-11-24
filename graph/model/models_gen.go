@@ -3,11 +3,9 @@
 package model
 
 type CreateJobArgs struct {
-	RunAt  string `json:"run_at"`
-	Name   string `json:"name"`
-	State  string `json:"state"`
-	URL    string `json:"url"`
-	Method string `json:"method"`
+	RunAt string `json:"run_at"`
+	Name  string `json:"name"`
+	State string `json:"state"`
 }
 
 type QueryJobsArgs struct {
@@ -17,8 +15,6 @@ type QueryJobsArgs struct {
 }
 
 type UpdateJobArgs struct {
-	RunAt  *string `json:"run_at"`
-	State  *string `json:"state"`
-	URL    *string `json:"url"`
-	Method *string `json:"method"`
+	RunAt *string `json:"run_at"`
+	State *string `json:"state"`
 }

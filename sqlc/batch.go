@@ -16,10 +16,11 @@ import (
 const batchUpdateJobs = `-- name: BatchUpdateJobs :batchexec
 update tiny.job
 set last_run_at = $1,
-    -- TODO: update
-    state = $2,
-    status = $3
+  -- TODO: update
+  state = $2,
+  status = $3
 where id = $4
+and executor = $5
 `
 
 type BatchUpdateJobsBatchResults struct {
@@ -33,6 +34,7 @@ type BatchUpdateJobsParams struct {
 	State     sql.NullString
 	Status    TinyStatus
 	ID        int64
+	Executor  string
 }
 
 func (q *Queries) BatchUpdateJobs(ctx context.Context, arg []BatchUpdateJobsParams) *BatchUpdateJobsBatchResults {
@@ -43,6 +45,7 @@ func (q *Queries) BatchUpdateJobs(ctx context.Context, arg []BatchUpdateJobsPara
 			a.State,
 			a.Status,
 			a.ID,
+			a.Executor,
 		}
 		batch.Queue(batchUpdateJobs, vals...)
 	}
