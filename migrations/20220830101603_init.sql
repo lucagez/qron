@@ -87,7 +87,7 @@ create table tiny.job
 
 alter table tiny.job add constraint run_format check (
   substr(run_at, 1, 6) in ('@every', '@after') and (substr(run_at, 7)::interval) is not null
-  or value ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+  or run_at ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
   or substr(run_at, 1, 3) = '@at' and (substr(run_at, 4)::timestamptz) is not null
   or tiny.crontab(run_at)
 );

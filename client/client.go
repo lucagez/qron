@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -76,9 +75,9 @@ func (t *Client) DecreaseInFlight() {
 }
 
 func (t *Client) flush(ctx context.Context, executorName string) {
-	var commitBatch []string
-	var failBatch []string
-	var retryBatch []string
+	var commitBatch []int64
+	var failBatch []int64
+	var retryBatch []int64
 	ticker := time.NewTicker(t.FlushInterval)
 
 	for {
@@ -92,11 +91,11 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 		case job := <-processedCh:
 			switch job.Status {
 			case sqlc.TinyStatusSUCCESS:
-				commitBatch = append(commitBatch, strconv.FormatInt(job.ID, 10))
+				commitBatch = append(commitBatch, job.ID)
 			case sqlc.TinyStatusFAILURE:
-				failBatch = append(failBatch, strconv.FormatInt(job.ID, 10))
+				failBatch = append(failBatch, job.ID)
 			case sqlc.TinyStatusREADY:
-				retryBatch = append(retryBatch, strconv.FormatInt(job.ID, 10))
+				retryBatch = append(retryBatch, job.ID)
 			}
 			if len(commitBatch)+len(failBatch)+len(retryBatch) > 100 {
 				shouldFlush = true
@@ -193,7 +192,7 @@ func (c *Client) UpdateJobByName(executorName, name string, args *model.UpdateJo
 	)
 }
 
-func (c *Client) UpdateJobByID(executorName, id string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) UpdateJobByID(executorName string, id int64, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByID(
 		executor.NewCtx(context.Background(), executorName),
 		id,
@@ -208,7 +207,7 @@ func (c *Client) DeleteJobByName(executorName, name string) (sqlc.TinyJob, error
 	)
 }
 
-func (c *Client) DeleteJobByID(executorName, id string) (sqlc.TinyJob, error) {
+func (c *Client) DeleteJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().DeleteJobByID(
 		executor.NewCtx(context.Background(), executorName),
 		id,
@@ -231,7 +230,7 @@ func (c *Client) QueryJobByName(executorName, name string) (sqlc.TinyJob, error)
 	)
 }
 
-func (c *Client) QueryJobByID(executorName, id string) (sqlc.TinyJob, error) {
+func (c *Client) QueryJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Query().QueryJobByID(
 		executor.NewCtx(context.Background(), executorName),
 		id,

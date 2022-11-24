@@ -2,12 +2,13 @@ package tinyq
 
 import (
 	"context"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/lucagez/tinyq/testutil"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/lucagez/tinyq/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
 type SchemaTest struct {
@@ -77,7 +78,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
+				insert into tiny.job (run_at, executor) values ($1, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -102,7 +103,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
+				insert into tiny.job (run_at, executor) values ($1, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -125,7 +126,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
+				insert into tiny.job (run_at, executor) values ($1, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -148,7 +149,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
+				insert into tiny.job (run_at, executor) values ($1, 'BANANA')
 			`, expr)
 
 			if valid {
@@ -174,7 +175,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (run_at, executor) values ($1::tiny.cron, 'BANANA')
+				insert into tiny.job (run_at, executor) values ($1, 'BANANA')
 			`, expr)
 
 			if valid {

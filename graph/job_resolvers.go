@@ -7,7 +7,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strconv"
 	"time"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -43,10 +42,9 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 }
 
 // UpdateJobByID is the resolver for the updateJobById field.
-func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
-	i, _ := strconv.ParseInt(id, 10, 64)
+func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByIDParams{
-		ID:       i,
+		ID:       id,
 		Executor: executor.FromCtx(ctx),
 	}
 	if args.RunAt != nil {
@@ -67,10 +65,9 @@ func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (sq
 }
 
 // DeleteJobByID is the resolver for the deleteJobByID field.
-func (r *mutationResolver) DeleteJobByID(ctx context.Context, id string) (sqlc.TinyJob, error) {
-	i, _ := strconv.ParseInt(id, 10, 64)
+func (r *mutationResolver) DeleteJobByID(ctx context.Context, id int64) (sqlc.TinyJob, error) {
 	return r.Queries.DeleteJobByID(ctx, sqlc.DeleteJobByIDParams{
-		ID:       i,
+		ID:       id,
 		Executor: executor.FromCtx(ctx),
 	})
 }
@@ -100,12 +97,11 @@ func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([
 }
 
 // CommitJobs is the resolver for the commitJobs field.
-func (r *mutationResolver) CommitJobs(ctx context.Context, ids []string) ([]string, error) {
+func (r *mutationResolver) CommitJobs(ctx context.Context, ids []int64) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, id := range ids {
-		i, _ := strconv.ParseInt(id, 10, 64)
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: i,
+			ID: id,
 			LastRunAt: sql.NullTime{
 				Time:  time.Now(),
 				Valid: true,
@@ -116,10 +112,10 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, ids []string) ([]stri
 	}
 
 	// TODO: this does not ensure a job exists
-	var failed []string
+	var failed []int64
 	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
 		if err != nil {
-			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+			failed = append(failed, batch[i].ID)
 		}
 	})
 
@@ -127,12 +123,11 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, ids []string) ([]stri
 }
 
 // FailJobs is the resolver for the failJobs field.
-func (r *mutationResolver) FailJobs(ctx context.Context, ids []string) ([]string, error) {
+func (r *mutationResolver) FailJobs(ctx context.Context, ids []int64) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, id := range ids {
-		i, _ := strconv.ParseInt(id, 10, 64)
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: i,
+			ID: id,
 			LastRunAt: sql.NullTime{
 				Time:  time.Now(),
 				Valid: true,
@@ -143,10 +138,10 @@ func (r *mutationResolver) FailJobs(ctx context.Context, ids []string) ([]string
 	}
 
 	// TODO: this does not ensure a job exists
-	var failed []string
+	var failed []int64
 	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
 		if err != nil {
-			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+			failed = append(failed, batch[i].ID)
 		}
 	})
 
@@ -154,12 +149,11 @@ func (r *mutationResolver) FailJobs(ctx context.Context, ids []string) ([]string
 }
 
 // RetryJobs is the resolver for the retryJobs field.
-func (r *mutationResolver) RetryJobs(ctx context.Context, ids []string) ([]string, error) {
+func (r *mutationResolver) RetryJobs(ctx context.Context, ids []int64) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, id := range ids {
-		i, _ := strconv.ParseInt(id, 10, 64)
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: i,
+			ID: id,
 			LastRunAt: sql.NullTime{
 				Time:  time.Now(),
 				Valid: true,
@@ -170,10 +164,10 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, ids []string) ([]strin
 	}
 
 	// TODO: this does not ensure a job exists
-	var failed []string
+	var failed []int64
 	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
 		if err != nil {
-			failed = append(failed, strconv.FormatInt(batch[i].ID, 10))
+			failed = append(failed, batch[i].ID)
 		}
 	})
 
@@ -203,10 +197,9 @@ func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (sqlc.T
 }
 
 // QueryJobByID is the resolver for the queryJobByID field.
-func (r *queryResolver) QueryJobByID(ctx context.Context, id string) (sqlc.TinyJob, error) {
-	i, _ := strconv.ParseInt(id, 10, 64)
+func (r *queryResolver) QueryJobByID(ctx context.Context, id int64) (sqlc.TinyJob, error) {
 	return r.Queries.GetJobByID(ctx, sqlc.GetJobByIDParams{
-		ID:       i,
+		ID:       id,
 		Executor: executor.FromCtx(ctx),
 	})
 }

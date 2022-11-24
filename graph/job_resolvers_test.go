@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -65,7 +64,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated, err := resolver.Mutation().UpdateJobByID(ctx, strconv.FormatInt(job.ID, 10), &model.UpdateJobArgs{
+		updated, err := resolver.Mutation().UpdateJobByID(ctx, job.ID, &model.UpdateJobArgs{
 			RunAt: ptrstring("@yearly"),
 			State: ptrstring(`{"hello":"world"}`),
 		})
@@ -173,7 +172,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-id"))
 
-		queried, err := resolver.Query().QueryJobByID(ctx, strconv.FormatInt(job.ID, 10))
+		queried, err := resolver.Query().QueryJobByID(ctx, job.ID)
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-id"))
@@ -191,7 +190,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-name"))
 
-		queried, err := resolver.Query().QueryJobByID(ctx, strconv.FormatInt(job.ID, 10))
+		queried, err := resolver.Query().QueryJobByID(ctx, job.ID)
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-name"))
@@ -396,9 +395,9 @@ func TestCommit(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []string
+		var commits []int64
 		for _, job := range fetch {
-			commits = append(commits, strconv.FormatInt(job.ID, 10))
+			commits = append(commits, job.ID)
 		}
 
 		failedCommits, err := resolver.Mutation().CommitJobs(ctx, commits)
@@ -457,9 +456,9 @@ func TestFailure(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []string
+		var commits []int64
 		for _, job := range fetch {
-			commits = append(commits, strconv.FormatInt(job.ID, 10))
+			commits = append(commits, job.ID)
 		}
 
 		failedCommits, err := resolver.Mutation().FailJobs(ctx, commits)
@@ -523,9 +522,9 @@ func TestRetry(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []string
+		var commits []int64
 		for _, job := range fetch {
-			commits = append(commits, strconv.FormatInt(job.ID, 10))
+			commits = append(commits, job.ID)
 		}
 
 		failedCommits, err := resolver.Mutation().RetryJobs(ctx, commits)
