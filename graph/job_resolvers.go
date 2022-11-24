@@ -11,6 +11,7 @@ import (
 	"time"
 
 	pgx "github.com/jackc/pgx/v4"
+	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
@@ -22,7 +23,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateJobA
 		RunAt:    args.RunAt,
 		Name:     sql.NullString{String: args.Name, Valid: true},
 		State:    sql.NullString{String: args.State, Valid: true},
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
@@ -30,7 +31,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateJobA
 func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{
 		Name:     sql.NullString{String: name, Valid: true},
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	}
 	if args.RunAt != nil {
 		params.RunAt = args.RunAt
@@ -46,7 +47,7 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *m
 	i, _ := strconv.ParseInt(id, 10, 64)
 	params := sqlc.UpdateJobByIDParams{
 		ID:       i,
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	}
 	if args.RunAt != nil {
 		params.RunAt = args.RunAt
@@ -61,7 +62,7 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *m
 func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
 	return r.Queries.DeleteJobByName(ctx, sqlc.DeleteJobByNameParams{
 		Name:     sql.NullString{String: name, Valid: true},
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
@@ -70,7 +71,7 @@ func (r *mutationResolver) DeleteJobByID(ctx context.Context, id string) (sqlc.T
 	i, _ := strconv.ParseInt(id, 10, 64)
 	return r.Queries.DeleteJobByID(ctx, sqlc.DeleteJobByIDParams{
 		ID:       i,
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
@@ -84,7 +85,7 @@ func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([
 	q := r.Queries.WithTx(tx)
 	jobs, err := q.FetchDueJobs(context.Background(), sqlc.FetchDueJobsParams{
 		Limit:    int32(limit),
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -110,7 +111,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, ids []string) ([]stri
 				Valid: true,
 			},
 			Status:   sqlc.TinyStatusSUCCESS,
-			Executor: "TODO",
+			Executor: executor.FromCtx(ctx),
 		})
 	}
 
@@ -137,7 +138,7 @@ func (r *mutationResolver) FailJobs(ctx context.Context, ids []string) ([]string
 				Valid: true,
 			},
 			Status:   sqlc.TinyStatusFAILURE,
-			Executor: "TODO",
+			Executor: executor.FromCtx(ctx),
 		})
 	}
 
@@ -164,7 +165,7 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, ids []string) ([]strin
 				Valid: true,
 			},
 			Status:   sqlc.TinyStatusREADY,
-			Executor: "TODO",
+			Executor: executor.FromCtx(ctx),
 		})
 	}
 
@@ -189,7 +190,7 @@ func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs
 		Query:    args.Filter,
 		Offset:   int32(args.Skip),
 		Limit:    int32(args.Limit),
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
@@ -197,7 +198,7 @@ func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs
 func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
 	return r.Queries.GetJobByName(ctx, sqlc.GetJobByNameParams{
 		Name:     sql.NullString{String: name, Valid: true},
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
@@ -206,7 +207,7 @@ func (r *queryResolver) QueryJobByID(ctx context.Context, id string) (sqlc.TinyJ
 	i, _ := strconv.ParseInt(id, 10, 64)
 	return r.Queries.GetJobByID(ctx, sqlc.GetJobByIDParams{
 		ID:       i,
-		Executor: "TODO",
+		Executor: executor.FromCtx(ctx),
 	})
 }
 
