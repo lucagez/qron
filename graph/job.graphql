@@ -31,9 +31,9 @@ input UpdateJobArgs {
 }
 
 type Mutation {
-  createJob(args: CreateJobArgs): TinyJob!
-  updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
-  updateJobById(id: ID!, args: UpdateJobArgs): TinyJob!
+  createJob(args: CreateJobArgs!): TinyJob!
+  updateJobByName(name: String!, args: UpdateJobArgs!): TinyJob!
+  updateJobById(id: ID!, args: UpdateJobArgs!): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
   fetchForProcessing(limit: Int! = 50): [TinyJob!]!

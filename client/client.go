@@ -177,14 +177,14 @@ func (c *Client) Handler() http.Handler {
 	return router
 }
 
-func (c *Client) CreateJob(executorName string, args *model.CreateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) CreateJob(executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().CreateJob(
 		executor.NewCtx(context.Background(), executorName),
 		args,
 	)
 }
 
-func (c *Client) UpdateJobByName(executorName, name string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) UpdateJobByName(executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByName(
 		executor.NewCtx(context.Background(), executorName),
 		name,
@@ -192,7 +192,7 @@ func (c *Client) UpdateJobByName(executorName, name string, args *model.UpdateJo
 	)
 }
 
-func (c *Client) UpdateJobByID(executorName string, id int64, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) UpdateJobByID(executorName string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByID(
 		executor.NewCtx(context.Background(), executorName),
 		id,
@@ -214,8 +214,6 @@ func (c *Client) DeleteJobByID(executorName string, id int64) (sqlc.TinyJob, err
 	)
 }
 
-// TODO: Make args consistent. Should always be pointer or always value
-// e.g. SearchJobs use values, UpdateJobByName use pointer
 func (c *Client) SearchJobs(executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
 	return c.resolver.Query().SearchJobs(
 		executor.NewCtx(context.Background(), executorName),

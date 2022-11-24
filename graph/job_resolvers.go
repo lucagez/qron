@@ -17,7 +17,7 @@ import (
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		RunAt:    args.RunAt,
 		Name:     sql.NullString{String: args.Name, Valid: true},
@@ -27,7 +27,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateJobA
 }
 
 // UpdateJobByName is the resolver for the updateJobByName field.
-func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{
 		Name:     sql.NullString{String: name, Valid: true},
 		Executor: executor.FromCtx(ctx),
@@ -42,7 +42,7 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 }
 
 // UpdateJobByID is the resolver for the updateJobById field.
-func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByIDParams{
 		ID:       id,
 		Executor: executor.FromCtx(ctx),

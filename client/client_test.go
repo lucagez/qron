@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,6 +22,9 @@ func TestClient(t *testing.T) {
 	defer client.Close()
 
 	t.Run("Should fetch", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			client.CreateJob("backup", model.CreateJobArgs{})
+		}
 
 	})
 }
