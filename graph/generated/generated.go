@@ -65,16 +65,16 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (*sqlc.TinyJob, error)
-	UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error)
-	UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error)
-	DeleteJobByName(ctx context.Context, name string) (*sqlc.TinyJob, error)
-	DeleteJobByID(ctx context.Context, id string) (*sqlc.TinyJob, error)
+	CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (sqlc.TinyJob, error)
+	UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error)
+	UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error)
+	DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error)
+	DeleteJobByID(ctx context.Context, id string) (sqlc.TinyJob, error)
 }
 type QueryResolver interface {
-	SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]*sqlc.TinyJob, error)
-	QueryJobByName(ctx context.Context, name string) (*sqlc.TinyJob, error)
-	QueryJobByID(ctx context.Context, id string) (*sqlc.TinyJob, error)
+	SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]sqlc.TinyJob, error)
+	QueryJobByName(ctx context.Context, name string) (sqlc.TinyJob, error)
+	QueryJobByID(ctx context.Context, id string) (sqlc.TinyJob, error)
 }
 
 type executableSchema struct {
@@ -317,7 +317,7 @@ input QueryJobsArgs {
 }
 
 type Query {
-  searchJobs(args: QueryJobsArgs!): [TinyJob]!
+  searchJobs(args: QueryJobsArgs!): [TinyJob!]!
   queryJobByName(name: String!): TinyJob!
   queryJobByID(id: ID!): TinyJob!
 }
@@ -546,9 +546,9 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -605,9 +605,9 @@ func (ec *executionContext) _Mutation_updateJobByName(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -664,9 +664,9 @@ func (ec *executionContext) _Mutation_updateJobById(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -723,9 +723,9 @@ func (ec *executionContext) _Mutation_deleteJobByName(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -782,9 +782,9 @@ func (ec *executionContext) _Mutation_deleteJobByID(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -841,9 +841,9 @@ func (ec *executionContext) _Query_searchJobs(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*sqlc.TinyJob)
+	res := resTmp.([]sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -900,9 +900,9 @@ func (ec *executionContext) _Query_queryJobByName(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -959,9 +959,9 @@ func (ec *executionContext) _Query_queryJobByID(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*sqlc.TinyJob)
+	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3725,7 +3725,7 @@ func (ec *executionContext) marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsql
 	return ec._TinyJob(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTinyJob2ᚕᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx context.Context, sel ast.SelectionSet, v []*sqlc.TinyJob) graphql.Marshaler {
+func (ec *executionContext) marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx context.Context, sel ast.SelectionSet, v []sqlc.TinyJob) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3749,7 +3749,7 @@ func (ec *executionContext) marshalNTinyJob2ᚕᚖgithubᚗcomᚋlucagezᚋtinyq
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, sel, v[i])
+			ret[i] = ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3760,17 +3760,13 @@ func (ec *executionContext) marshalNTinyJob2ᚕᚖgithubᚗcomᚋlucagezᚋtinyq
 	}
 	wg.Wait()
 
-	return ret
-}
-
-func (ec *executionContext) marshalNTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx context.Context, sel ast.SelectionSet, v *sqlc.TinyJob) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
 		}
-		return graphql.Null
 	}
-	return ec._TinyJob(ctx, sel, v)
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -4112,13 +4108,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOTinyJob2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx context.Context, sel ast.SelectionSet, v *sqlc.TinyJob) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TinyJob(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOUpdateHttpJobArgs2ᚖgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateHTTPJobArgs(ctx context.Context, v interface{}) (*model.UpdateHTTPJobArgs, error) {

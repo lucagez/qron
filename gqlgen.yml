@@ -13,7 +13,10 @@ resolver:
   filename_template: "{name}_resolvers.go"
 autobind:
   - "github.com/lucagez/tinyq/sqlc"
-omit_slice_element_pointers: false
+omit_slice_element_pointers: true
+struct_fields_always_pointers: false
+resolvers_always_return_pointers: false
+skip_validation: false
 models:
   ID:
     model:

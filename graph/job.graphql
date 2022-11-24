@@ -49,7 +49,7 @@ input QueryJobsArgs {
 }
 
 type Query {
-  searchJobs(args: QueryJobsArgs!): [TinyJob]!
+  searchJobs(args: QueryJobsArgs!): [TinyJob!]!
   queryJobByName(name: String!): TinyJob!
   queryJobByID(id: ID!): TinyJob!
 }

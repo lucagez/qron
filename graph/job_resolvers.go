@@ -8,31 +8,30 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/lucagez/tinyq/executor"
 	"strconv"
 
+	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (*sqlc.TinyJob, error) {
+func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (sqlc.TinyJob, error) {
 	config, _ := json.Marshal(executor.HttpConfig{
 		Url:    args.URL,
 		Method: args.Method,
 	})
-	job, err := r.Queries.CreateHttpJob(ctx, sqlc.CreateHttpJobParams{
+	return r.Queries.CreateHttpJob(ctx, sqlc.CreateHttpJobParams{
 		RunAt:  args.RunAt,
 		Name:   sql.NullString{String: args.Name, Valid: true},
 		State:  sql.NullString{String: args.State, Valid: true},
 		Config: string(config),
 	})
-	return &job, err
 }
 
 // UpdateJobByName is the resolver for the updateJobByName field.
-func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error) {
 	config := executor.HttpConfig{}
 	if args.URL != nil {
 		config.Url = *args.URL
@@ -51,12 +50,11 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 	if args.State != nil {
 		params.State = args.State
 	}
-	job, err := r.Queries.UpdateJobByName(ctx, params)
-	return &job, err
+	return r.Queries.UpdateJobByName(ctx, params)
 }
 
 // UpdateJobByID is the resolver for the updateJobById field.
-func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (*sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error) {
 	i, _ := strconv.ParseInt(id, 10, 64)
 	config := executor.HttpConfig{}
 	if args.URL != nil {
@@ -76,52 +74,42 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *m
 	if args.State != nil {
 		params.State = args.State
 	}
-	job, err := r.Queries.UpdateJobByID(ctx, params)
-	return &job, err
+	return r.Queries.UpdateJobByID(ctx, params)
 }
 
 // DeleteJobByName is the resolver for the deleteJobByName field.
-func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (*sqlc.TinyJob, error) {
-	job, err := r.Queries.DeleteJobByName(ctx, sql.NullString{String: name, Valid: true})
-	return &job, err
+func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
+	return r.Queries.DeleteJobByName(ctx, sql.NullString{String: name, Valid: true})
 }
 
 // DeleteJobByID is the resolver for the deleteJobByID field.
-func (r *mutationResolver) DeleteJobByID(ctx context.Context, id string) (*sqlc.TinyJob, error) {
+func (r *mutationResolver) DeleteJobByID(ctx context.Context, id string) (sqlc.TinyJob, error) {
 	i, _ := strconv.ParseInt(id, 10, 64)
-	job, err := r.Queries.DeleteJobByID(ctx, i)
-	return &job, err
+	return r.Queries.DeleteJobByID(ctx, i)
 }
 
 // SearchJobs is the resolver for the searchJobs field.
-func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]*sqlc.TinyJob, error) {
+func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
 	if args.Limit > 1000 {
 		return nil, errors.New("requesting too many jobs")
 	}
-	jobs, err := r.Queries.SearchJobs(ctx, sqlc.SearchJobsParams{
+	return r.Queries.SearchJobs(ctx, sqlc.SearchJobsParams{
 		// Search term
 		Query:  args.Filter,
 		Offset: int32(args.Skip),
 		Limit:  int32(args.Limit),
 	})
-	var refs []*sqlc.TinyJob
-	for i := range jobs {
-		refs = append(refs, &jobs[i])
-	}
-	return refs, err
 }
 
 // QueryJobByName is the resolver for the queryJobByName field.
-func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (*sqlc.TinyJob, error) {
-	job, err := r.Queries.GetJobByName(ctx, sql.NullString{String: name, Valid: true})
-	return &job, err
+func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
+	return r.Queries.GetJobByName(ctx, sql.NullString{String: name, Valid: true})
 }
 
 // QueryJobByID is the resolver for the queryJobByID field.
-func (r *queryResolver) QueryJobByID(ctx context.Context, id string) (*sqlc.TinyJob, error) {
+func (r *queryResolver) QueryJobByID(ctx context.Context, id string) (sqlc.TinyJob, error) {
 	i, _ := strconv.ParseInt(id, 10, 64)
-	job, err := r.Queries.GetJobByID(ctx, i)
-	return &job, err
+	return r.Queries.GetJobByID(ctx, i)
 }
 
 // Mutation returns generated.MutationResolver implementation.
