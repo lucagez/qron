@@ -11,6 +11,7 @@ import (
 // - Start working on SDK 👈 🎉
 // - graphql-generator with graphql-request
 // - create class wrapper so to get fluent config
+// - gqlgen go models are not introspected. Enhance graph/job.graphql:19
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
