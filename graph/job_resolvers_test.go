@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
@@ -37,7 +39,7 @@ func TestJobResolvers(t *testing.T) {
 	defer cleanup()
 
 	queries := sqlc.New(pool)
-	resolver := Resolver{Queries: queries}
+	resolver := Resolver{Queries: queries, DB: pool}
 
 	t.Run("Should create job", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
@@ -229,5 +231,139 @@ func TestJobResolvers(t *testing.T) {
 		for index, s := range search1 {
 			assert.Equal(t, fmt.Sprintf("search-%d", index+10), s.Name.String)
 		}
+	})
+
+}
+
+func TestProcessing(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("fetch_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+
+	t.Run("Should fetch for processing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
+				RunAt: "@after 1 second",
+				Name:  fmt.Sprintf("search-%d", i),
+				State: "{}",
+			})
+			assert.Nil(t, err)
+		}
+
+		time.Sleep(1 * time.Second)
+
+		all, err := resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending := 0
+		ready := 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 0, pending)
+		assert.Equal(t, 50, ready)
+
+		fetch, err := resolver.Mutation().FetchForProcessing(context.Background(), 20)
+		assert.Nil(t, err)
+		assert.Len(t, fetch, 20)
+
+		for index, job := range fetch {
+			assert.Equal(t, fmt.Sprintf("search-%d", index+0), job.Name.String)
+			assert.Equal(t, sqlc.TinyStatusPENDING, job.Status)
+		}
+
+		all, err = resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending = 0
+		ready = 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 20, pending)
+		assert.Equal(t, 30, ready)
+	})
+}
+
+func TestConcurrentProcessing(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("concurrent_fetch_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+
+	t.Run("Should fetch for concurrent processing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
+				RunAt: "@after 1 second",
+				Name:  fmt.Sprintf("search-%d", i),
+				State: "{}",
+			})
+			assert.Nil(t, err)
+		}
+
+		time.Sleep(1 * time.Second)
+
+		var wg sync.WaitGroup
+
+		for i := 0; i < 8; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				fetch, err := resolver.Mutation().FetchForProcessing(context.Background(), 5)
+				assert.Nil(t, err)
+				assert.Len(t, fetch, 5)
+
+				for _, job := range fetch {
+					assert.Equal(t, sqlc.TinyStatusPENDING, job.Status)
+				}
+			}()
+		}
+
+		wg.Wait()
+
+		all, err := resolver.Query().SearchJobs(context.Background(), model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "search",
+		})
+		assert.Nil(t, err)
+
+		pending := 0
+		ready := 0
+		for _, job := range all {
+			if job.Status == "PENDING" {
+				pending += 1
+			}
+			if job.Status == "READY" {
+				ready += 1
+			}
+		}
+
+		assert.Equal(t, 40, pending)
+		assert.Equal(t, 10, ready)
 	})
 }

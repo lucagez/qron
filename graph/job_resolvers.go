@@ -7,8 +7,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strconv"
 
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
@@ -70,6 +72,45 @@ func (r *mutationResolver) DeleteJobByID(ctx context.Context, id string) (sqlc.T
 		ID:       i,
 		Executor: "TODO",
 	})
+}
+
+// FetchForProcessing is the resolver for the fetchForProcessing field.
+func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([]sqlc.TinyJob, error) {
+	tx, err := r.DB.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	q := r.Queries.WithTx(tx)
+	jobs, err := q.FetchDueJobs(context.Background(), sqlc.FetchDueJobsParams{
+		Limit:    int32(limit),
+		Executor: "TODO",
+	})
+	if err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+
+	if tx.Commit(context.Background()) != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
+
+// CommitJobs is the resolver for the commitJobs field.
+func (r *mutationResolver) CommitJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
+	panic(fmt.Errorf("not implemented: CommitJobs - commitJobs"))
+}
+
+// FailJobs is the resolver for the failJobs field.
+func (r *mutationResolver) FailJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
+	panic(fmt.Errorf("not implemented: FailJobs - failJobs"))
+}
+
+// RetryJobs is the resolver for the retryJobs field.
+func (r *mutationResolver) RetryJobs(ctx context.Context, jobs []string) ([]sqlc.TinyJob, error) {
+	panic(fmt.Errorf("not implemented: RetryJobs - retryJobs"))
 }
 
 // SearchJobs is the resolver for the searchJobs field.
