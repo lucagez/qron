@@ -11,9 +11,7 @@ where id = $1 limit 1;
 -- name: UpdateJobByName :one
 update tiny.job
 set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
-    state = coalesce(nullif(sqlc.arg('state'), ''), state),
-    -- Hack for sqlc compiler
-    config = cast(config::jsonb || cast(sqlc.arg('config') as text)::jsonb as text)
+    state = coalesce(nullif(sqlc.arg('state'), ''), state)
 where name = $1
 returning *;
 
@@ -22,9 +20,7 @@ returning *;
 -- name: UpdateJobByID :one
 update tiny.job
 set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
-    state = coalesce(nullif(sqlc.arg('state'), ''), state),
-    -- Hack for sqlc compiler
-    config = cast(config::jsonb || cast(sqlc.arg('config') as text)::jsonb as text)
+    state = coalesce(nullif(sqlc.arg('state'), ''), state)
 where id = $1
 returning *;
 
@@ -38,15 +34,14 @@ delete from tiny.job
 where id = $1
 returning *;
 
--- name: CreateHttpJob :one
-insert into tiny.job(run_at, name, state, config, status, executor)
+-- name: CreateJob :one
+insert into tiny.job(run_at, name, state, status, executor)
 values (
    $1,
    $2,
    $3,
-   $4,
    'READY',
-   'HTTP'
+   $4
 )
 returning *;
 

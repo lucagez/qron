@@ -19,7 +19,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
 }
 
-input CreateHttpJobArgs {
+input CreateJobArgs {
   run_at: String!
   name: String!
   state: String!
@@ -27,7 +27,7 @@ input CreateHttpJobArgs {
   method: String!
 }
 
-input UpdateHttpJobArgs {
+input UpdateJobArgs {
   run_at: String
   state: String
   url: String
@@ -35,9 +35,9 @@ input UpdateHttpJobArgs {
 }
 
 type Mutation {
-  createJob(args: CreateHttpJobArgs): TinyJob!
-  updateJobByName(name: String!, args: UpdateHttpJobArgs): TinyJob!
-  updateJobById(id: ID!, args: UpdateHttpJobArgs): TinyJob!
+  createJob(args: CreateJobArgs): TinyJob!
+  updateJobByName(name: String!, args: UpdateJobArgs): TinyJob!
+  updateJobById(id: ID!, args: UpdateJobArgs): TinyJob!
   deleteJobByName(name: String!): TinyJob!
   deleteJobByID(id: ID!): TinyJob!
 }

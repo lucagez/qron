@@ -6,43 +6,28 @@ package graph
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"strconv"
 
-	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateHTTPJobArgs) (sqlc.TinyJob, error) {
-	config, _ := json.Marshal(executor.HttpConfig{
-		Url:    args.URL,
-		Method: args.Method,
-	})
-	return r.Queries.CreateHttpJob(ctx, sqlc.CreateHttpJobParams{
-		RunAt:  args.RunAt,
-		Name:   sql.NullString{String: args.Name, Valid: true},
-		State:  sql.NullString{String: args.State, Valid: true},
-		Config: string(config),
+func (r *mutationResolver) CreateJob(ctx context.Context, args *model.CreateJobArgs) (sqlc.TinyJob, error) {
+	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
+		RunAt:    args.RunAt,
+		Name:     sql.NullString{String: args.Name, Valid: true},
+		State:    sql.NullString{String: args.State, Valid: true},
+		Executor: "TODO: executor",
 	})
 }
 
 // UpdateJobByName is the resolver for the updateJobByName field.
-func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error) {
-	config := executor.HttpConfig{}
-	if args.URL != nil {
-		config.Url = *args.URL
-	}
-	if args.Method != nil {
-		config.Method = *args.Method
-	}
-	buf, _ := json.Marshal(config)
+func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{
-		Name:   sql.NullString{String: name, Valid: true},
-		Config: string(buf),
+		Name: sql.NullString{String: name, Valid: true},
 	}
 	if args.RunAt != nil {
 		params.RunAt = args.RunAt
@@ -54,19 +39,10 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 }
 
 // UpdateJobByID is the resolver for the updateJobById field.
-func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *model.UpdateHTTPJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByID(ctx context.Context, id string, args *model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	i, _ := strconv.ParseInt(id, 10, 64)
-	config := executor.HttpConfig{}
-	if args.URL != nil {
-		config.Url = *args.URL
-	}
-	if args.Method != nil {
-		config.Method = *args.Method
-	}
-	buf, _ := json.Marshal(config)
 	params := sqlc.UpdateJobByIDParams{
-		ID:     i,
-		Config: string(buf),
+		ID: i,
 	}
 	if args.RunAt != nil {
 		params.RunAt = args.RunAt

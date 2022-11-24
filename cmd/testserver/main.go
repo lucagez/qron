@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/executor"
-	"github.com/lucagez/tinyq/sqlc"
-	"github.com/pyroscope-io/client/pyroscope"
 	"log"
 	_ "net/http/pprof"
 	"runtime/pprof"
 	"time"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/lucagez/tinyq"
+	"github.com/lucagez/tinyq/sqlc"
+	"github.com/pyroscope-io/client/pyroscope"
 )
 
 func main() {
@@ -24,9 +24,7 @@ func main() {
 		FlushInterval: 1 * time.Second,
 		PollInterval:  1 * time.Second,
 		MaxInFlight:   1000,
-		Executors: map[string]tinyq.Executor{
-			"HTTP": executor.NewHttpExecutor(50),
-		},
+		Executors:     map[string]tinyq.Executor{},
 	})
 
 	// Profiling

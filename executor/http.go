@@ -1,11 +1,7 @@
 package executor
 
 import (
-	"encoding/json"
-	"github.com/lucagez/tinyq/sqlc"
-	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -37,40 +33,42 @@ type HttpConfig struct {
 	Method string `json:"method,omitempty"`
 }
 
-func (h HttpExecutor) Run(job sqlc.TinyJob) (sqlc.TinyJob, error) {
-	var config HttpConfig
-	err := json.Unmarshal([]byte(job.Config), &config)
-	if err != nil {
-		log.Panicln("error while decoding config payload:", err)
-		return job, err
-	}
+// TODO: refactor executor to use state
 
-	// TODO: Check null readers do not cause issues
-	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State.String))
-	if err != nil {
-		log.Println("error while assembling http request", err)
-		return job, err
-	}
+// func (h HttpExecutor) Run(job sqlc.TinyJob) (sqlc.TinyJob, error) {
+// 	var config HttpConfig
+// 	err := json.Unmarshal([]byte(job.Config), &config)
+// 	if err != nil {
+// 		log.Panicln("error while decoding config payload:", err)
+// 		return job, err
+// 	}
 
-	h.limiter <- 0
+// 	// TODO: Check null readers do not cause issues
+// 	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State.String))
+// 	if err != nil {
+// 		log.Println("error while assembling http request", err)
+// 		return job, err
+// 	}
 
-	res, err := h.client.Do(req)
-	if err != nil {
-		log.Println("http error:", err)
-		return job, err
-	}
-	defer res.Body.Close()
+// 	h.limiter <- 0
 
-	<-h.limiter
+// 	res, err := h.client.Do(req)
+// 	if err != nil {
+// 		log.Println("http error:", err)
+// 		return job, err
+// 	}
+// 	defer res.Body.Close()
 
-	var execRes sqlc.TinyJob
-	err = json.NewDecoder(res.Body).Decode(&execRes)
-	if err != nil {
-		// TODO: In case body arrives but it's null
-		// it should just not update job and NOT retrun an error
-		log.Println("invalid response payload:", err)
-		return job, err
-	}
+// 	<-h.limiter
 
-	return execRes, nil
-}
+// 	var execRes sqlc.TinyJob
+// 	err = json.NewDecoder(res.Body).Decode(&execRes)
+// 	if err != nil {
+// 		// TODO: In case body arrives but it's null
+// 		// it should just not update job and NOT retrun an error
+// 		log.Println("invalid response payload:", err)
+// 		return job, err
+// 	}
+
+// 	return execRes, nil
+// }

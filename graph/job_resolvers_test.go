@@ -3,6 +3,10 @@ package graph
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+	"testing"
+
 	"github.com/georgysavva/scany/pgxscan"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -10,9 +14,6 @@ import (
 	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"strconv"
-	"testing"
 )
 
 func countJobs(db *pgxpool.Pool, name string) int {
@@ -39,7 +40,7 @@ func TestJobResolvers(t *testing.T) {
 	resolver := Resolver{Queries: queries}
 
 	t.Run("Should create job", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "lmao",
 			State:  "{}",
@@ -52,12 +53,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", job.RunAt)
 		assert.Equal(t, "lmao", job.Name.String)
 		assert.Equal(t, "{}", job.State.String)
-		assert.Contains(t, job.Config, `"url":"http://localhost:1234"`)
-		assert.Contains(t, job.Config, `"method":"GET"`)
 	})
 
 	t.Run("Should update job by ID", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "update-lmao",
 			State:  "{}",
@@ -66,7 +65,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
+		updated, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateJobArgs{
 			RunAt:  ptrstring("@yearly"),
 			State:  ptrstring(`{"hello":"world"}`),
 			URL:    ptrstring("http://localhost:1234"),
@@ -78,11 +77,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@yearly", updated.RunAt)
 		assert.Equal(t, "update-lmao", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
-		assert.Contains(t, updated.Config, `"method": "POST"`)
 	})
 
 	t.Run("Should update job by name", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "update-lmao-by-name",
 			State:  "{}",
@@ -91,7 +89,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
+		updated, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateJobArgs{
 			RunAt:  ptrstring("@yearly"),
 			State:  ptrstring(`{"hello":"world"}`),
 			URL:    ptrstring("http://localhost:1234"),
@@ -103,11 +101,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@yearly", updated.RunAt)
 		assert.Equal(t, "update-lmao-by-name", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
-		assert.Contains(t, updated.Config, `"method": "POST"`)
 	})
 
 	t.Run("Should conditionally update job config by name", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "update-cond-lmao-by-name",
 			State:  "{}",
@@ -116,7 +113,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated0, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
+		updated0, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateJobArgs{
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
@@ -125,10 +122,8 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated0.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
-		assert.Contains(t, updated0.Config, `"method": "GET"`)
-		assert.Contains(t, updated0.Config, `"url": "http://localhost:1234"`)
 
-		updated1, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
+		updated1, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateJobArgs{
 			URL: ptrstring("http://localhost:9876"),
 		})
 
@@ -137,10 +132,8 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated1.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
-		assert.Contains(t, updated1.Config, `"method": "GET"`)
-		assert.Contains(t, updated1.Config, `"url": "http://localhost:9876"`)
 
-		updated2, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateHTTPJobArgs{
+		updated2, err := resolver.Mutation().UpdateJobByName(context.Background(), job.Name.String, &model.UpdateJobArgs{
 			Method: ptrstring("DELETE"),
 		})
 
@@ -149,12 +142,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated2.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated2.State.String)
-		assert.Contains(t, updated2.Config, `"method": "DELETE"`)
-		assert.Contains(t, updated2.Config, `"url": "http://localhost:9876"`)
 	})
 
 	t.Run("Should conditionally update job config by ID", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "update-cond-lmao-by-id",
 			State:  "{}",
@@ -163,7 +154,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated0, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
+		updated0, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateJobArgs{
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
@@ -172,10 +163,8 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated0.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-id", updated0.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
-		assert.Contains(t, updated0.Config, `"method": "GET"`)
-		assert.Contains(t, updated0.Config, `"url": "http://localhost:1234"`)
 
-		updated1, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
+		updated1, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateJobArgs{
 			URL: ptrstring("http://localhost:9876"),
 		})
 
@@ -184,10 +173,8 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated1.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-id", updated1.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
-		assert.Contains(t, updated1.Config, `"method": "GET"`)
-		assert.Contains(t, updated1.Config, `"url": "http://localhost:9876"`)
 
-		updated2, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateHTTPJobArgs{
+		updated2, err := resolver.Mutation().UpdateJobByID(context.Background(), strconv.FormatInt(job.ID, 10), &model.UpdateJobArgs{
 			Method: ptrstring("DELETE"),
 		})
 
@@ -196,12 +183,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", updated2.RunAt)
 		assert.Equal(t, "update-cond-lmao-by-id", updated2.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated2.State.String)
-		assert.Contains(t, updated2.Config, `"method": "DELETE"`)
-		assert.Contains(t, updated2.Config, `"url": "http://localhost:9876"`)
 	})
 
 	t.Run("Should delete job by name", func(t *testing.T) {
-		_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "delete-lmao-by-name",
 			State:  "{}",
@@ -218,7 +203,7 @@ func TestJobResolvers(t *testing.T) {
 	})
 
 	t.Run("Should delete job by ID", func(t *testing.T) {
-		_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "delete-lmao-by-id",
 			State:  "{}",
@@ -235,7 +220,7 @@ func TestJobResolvers(t *testing.T) {
 	})
 
 	t.Run("Should query job by ID", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "query-lmao-by-id",
 			State:  "{}",
@@ -252,11 +237,10 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", queried.RunAt)
 		assert.Equal(t, "query-lmao-by-id", queried.Name.String)
 		assert.Equal(t, `{}`, queried.State.String)
-		assert.Contains(t, queried.Config, `"method":"GET"`)
 	})
 
 	t.Run("Should query job by name", func(t *testing.T) {
-		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+		job, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 			RunAt:  "@weekly",
 			Name:   "query-lmao-by-name",
 			State:  "{}",
@@ -273,12 +257,11 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", queried.RunAt)
 		assert.Equal(t, "query-lmao-by-name", queried.Name.String)
 		assert.Equal(t, `{}`, queried.State.String)
-		assert.Contains(t, queried.Config, `"method":"GET"`)
 	})
 
 	t.Run("Should search jobs", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateHTTPJobArgs{
+			_, err := resolver.Mutation().CreateJob(context.Background(), &model.CreateJobArgs{
 				RunAt:  "@weekly",
 				Name:   fmt.Sprintf("search-%d", i),
 				State:  "{}",

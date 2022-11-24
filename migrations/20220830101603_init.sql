@@ -89,9 +89,6 @@ create table tiny.job
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data
     state            text,
-    -- config is not encrypted as it holds info for the
-    -- worker on how to perform the job
-    config           text not null default '{}',
     executor         text not null
 );
 
