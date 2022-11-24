@@ -4,28 +4,38 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	_ "net/http/pprof"
 	"runtime/pprof"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/go-chi/chi/v5"
 	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/sqlc"
 	"github.com/pyroscope-io/client/pyroscope"
 )
 
 func main() {
-	db, err := pgxpool.Connect(context.Background(), "postgres://postgres:password@localhost:5435/postgres")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	tiny := tinyq.NewTinyQ(tinyq.Config{
-		Db:            db,
+	tiny, err := tinyq.NewClient(tinyq.Config{
+		Dsn:           "postgres://postgres:password@localhost:5435/postgres",
 		FlushInterval: 1 * time.Second,
 		PollInterval:  1 * time.Second,
-		MaxInFlight:   1000,
-		Executors:     map[string]tinyq.Executor{},
+		MaxInFlight:   100,
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	transport := &http.Transport{
+		MaxIdleConns:        10, // global number of idle conns
+		MaxIdleConnsPerHost: 5,  // subset of MaxIdleConns, per-host
+		// declare a conn idle after 10 seconds. too low and conns are recycled too much, too high and conns aren't recycled enough
+		IdleConnTimeout: 10 * time.Second,
+		// DisableKeepAlives: true, // this means create a new connection per request. not recommended
+	}
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}
 
 	// Profiling
 	_, err = pyroscope.Start(pyroscope.Config{
@@ -37,34 +47,50 @@ func main() {
 		log.Fatalf("error starting pyroscope profiler: %v", err)
 	}
 
-	pyroscope.TagWrapper(context.Background(), pyroscope.Labels("fetching", "jobs"), func(c context.Context) {
-		go func() {
-			batchN := 0
-			for {
-				batchN++
+	// go func() {
+	// 	for {
+	// 		time.Sleep(100 * time.Millisecond)
+	// 		fmt.Println("creating jobs")
 
-				t0 := time.Now()
-				fmt.Println("BATCH", batchN)
-				result, err := tiny.Fetch()
-				if result != nil {
-					fmt.Println("Fetched:", len(result))
-				}
-				if err != nil {
-					fmt.Println("Error:", err)
-				}
+	// 		for i := 0; i < 1000; i++ {
+	// 			_, err := tiny.CreateJob("admin", model.CreateJobArgs{
+	// 				RunAt: "@after 1s",
+	// 				State: `http://localhost:8081/counter`,
+	// 			})
+	// 			if err != nil {
+	// 				log.Fatal(err)
+	// 			}
+	// 		}
+	// 	}
+	// }()
 
-				for _, job := range result {
-					// profiler
-					go func(j sqlc.TinyJob) {
-						pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
-							tiny.Process(ctx, j)
-						})
-					}(job)
-				}
-				fmt.Println("Elapsed:", time.Now().Sub(t0))
+	go func() {
+		pyroscope.TagWrapper(context.Background(), pyroscope.Labels("fetching", "jobs"), func(c context.Context) {
+			jobs, _ := tiny.Fetch("admin")
+			fmt.Println("============ FETCHING =============")
+
+			for job := range jobs {
+				fmt.Println("fetching job:", job.ID)
+				// profiler
+				go func(j tinyq.Job) {
+					pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
+						_, err := httpClient.Get(j.State.String)
+						if err != nil {
+							log.Println("failed to execute:", j.ID, err)
+							j.Fail()
+							return
+						}
+						j.Commit()
+					})
+				}(job)
 			}
-		}()
-	})
+		})
+	}()
 
-	tiny.Listen()
+	router := chi.NewRouter()
+
+	router.Handle("/*", tiny.Handler())
+
+	fmt.Println("======= LISTENING ON :1234 =======")
+	http.ListenAndServe(":1234", router)
 }

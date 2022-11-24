@@ -15,9 +15,7 @@ func ExecutorSetterMiddleware(next http.Handler) http.Handler {
 		// TODO: naming? should be `subscriber`?
 		executor := r.Header.Get("x-executor")
 		if executor == "" {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			w.Write([]byte(http.StatusText(http.StatusUnprocessableEntity)))
-			return
+			executor = "default"
 		}
 
 		ctx := NewCtx(r.Context(), executor)

@@ -1,4 +1,4 @@
-package client
+package tinyq
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/lucagez/tinyq/sqlc"
 )
 
-var processedCh chan Job
+var processedCh = make(chan Job)
 
 type Client struct {
 	resolver       graph.Resolver
@@ -36,6 +36,9 @@ type Config struct {
 	ExecutorSetter func(http.Handler) http.Handler
 }
 
+// TODO: There should be alway a global job that make sure
+// that tasks that exceed timeouts get cleared and set back to READY.
+// -> this behavior should be configurable?
 func NewClient(cfg Config) (Client, error) {
 	db, err := pgxpool.Connect(context.Background(), cfg.Dsn)
 	if err != nil {
@@ -74,6 +77,8 @@ func (t *Client) DecreaseInFlight() {
 	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
 }
 
+// TODO: Should optimize `flush` behavior. It currently
+// weights for 80% of total ram
 func (t *Client) flush(ctx context.Context, executorName string) {
 	var commitBatch []int64
 	var failBatch []int64
@@ -159,8 +164,8 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 	}()
 
 	return ch, func() {
-		cancel()
 		close(ch)
+		cancel()
 	}
 }
 
