@@ -248,6 +248,9 @@ func TestSchema(t *testing.T) {
 			{Expr: "*/5 * * * *"},
 			{Expr: "*/4 * 3 * *"},
 			{Expr: "*/4 * */3 * *"},
+			{Expr: "0 0,12 1 */2 *"},
+			{Expr: "0 4 8-14 * *"},
+			{Expr: "23 0-20/2 * * *"},
 			{Expr: "5 4 * * *"},
 			{Expr: "5 0 * * MON"},
 			{Expr: "5 0 * 8 MON"},
@@ -299,9 +302,20 @@ func TestSchema(t *testing.T) {
 			}
 			return parsed
 		}
+		cronNextRuns := func(from time.Time, expr string) time.Time {
+			p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			scheduler, err := p.Parse(expr)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return scheduler.Next(from)
+		}
 		jobs := []IsDue{
 			{Expr: "* * * * *", LastRunAt: time.Now(), By: time.Now(), Due: false},
 			{Expr: "* * * * *", LastRunAt: time.Now().Add(-1 * time.Minute), By: time.Now(), Due: true},
+			{Expr: "15 14 1 * *", LastRunAt: time.Now().Add(-10000 * time.Hour), By: cronNextRuns(time.Now(), "15 14 1 * *"), Due: true},
+			// going back for 2 weeks approx
+			{Expr: "*/5 * * * MON", LastRunAt: time.Now().Add(-300 * time.Hour), By: cronNextRuns(time.Now(), "*/5 * * * MON"), Due: true},
 			{Expr: "@every 10 minutes", LastRunAt: time.Now().Add(-5 * time.Minute), By: time.Now(), Due: false},
 			{Expr: "@every 10 minutes", LastRunAt: time.Now().Add(-10 * time.Minute), By: time.Now(), Due: true},
 			{Expr: "@after 18 hours", LastRunAt: time.Now().Add(-5 * time.Hour), By: time.Now(), Due: false},
@@ -329,6 +343,7 @@ func TestSchema(t *testing.T) {
 			rows, err := db.Query(context.Background(), `
 				select tiny.is_due($1, $2, $3)
 			`, job.Expr, job.LastRunAt, job.By)
+			assert.Nil(t, err)
 
 			var result bool
 			err = pgxscan.ScanOne(&result, rows)

@@ -56,9 +56,7 @@ begin
                             else false
                    end
                when tiny.crontab(cron)
-                   and cronexp.match(by, cron)
-                   -- can't be more granular than minute for cron jobs
-                   and date_trunc('minute', last_run_at) < date_trunc('minute', by)
+                   and timetable.next_run(last_run_at, by + '10 mins', cron) < by
                    then true
                else false
         end;

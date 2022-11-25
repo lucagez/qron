@@ -211,6 +211,14 @@ create or replace function timetable.is_cron_in_time(
         timetable.cron_split_to_arrays(run_at) a
 $$ language sql;
 
+create or replace function timetable.next_run(
+    from_ts timestamptz,
+    to_ts timestamptz,
+    cron text
+) returns timestamptz as $$
+  select * from timetable.cron_runs(from_ts, to_ts, cron) limit 1
+$$ language sql strict;
+
 
 -- +goose StatementEnd
 
