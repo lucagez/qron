@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"

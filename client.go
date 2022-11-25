@@ -2,6 +2,7 @@ package tinyq
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -11,17 +12,21 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
+	"github.com/lucagez/tinyq/migrations"
 	"github.com/lucagez/tinyq/sqlc"
+	"github.com/pressly/goose/v3"
 )
 
 var processedCh = make(chan Job)
 
 type Client struct {
 	resolver       graph.Resolver
+	dsn            string
 	MaxInFlight    uint64
 	FlushInterval  time.Duration
 	PollInterval   time.Duration
@@ -62,6 +67,7 @@ func NewClient(cfg Config) (Client, error) {
 
 	return Client{
 		resolver:       resolver,
+		dsn:            cfg.Dsn,
 		MaxInFlight:    cfg.MaxInFlight,
 		FlushInterval:  cfg.FlushInterval,
 		PollInterval:   cfg.PollInterval,
@@ -238,6 +244,18 @@ func (c *Client) QueryJobByID(executorName string, id int64) (sqlc.TinyJob, erro
 		executor.NewCtx(context.Background(), executorName),
 		id,
 	)
+}
+
+func (c *Client) Migrate() error {
+	goose.SetDialect("postgres")
+	goose.SetBaseFS(migrations.MigrationsFS)
+
+	migrationClient, err := sql.Open("pgx", c.dsn)
+	if err != nil {
+		return err
+	}
+
+	return goose.Up(migrationClient, ".")
 }
 
 type Job struct {

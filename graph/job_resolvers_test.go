@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
-	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/lucagez/tinyq/executor"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
