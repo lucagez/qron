@@ -11,7 +11,6 @@ import (
 // - Start working on SDK 👈 🎉
 // - graphql-generator with graphql-request
 // - create class wrapper so to get fluent config
-// - 🚨 cron jobs should keep track of past 🚨
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
