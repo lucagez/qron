@@ -228,6 +228,42 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 	return i, err
 }
 
+const nextRuns = `-- name: NextRuns :one
+select date_part('year', runs) as year,
+  date_part('month', runs) as month,
+  date_part('day', runs) as day,
+  date_part('minute', runs) as min,
+  date_part('dow', runs) as dow 
+from timetable.cron_runs(
+  now(),
+  -- anyway max interval
+  now() + '1 year'::interval, 
+  $1::text
+) as runs 
+limit 1
+`
+
+type NextRunsRow struct {
+	Year  float64
+	Month float64
+	Day   float64
+	Min   float64
+	Dow   float64
+}
+
+func (q *Queries) NextRuns(ctx context.Context, expr string) (NextRunsRow, error) {
+	row := q.db.QueryRow(ctx, nextRuns, expr)
+	var i NextRunsRow
+	err := row.Scan(
+		&i.Year,
+		&i.Month,
+		&i.Day,
+		&i.Min,
+		&i.Dow,
+	)
+	return i, err
+}
+
 const searchJobs = `-- name: SearchJobs :many
 select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
 where (name like concat($4::text, '%')

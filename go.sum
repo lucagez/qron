@@ -203,6 +203,8 @@ github.com/pressly/goose/v3 v3.6.1/go.mod h1:fpaav/TpxygOn1+OAdzwswN2NbvadBOktQp
 github.com/pyroscope-io/client v0.3.0 h1:H+1pvKpdMOESX9jYuJKbO0+7yWY7aQNjIKuQ2rpnZIY=
 github.com/pyroscope-io/client v0.3.0/go.mod h1:zRdQXIGxy0H2QbKEkCmZBR6KOLLIFYLWsdzVI0MRm2E=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 h1:OdAsTTz6OkFY5QxjkYwrChwuRruF69c169dPK26NUlk=
+github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
+github.com/robfig/cron/v3 v3.0.1/go.mod h1:eQICP3HwyT7UooqI/z+Ov+PtYAWygg1TEWWzGIFLtro=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=

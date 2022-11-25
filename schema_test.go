@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
+	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,6 +22,8 @@ type SchemaTest struct {
 func TestSchema(t *testing.T) {
 	db, cleanup := testutil.PG.CreateDb("schema_assertions")
 	defer cleanup()
+
+	queries := sqlc.New(db)
 
 	t.Run("Should create job tables", func(t *testing.T) {
 		rows, err := db.Query(context.Background(), `
@@ -225,12 +229,59 @@ func TestSchema(t *testing.T) {
 			rows, err := db.Query(context.Background(), `
 				select cronexp.match($1, $2)
 			`, job.Ts, job.Expr)
+			assert.Nil(t, err)
 
 			var result bool
 			err = pgxscan.ScanOne(&result, rows)
 
 			assert.Nil(t, err)
 			assert.Equal(t, job.Match, result, job.Expr, job.Ts.String())
+		}
+	})
+
+	t.Run("Should calculate next execution time", func(t *testing.T) {
+		type IsMatch struct {
+			Expr string
+		}
+		jobs := []IsMatch{
+			{Expr: "* * * * *"},
+			{Expr: "*/5 * * * *"},
+			{Expr: "*/4 * 3 * *"},
+			{Expr: "*/4 * */3 * *"},
+			{Expr: "5 4 * * *"},
+			{Expr: "5 0 * * MON"},
+			{Expr: "5 0 * 8 MON"},
+			{Expr: "5 0 * AUG MON"},
+			{Expr: "5 0 * AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * APR-AUG SUN"},
+			{Expr: "* * * * MON-TUE"},
+			{Expr: "* * * * MON-TUE"},
+			{Expr: "* * * * MON-TUE"},
+			{Expr: "5 0 * 8 *"},
+			{Expr: "5 0 * AUG *"},
+			{Expr: "5 0 * FEB *"},
+		}
+
+		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+		for _, job := range jobs {
+			schedule, err := p.Parse(job.Expr)
+			assert.Nil(t, err)
+
+			nextRun := schedule.Next(time.Now())
+
+			calculatedRun, err := queries.NextRuns(context.Background(), job.Expr)
+
+			assert.Nil(t, err)
+			assert.Equal(t, nextRun.Year(), int(calculatedRun.Year), job.Expr)
+			assert.Equal(t, nextRun.Month(), time.Month(calculatedRun.Month), job.Expr)
+			assert.Equal(t, nextRun.Day(), int(calculatedRun.Day), job.Expr)
+			assert.Equal(t, nextRun.Minute(), int(calculatedRun.Min), job.Expr)
+			assert.Equal(t, nextRun.Weekday(), time.Weekday(calculatedRun.Dow), job.Expr)
 		}
 	})
 

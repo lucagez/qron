@@ -17,6 +17,13 @@ directive @goTag(
 
 type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
+  name: String
+  run_at: String!
+  last_run_at: Time
+  created_at: Time!
+  executor: String!
+  state: String
+  status: String!
 }
 
 input CreateJobArgs {

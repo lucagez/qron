@@ -9,11 +9,10 @@ create or replace function tiny.crontab(expr text)
 $$
 declare
     c text := '^(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) +){4}(((\d+,)+\d+|(\d+(\/|-)\d+)|(\*(\/|-)\d+)|\d+|\*) ?)$';
---     c text := '^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5})';
 begin
     return case
                when expr ~ c then true
-        -- TODO: terrible but keeps monster regex complexity low for now
+               -- TODO: terrible but keeps monster regex complexity low for now
                when expr ~ 'MON|TUE|WED|THU|FRI|SAT|SUN' then true
                when expr ~ 'JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC' then true
                else false
@@ -24,7 +23,7 @@ $$ language 'plpgsql' immutable;
 -- last run default should be creation date
 create or replace function tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
     returns boolean as
-$CODE$
+$code$
 begin
     return case
                when substr(cron, 1, 6) in ('@every', '@after')
@@ -64,7 +63,7 @@ begin
                else false
         end;
 end;
-$CODE$
+$code$
     strict
     language plpgsql;
 

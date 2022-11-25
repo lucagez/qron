@@ -89,3 +89,17 @@ from (
 ) as due_jobs
 where due_jobs.id = updated_jobs.id
 returning updated_jobs.*;
+
+-- name: NextRuns :one
+select date_part('year', runs) as year,
+  date_part('month', runs) as month,
+  date_part('day', runs) as day,
+  date_part('minute', runs) as min,
+  date_part('dow', runs) as dow 
+from timetable.cron_runs(
+  now(),
+  -- anyway max interval
+  now() + '1 year'::interval, 
+  sqlc.arg('expr')::text
+) as runs 
+limit 1;

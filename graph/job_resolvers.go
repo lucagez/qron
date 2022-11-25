@@ -204,11 +204,37 @@ func (r *queryResolver) QueryJobByID(ctx context.Context, id int64) (sqlc.TinyJo
 	})
 }
 
+// Name is the resolver for the Name field.
+func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
+	// TODO: might panic
+	return &obj.Name.String, nil
+}
+
+// LastRunAt is the resolver for the last_run_at field.
+func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error) {
+	return &obj.LastRunAt.Time, nil
+}
+
+// State is the resolver for the state field.
+func (r *tinyJobResolver) State(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
+	// TODO: might panic
+	return &obj.State.String, nil
+}
+
+// Status is the resolver for the status field.
+func (r *tinyJobResolver) Status(ctx context.Context, obj *sqlc.TinyJob) (string, error) {
+	return string(obj.Status), nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// TinyJob returns generated.TinyJobResolver implementation.
+func (r *Resolver) TinyJob() generated.TinyJobResolver { return &tinyJobResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type tinyJobResolver struct{ *Resolver }
