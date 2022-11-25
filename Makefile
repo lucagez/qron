@@ -21,3 +21,4 @@ recreate_local_env:
 	@docker compose up -d
 	@sleep 1
 	@make migrate_up
+	@echo "Done 🎉"
