@@ -3,8 +3,10 @@ package tinyq
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -123,18 +125,21 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			if err != nil {
 				log.Println(err)
 			}
+			commitBatch = []int64{}
 		}
 		if len(failBatch) > 0 {
 			_, err := t.resolver.Mutation().FailJobs(executor.NewCtx(ctx, executorName), failBatch)
 			if err != nil {
 				log.Println(err)
 			}
+			failBatch = []int64{}
 		}
 		if len(retryBatch) > 0 {
 			_, err := t.resolver.Mutation().RetryJobs(executor.NewCtx(ctx, executorName), retryBatch)
 			if err != nil {
 				log.Println(err)
 			}
+			retryBatch = []int64{}
 		}
 	}
 }
@@ -162,6 +167,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 					// TODO: how to handle err?
 					log.Println(err)
 				}
+				fmt.Println("fetched jobs:", len(jobs))
 				for _, job := range jobs {
 					ch <- Job{job}
 				}
@@ -262,8 +268,16 @@ type Job struct {
 	sqlc.TinyJob
 }
 
+// RIPARTIRE QUI!<--
+// - Perche last_run_at cambia? out of order?
+// - Update `execution_amount` on every update
 func (j Job) Commit() {
-	j.Status = sqlc.TinyStatusSUCCESS
+	if strings.HasPrefix(j.RunAt, "@at") {
+		j.Status = sqlc.TinyStatusSUCCESS
+	} else {
+		// Else is cron. Should be ready to be picked up again
+		j.Status = sqlc.TinyStatusREADY
+	}
 	processedCh <- j
 }
 

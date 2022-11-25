@@ -67,7 +67,8 @@ update tiny.job
 set last_run_at = $1,
   -- TODO: update
   state = $2,
-  status = $3
+  status = $3,
+  execution_amount = execution_amount + 1
 where id = $4
 and executor = $5; 
 

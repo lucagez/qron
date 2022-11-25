@@ -56,8 +56,9 @@ begin
                             else false
                    end
                when tiny.crontab(cron)
-                   and timetable.next_run(last_run_at, by + '10 mins', cron) < by
-                   then true
+                  -- can't be more granular than minute for cron jobs
+                  and now() - timetable.next_run(last_run_at, by + '10 mins', cron) > '60 second'::interval
+                  then true
                else false
         end;
 end;
