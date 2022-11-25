@@ -3,7 +3,6 @@ package tinyq
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -167,7 +166,6 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 					// TODO: how to handle err?
 					log.Println(err)
 				}
-				fmt.Println("fetched jobs:", len(jobs))
 				for _, job := range jobs {
 					ch <- Job{job}
 				}
