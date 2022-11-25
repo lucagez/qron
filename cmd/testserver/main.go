@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lucagez/tinyq"
+	"github.com/lucagez/tinyq/graph/model"
 	"github.com/pyroscope-io/client/pyroscope"
 )
 
@@ -47,22 +48,22 @@ func main() {
 		log.Fatalf("error starting pyroscope profiler: %v", err)
 	}
 
-	// go func() {
-	// 	for {
-	// 		time.Sleep(100 * time.Millisecond)
-	// 		fmt.Println("creating jobs")
+	go func() {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			fmt.Println("creating jobs")
 
-	// 		for i := 0; i < 1000; i++ {
-	// 			_, err := tiny.CreateJob("admin", model.CreateJobArgs{
-	// 				RunAt: "@after 1s",
-	// 				State: `http://localhost:8081/counter`,
-	// 			})
-	// 			if err != nil {
-	// 				log.Fatal(err)
-	// 			}
-	// 		}
-	// 	}
-	// }()
+			for i := 0; i < 1000; i++ {
+				_, err := tiny.CreateJob("admin", model.CreateJobArgs{
+					RunAt: "@after 1s",
+					State: `http://localhost:8081/counter`,
+				})
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+	}()
 
 	go func() {
 		pyroscope.TagWrapper(context.Background(), pyroscope.Labels("fetching", "jobs"), func(c context.Context) {
