@@ -157,6 +157,12 @@ create table tiny.job
 (
     id               bigserial primary key,
     run_at           text not null,
+    -- RIPARTIRE QUI!<---
+    -- - Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
+    -- - `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
+    --    👆 Should be updated automatically on each insertion
+    -- - FetchDueJobs should just compare on `next_run_at`
+    next_run_at      timestamptz not null default (custom function),
     -- TODO: Should `name` ever be null??
     name             text,
     last_run_at      timestamptz,
