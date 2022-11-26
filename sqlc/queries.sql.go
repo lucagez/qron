@@ -237,8 +237,6 @@ select date_part('year', runs) as year,
   date_part('dow', runs) as dow 
 from tiny.cron_next_run(
   $1::timestamptz,
-  0,
-  0, 
   $2::text
 ) as runs
 `

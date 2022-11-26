@@ -20,11 +20,11 @@ begin
 end
 $$ language 'plpgsql' immutable;
 
-create or replace function tiny.cron_next_run(
+create or replace function tiny.cron_next_run_wrap(
 	from_ts timestamptz,
 	page int,
 	h_page int,
-    expr text
+  expr text
 ) returns timestamptz as $$
 declare
 	day_ts timestamptz;
@@ -79,7 +79,7 @@ begin
    	offset h_page;
    
    	if hour_ts is null then
-   		return tiny.cron_next_run(day_ts, page+1, h_page, expr);
+   		return tiny.cron_next_run_wrap(day_ts, page+1, h_page, expr);
    	end if;
 
 	-- Find minute
@@ -89,7 +89,7 @@ begin
    	and array [date_part('minute', ts)::int] <@ minute_fields;
    
    	if min_ts is null then
-   		return tiny.cron_next_run(hour_ts, page, h_page+1, expr);
+   		return tiny.cron_next_run_wrap(hour_ts, page, h_page+1, expr);
    	end if;
    
    	-- TODO: Tweak.. still some minor bugs
@@ -98,6 +98,14 @@ begin
 end;
 $$ language plpgsql strict;
 
+create or replace function tiny.cron_next_run(
+	from_ts timestamptz,
+  	expr text
+) returns timestamptz as $$
+begin
+	return tiny.cron_next_run_wrap(from_ts, 0, 0, expr);
+end;
+$$ language plpgsql strict;
 
 -- last run default should be creation date
 create or replace function tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
@@ -136,7 +144,7 @@ begin
                    end
                when tiny.crontab(cron)
                   -- can't be more granular than minute for cron jobs
-                  and date_trunc('minute', now()) - tiny.cron_next_run(last_run_at, 0, 0, cron) >= '1 minute'::interval
+                  and date_trunc('minute', now()) - tiny.cron_next_run(last_run_at, cron) >= '1 minute'::interval
                   then true
                else false
         end;

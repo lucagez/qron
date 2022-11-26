@@ -99,7 +99,5 @@ select date_part('year', runs) as year,
   date_part('dow', runs) as dow 
 from tiny.cron_next_run(
   sqlc.arg('from')::timestamptz,
-  0,
-  0, 
   sqlc.arg('expr')::text
 ) as runs;
