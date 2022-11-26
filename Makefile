@@ -1,15 +1,17 @@
-.PHONY: test generate migrate_up recreate_local_env 
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env 
 
 test: 
 	@echo "Running TinyQ tests..."
 	@go test ./...
 
-generate:
-	@echo "Generating sqlc queries..."
-	@docker run --rm -v $(shell pwd):/src -w /src kjconroy/sqlc generate
+gqlgen:
 	@echo "Generating gqlgen graph..."
 	@rm -rf ./graph/generated
 	@go generate ./...
+
+sqlc:
+	@echo "Generating sqlc queries..."
+	@docker run --rm -v $(shell pwd):/src -w /src kjconroy/sqlc generate
 
 migrate_up:
 	@echo "Migrate local db..."

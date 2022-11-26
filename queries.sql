@@ -97,10 +97,9 @@ select date_part('year', runs) as year,
   date_part('day', runs) as day,
   date_part('minute', runs) as min,
   date_part('dow', runs) as dow 
-from timetable.cron_runs(
-  now(),
-  -- anyway max interval
-  now() + '1 year'::interval, 
+from tiny.cron_next_run(
+  sqlc.arg('from')::timestamptz,
+  0,
+  0, 
   sqlc.arg('expr')::text
-) as runs 
-limit 1;
+) as runs;

@@ -266,9 +266,6 @@ type Job struct {
 	sqlc.TinyJob
 }
 
-// RIPARTIRE QUI!<--
-// - Perche last_run_at cambia? out of order?
-// - Update `execution_amount` on every update
 func (j Job) Commit() {
 	if strings.HasPrefix(j.RunAt, "@at") {
 		j.Status = sqlc.TinyStatusSUCCESS

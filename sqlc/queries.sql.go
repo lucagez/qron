@@ -8,6 +8,7 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createJob = `-- name: CreateJob :one
@@ -234,14 +235,18 @@ select date_part('year', runs) as year,
   date_part('day', runs) as day,
   date_part('minute', runs) as min,
   date_part('dow', runs) as dow 
-from timetable.cron_runs(
-  now(),
-  -- anyway max interval
-  now() + '1 year'::interval, 
-  $1::text
-) as runs 
-limit 1
+from tiny.cron_next_run(
+  $1::timestamptz,
+  0,
+  0, 
+  $2::text
+) as runs
 `
+
+type NextRunsParams struct {
+	From time.Time
+	Expr string
+}
 
 type NextRunsRow struct {
 	Year  float64
@@ -251,8 +256,8 @@ type NextRunsRow struct {
 	Dow   float64
 }
 
-func (q *Queries) NextRuns(ctx context.Context, expr string) (NextRunsRow, error) {
-	row := q.db.QueryRow(ctx, nextRuns, expr)
+func (q *Queries) NextRuns(ctx context.Context, arg NextRunsParams) (NextRunsRow, error) {
+	row := q.db.QueryRow(ctx, nextRuns, arg.From, arg.Expr)
 	var i NextRunsRow
 	err := row.Scan(
 		&i.Year,

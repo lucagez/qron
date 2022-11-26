@@ -268,6 +268,9 @@ func TestSchema(t *testing.T) {
 			{Expr: "5 0 * 8 *"},
 			{Expr: "5 0 * AUG *"},
 			{Expr: "5 0 * FEB *"},
+			{Expr: "1 9 * OCT MON"},
+			{Expr: "1 9 * JAN TUE"},
+			{Expr: "1 9 21 MAR *"},
 		}
 
 		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
@@ -277,7 +280,10 @@ func TestSchema(t *testing.T) {
 
 			nextRun := schedule.Next(time.Now())
 
-			calculatedRun, err := queries.NextRuns(context.Background(), job.Expr)
+			calculatedRun, err := queries.NextRuns(context.Background(), sqlc.NextRunsParams{
+				From: time.Now(),
+				Expr: job.Expr,
+			})
 
 			assert.Nil(t, err)
 			assert.Equal(t, nextRun.Year(), int(calculatedRun.Year), job.Expr)
@@ -312,7 +318,7 @@ func TestSchema(t *testing.T) {
 		}
 		jobs := []IsDue{
 			{Expr: "* * * * *", LastRunAt: time.Now(), By: time.Now(), Due: false},
-			{Expr: "* * * * *", LastRunAt: time.Now().Add(-1 * time.Minute), By: time.Now(), Due: true},
+			{Expr: "* * * * *", LastRunAt: time.Now().Add(-2 * time.Minute), By: time.Now(), Due: true},
 			{Expr: "15 14 1 * *", LastRunAt: time.Now().Add(-10000 * time.Hour), By: cronNextRuns(time.Now(), "15 14 1 * *"), Due: true},
 			// going back for 2 weeks approx
 			{Expr: "*/5 * * * MON", LastRunAt: time.Now().Add(-300 * time.Hour), By: cronNextRuns(time.Now(), "*/5 * * * MON"), Due: true},
