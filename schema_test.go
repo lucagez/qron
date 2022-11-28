@@ -271,6 +271,8 @@ func TestSchema(t *testing.T) {
 			{Expr: "1 9 * OCT MON"},
 			{Expr: "1 9 * JAN TUE"},
 			{Expr: "1 9 21 MAR *"},
+			{Expr: "23 1-20/2 * * *"},
+			{Expr: "1-16/5 * * * *"},
 		}
 
 		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)

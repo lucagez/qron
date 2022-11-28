@@ -42,7 +42,7 @@ declare
 begin
 	groups = regexp_split_to_array(trim(expr), '\s+');
   if array_length(groups, 1) != 5 then
-      raise exception 'invalid parameter "exp": five space-separated fields expected';
+    raise exception 'invalid parameter "exp": five space-separated fields expected';
   end if;
   
   minute_fields := cronexp.expand_field(groups[1], 0, 59);
@@ -70,7 +70,7 @@ begin
     return day_ts;
   end if;
 
--- Find hour
+  -- Find hour
   select ts into hour_ts
   from pg_catalog.generate_series(day_ts, day_ts + '1 day'::interval, '1 hour'::interval) as ts
   where ts >= date_trunc('hour', from_ts)
@@ -81,20 +81,11 @@ begin
   limit 1
   offset h_page;
   
-  -- raise notice '===================';
-  -- raise notice 'selected day: %s', day_ts;
-  -- raise notice 'from_ts: %s', from_ts;
-  -- raise notice 'hour fields: %s', hour_fields;
-  -- raise notice 'dow fields: %s', dow_fields;
-  -- raise notice 'selected ts: %s', hour_ts;
-  
   if hour_ts is null then
-    -- raise notice 'Searching into next day';
-    -- raise notice '===================';
     return tiny.cron_next_run_wrap(day_ts, page+1, h_page, expr);
   end if;
 
--- Find minute
+  -- Find minute
   select ts into min_ts
   from pg_catalog.generate_series(hour_ts, hour_ts + '1 hour'::interval, '1 minute'::interval) as ts
   where ts > date_trunc('minute', from_ts)
@@ -104,15 +95,9 @@ begin
   and array [date_part('hour', ts)::int] <@ hour_fields
   and array [date_part('minute', ts)::int] <@ minute_fields;
   
-  -- raise notice 'selected min_ts: %s', min_ts;
-  
   if min_ts is null then
-    -- raise notice 'Minute not found. Searching into next hour';
-    -- raise notice '===================';
     return tiny.cron_next_run_wrap(hour_ts, page, h_page+1, expr);
   end if;
-  
-  -- TODO: Tweak.. still some minor bugs
   
 	return min_ts;
 end;
