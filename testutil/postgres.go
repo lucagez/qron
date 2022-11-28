@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/lucagez/tinyq/migrations"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/pressly/goose/v3"
-	"log"
-	"time"
 )
 
 type PgFactory struct {

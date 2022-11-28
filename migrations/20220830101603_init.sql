@@ -33,67 +33,87 @@ declare
 	ts_parts int[];
 	groups text[];
 	field_min int[] := '{ 0,  0,  1,  1, 0}';
-    field_max int[] := '{59, 23, 31, 12, 7}';
-   	day_fields int[];
-   	month_fields int[];
-   	dow_fields int[];
-   	hour_fields int[];
-   	minute_fields int[];
+  field_max int[] := '{59, 23, 31, 12, 7}';
+  day_fields int[];
+  month_fields int[];
+  dow_fields int[];
+  hour_fields int[];
+  minute_fields int[];
 begin
 	groups = regexp_split_to_array(trim(expr), '\s+');
-    if array_length(groups, 1) != 5 then
-        raise exception 'invalid parameter "exp": five space-separated fields expected';
-    end if;
-   
-   	minute_fields := cronexp.expand_field(groups[1], 0, 59);
-   	hour_fields := cronexp.expand_field(groups[2], 0, 23);
-   	day_fields := cronexp.expand_field(groups[3], 1, 31);
-   	month_fields := cronexp.expand_field(groups[4], 1, 12);
-   	dow_fields := cronexp.expand_field(groups[5], 0, 7);
-   
-   	if array [7] <@ dow_fields then
-      dow_fields := array [0] || dow_fields;
-    end if;
-   
-   	-- Find month, day and dow
-   	select ts into day_ts
-   	from pg_catalog.generate_series(date_trunc('day', from_ts), date_trunc('day', from_ts) + '1 year'::interval, '1 day'::interval) as ts
-   	where ts >= date_trunc('day', from_ts)
-   	and array [date_part('day', ts)::int] <@ day_fields
-   	and array [date_part('month', ts)::int] <@ month_fields
-   	and array [date_part('dow', ts)::int] <@ dow_fields
-   	limit 1
-   	offset page;
-   
-   	if day_ts is null then
-   		-- result is out of bounds
-   		return day_ts;
-   	end if;
+  if array_length(groups, 1) != 5 then
+      raise exception 'invalid parameter "exp": five space-separated fields expected';
+  end if;
+  
+  minute_fields := cronexp.expand_field(groups[1], 0, 59);
+  hour_fields := cronexp.expand_field(groups[2], 0, 23);
+  day_fields := cronexp.expand_field(groups[3], 1, 31);
+  month_fields := cronexp.expand_field(groups[4], 1, 12);
+  dow_fields := cronexp.expand_field(groups[5], 0, 7);
+  
+  if array [7] <@ dow_fields then
+    dow_fields := array [0] || dow_fields;
+  end if;
+  
+  -- Find month, day and dow
+  select ts into day_ts
+  from pg_catalog.generate_series(date_trunc('day', from_ts), date_trunc('day', from_ts) + '1 year'::interval, '1 day'::interval) as ts
+  where ts >= date_trunc('day', from_ts)
+  and array [date_part('day', ts)::int] <@ day_fields
+  and array [date_part('month', ts)::int] <@ month_fields
+  and array [date_part('dow', ts)::int] <@ dow_fields
+  limit 1
+  offset page;
+  
+  if day_ts is null then
+    -- result is out of bounds
+    return day_ts;
+  end if;
 
-	-- Find hour
-   	select ts into hour_ts
-   	from pg_catalog.generate_series(day_ts, day_ts + '1 day'::interval, '1 hour'::interval) as ts
-   	where ts >= date_trunc('hour', from_ts)
-   	and array [date_part('hour', ts)::int] <@ hour_fields
-   	limit 1
-   	offset h_page;
-   
-   	if hour_ts is null then
-   		return tiny.cron_next_run_wrap(day_ts, page+1, h_page, expr);
-   	end if;
+-- Find hour
+  select ts into hour_ts
+  from pg_catalog.generate_series(day_ts, day_ts + '1 day'::interval, '1 hour'::interval) as ts
+  where ts >= date_trunc('hour', from_ts)
+  and array [date_part('day', ts)::int] <@ day_fields
+  and array [date_part('month', ts)::int] <@ month_fields
+  and array [date_part('dow', ts)::int] <@ dow_fields
+  and array [date_part('hour', ts)::int] <@ hour_fields
+  limit 1
+  offset h_page;
+  
+  -- raise notice '===================';
+  -- raise notice 'selected day: %s', day_ts;
+  -- raise notice 'from_ts: %s', from_ts;
+  -- raise notice 'hour fields: %s', hour_fields;
+  -- raise notice 'dow fields: %s', dow_fields;
+  -- raise notice 'selected ts: %s', hour_ts;
+  
+  if hour_ts is null then
+    -- raise notice 'Searching into next day';
+    -- raise notice '===================';
+    return tiny.cron_next_run_wrap(day_ts, page+1, h_page, expr);
+  end if;
 
-	-- Find minute
-   	select ts into min_ts
-   	from pg_catalog.generate_series(hour_ts, hour_ts + '1 hour'::interval, '1 minute'::interval) as ts
-   	where ts > date_trunc('minute', from_ts)
-   	and array [date_part('minute', ts)::int] <@ minute_fields;
-   
-   	if min_ts is null then
-   		return tiny.cron_next_run_wrap(hour_ts, page, h_page+1, expr);
-   	end if;
-   
-   	-- TODO: Tweak.. still some minor bugs
-   
+-- Find minute
+  select ts into min_ts
+  from pg_catalog.generate_series(hour_ts, hour_ts + '1 hour'::interval, '1 minute'::interval) as ts
+  where ts > date_trunc('minute', from_ts)
+  and array [date_part('day', ts)::int] <@ day_fields
+  and array [date_part('month', ts)::int] <@ month_fields
+  and array [date_part('dow', ts)::int] <@ dow_fields
+  and array [date_part('hour', ts)::int] <@ hour_fields
+  and array [date_part('minute', ts)::int] <@ minute_fields;
+  
+  -- raise notice 'selected min_ts: %s', min_ts;
+  
+  if min_ts is null then
+    -- raise notice 'Minute not found. Searching into next hour';
+    -- raise notice '===================';
+    return tiny.cron_next_run_wrap(hour_ts, page, h_page+1, expr);
+  end if;
+  
+  -- TODO: Tweak.. still some minor bugs
+  
 	return min_ts;
 end;
 $$ language plpgsql strict;
@@ -158,11 +178,16 @@ create table tiny.job
     id               bigserial primary key,
     run_at           text not null,
     -- RIPARTIRE QUI!<---
-    -- - Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
-    -- - `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
+    -- [] Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
+    -- [] `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
     --    👆 Should be updated automatically on each insertion
-    -- - FetchDueJobs should just compare on `next_run_at`
-    next_run_at      timestamptz not null default (custom function),
+    -- [] FetchDueJobs should just compare on `next_run_at`
+    -- [] refactor signatures (make consistent)
+    -- [] rename run_at to `expr`
+    -- [] move tiny functions to separate migration
+    -- [] should truncate by time unit to avoid future drifting?
+    -- next_run_at      timestamptz not null default (custom function),
+
     -- TODO: Should `name` ever be null??
     name             text,
     last_run_at      timestamptz,
