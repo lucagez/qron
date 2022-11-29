@@ -95,7 +95,7 @@ func TestClient(t *testing.T) {
 		jobs, close := client.Fetch("flush")
 
 		go func() {
-			<-time.After(500 * time.Millisecond)
+			<-time.After(550 * time.Millisecond)
 			close()
 		}()
 
@@ -143,8 +143,6 @@ func TestClient(t *testing.T) {
 			// Jobs are never committed
 		}
 
-		// RIPARTIRE QUI!<---
-		// - reset timeout jobs does not work
 		all, err := client.SearchJobs("timeout", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
@@ -157,6 +155,17 @@ func TestClient(t *testing.T) {
 			assert.Greater(t, 1, int(job.ExecutionAmount))
 		}
 		assert.Equal(t, 100, counter)
+	})
+
+	t.Run("Should calculate next execution based on start time", func(t *testing.T) {
+		startAt := time.Now().Add(1 * time.Second)
+		j, _ := client.CreateJob("delayed_start", model.CreateJobArgs{
+			Expr:    "@after 100ms",
+			Name:    "test",
+			StartAt: &startAt,
+		})
+
+		assert.Equal(t, j.RunAt.Time.Sub(startAt).Milliseconds(), int64(100))
 	})
 
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {

@@ -22,12 +22,19 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 	if args.Timeout != nil {
 		timeout = int32(*args.Timeout)
 	}
+
+	startAt := time.Now()
+	if args.StartAt != nil {
+		startAt = *args.StartAt
+	}
+
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		Expr:     args.Expr,
 		Name:     sql.NullString{String: args.Name, Valid: true},
 		State:    sql.NullString{String: args.State, Valid: true},
 		Executor: executor.FromCtx(ctx),
 		Timeout:  sql.NullInt32{Valid: true, Int32: timeout},
+		StartAt:  startAt,
 	})
 }
 

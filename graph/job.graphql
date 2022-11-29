@@ -33,6 +33,7 @@ input CreateJobArgs {
   name: String!
   state: String!
   timeout: Int
+  start_at: Time
 }
 
 input UpdateJobArgs {

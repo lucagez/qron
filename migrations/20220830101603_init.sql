@@ -196,12 +196,14 @@ create table tiny.job
 
     -- TODO: should truncate by time unit to avoid future drifting?
     run_at           timestamptz,
+    last_run_at      timestamptz,
+    created_at       timestamptz not null default now(),
+    start_at         timestamptz not null default now(),
+
+    execution_amount integer     not null default 0,
 
     -- TODO: Should `name` ever be null??
     name             text,
-    last_run_at      timestamptz,
-    created_at       timestamptz not null default now(),
-    execution_amount integer     not null default 0,
     
     -- timeout in seconds
     timeout          integer,

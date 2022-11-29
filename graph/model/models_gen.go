@@ -2,11 +2,16 @@
 
 package model
 
+import (
+	"time"
+)
+
 type CreateJobArgs struct {
-	Expr    string `json:"expr"`
-	Name    string `json:"name"`
-	State   string `json:"state"`
-	Timeout *int   `json:"timeout"`
+	Expr    string     `json:"expr"`
+	Name    string     `json:"name"`
+	State   string     `json:"state"`
+	Timeout *int       `json:"timeout"`
+	StartAt *time.Time `json:"start_at"`
 }
 
 type QueryJobsArgs struct {

@@ -441,6 +441,7 @@ input CreateJobArgs {
   name: String!
   state: String!
   timeout: Int
+  start_at: Time
 }
 
 input UpdateJobArgs {
@@ -3932,7 +3933,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "name", "state", "timeout"}
+	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3968,6 +3969,14 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeout"))
 			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "start_at":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start_at"))
+			it.StartAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}

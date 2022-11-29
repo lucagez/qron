@@ -59,10 +59,11 @@ type TinyJob struct {
 	ID              int64
 	Expr            string
 	RunAt           sql.NullTime
-	Name            sql.NullString
 	LastRunAt       sql.NullTime
 	CreatedAt       time.Time
+	StartAt         time.Time
 	ExecutionAmount int32
+	Name            sql.NullString
 	Timeout         sql.NullInt32
 	Status          TinyStatus
 	State           sql.NullString
