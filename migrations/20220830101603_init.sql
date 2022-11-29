@@ -193,14 +193,6 @@ create table tiny.job
 (
     id               bigserial primary key,
     expr             text not null,
-    -- RIPARTIRE QUI!<---
-    -- [✅] Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
-    -- [✅] `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
-    --    👆 Should be updated automatically on each insertion
-    -- [✅] FetchDueJobs should just compare on `next_run_at`
-    -- [✅] refactor signatures (make consistent)
-    -- [✅] rename run_at to `expr`
-    -- [] move tiny functions to separate migration
 
     -- TODO: should truncate by time unit to avoid future drifting?
     run_at           timestamptz,
