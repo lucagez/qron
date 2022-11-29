@@ -125,7 +125,6 @@ from (
   select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
   from tiny.job j
   where j.run_at < now()
-  -- where tiny.is_due(j.run_at, coalesce(j.last_run_at, j.created_at), now())
   and j.status = 'READY'
   and j.executor = $2 
   -- worker limit

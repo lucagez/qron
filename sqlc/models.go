@@ -62,7 +62,7 @@ type TinyJob struct {
 	Name            sql.NullString
 	LastRunAt       sql.NullTime
 	CreatedAt       time.Time
-	ExecutionAmount sql.NullInt32
+	ExecutionAmount int32
 	Timeout         sql.NullInt32
 	Status          TinyStatus
 	State           sql.NullString

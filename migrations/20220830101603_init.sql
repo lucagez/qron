@@ -208,7 +208,7 @@ create table tiny.job
     name             text,
     last_run_at      timestamptz,
     created_at       timestamptz not null default now(),
-    execution_amount integer              default 0,
+    execution_amount integer     not null default 0,
     timeout          integer              default 0,
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never

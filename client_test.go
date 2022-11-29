@@ -34,14 +34,12 @@ func TestClient(t *testing.T) {
 			})
 		}
 
-		time.Sleep(100 * time.Second)
-
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
 		jobs, close := client.Fetch("backup")
 
 		go func() {
-			<-time.After(200 * time.Millisecond)
+			<-time.After(300 * time.Millisecond)
 			close()
 		}()
 
@@ -79,6 +77,44 @@ func TestClient(t *testing.T) {
 		assert.Equal(t, 9, fail)
 	})
 
+	t.Run("Should flush", func(t *testing.T) {
+		for i := 0; i < 2; i++ {
+			client.CreateJob("flush", model.CreateJobArgs{
+				Expr: "@every 100ms",
+				Name: "test",
+			})
+		}
+
+		// TODO: Probably not the best api for closing?
+		// TODO: Should close anyway when main client is closed
+		jobs, close := client.Fetch("flush")
+
+		go func() {
+			<-time.After(500 * time.Millisecond)
+			close()
+		}()
+
+		counter := 0
+		for job := range jobs {
+			counter += 1
+			job.Commit()
+		}
+
+		all, err := client.SearchJobs("flush", model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "test",
+		})
+		assert.Nil(t, err)
+
+		for _, job := range all {
+			assert.Equal(t, 4, int(job.ExecutionAmount))
+		}
+
+		// 2 jobs executed 4 times
+		assert.Equal(t, 8, counter)
+	})
+
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {
 		_, cleanup := testutil.PG.CreateDb("no_overlaps")
 		defer cleanup()
@@ -90,7 +126,7 @@ func TestClient(t *testing.T) {
 			Dsn:           dsn,
 			FlushInterval: 10 * time.Millisecond,
 			PollInterval:  10 * time.Millisecond,
-			MaxInFlight:   5, // so to maximize change of getting concurrent reads
+			MaxInFlight:   5, // so to maximize chance of getting concurrent reads
 		})
 		q1, err1 := NewClient(Config{
 			Dsn:           dsn,
@@ -110,8 +146,6 @@ func TestClient(t *testing.T) {
 			})
 			assert.Nil(t, err)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 
 		// check that jobs are not fetched twice
 		var q0jobs []Job
@@ -154,7 +188,6 @@ func TestClient(t *testing.T) {
 			}
 		}
 
-		assert.Len(t, q0jobs, 50)
-		assert.Len(t, q1jobs, 50)
+		assert.Equal(t, len(q0jobs)+len(q1jobs), 100)
 	})
 }
