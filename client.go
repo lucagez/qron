@@ -3,7 +3,6 @@ package tinyq
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -98,7 +97,7 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		select {
 		case <-ctx.Done():
-			fmt.Println("CLOSING!")
+			// time.Sleep(10 * time.Millisecond)
 			return
 		case <-ticker.C:
 			shouldFlush = true
@@ -122,7 +121,6 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		// TODO: Handle failed commits + flush errors
 		if len(commitBatch) > 0 {
-			fmt.Println("SENDING")
 			_, err := t.resolver.Mutation().CommitJobs(executor.NewCtx(ctx, executorName), commitBatch)
 			if err != nil {
 				log.Println(err)
@@ -130,7 +128,6 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			commitBatch = []int64{}
 		}
 		if len(failBatch) > 0 {
-			fmt.Println("SENDING")
 			_, err := t.resolver.Mutation().FailJobs(executor.NewCtx(ctx, executorName), failBatch)
 			if err != nil {
 				log.Println(err)
@@ -138,7 +135,6 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			failBatch = []int64{}
 		}
 		if len(retryBatch) > 0 {
-			fmt.Println("SENDING")
 			_, err := t.resolver.Mutation().RetryJobs(executor.NewCtx(ctx, executorName), retryBatch)
 			if err != nil {
 				log.Println(err)
@@ -162,7 +158,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("CLOSING FETCH")
+				// BUG: sometimes it panics when closing channel (send to closed channel)
 				return
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
