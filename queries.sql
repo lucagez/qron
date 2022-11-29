@@ -14,8 +14,13 @@ limit 1;
 
 -- name: UpdateJobByName :one
 update tiny.job
-set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
-  state = coalesce(nullif(sqlc.arg('state'), ''), state)
+set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
+  state = coalesce(nullif(sqlc.arg('state'), ''), state),
+  -- `run_at` should always be consistent
+  run_at = tiny.next(
+    coalesce(last_run_at, created_at), 
+    coalesce(nullif(sqlc.arg('expr'), ''), expr)
+  )
 where name = $1
 and executor = $2 
 returning *;
@@ -24,8 +29,13 @@ returning *;
 
 -- name: UpdateJobByID :one
 update tiny.job
-set run_at = coalesce(nullif(sqlc.arg('run_at'), ''), run_at),
-  state = coalesce(nullif(sqlc.arg('state'), ''), state)
+set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
+  state = coalesce(nullif(sqlc.arg('state'), ''), state),
+  -- `run_at` should always be consistent
+  run_at = tiny.next(
+    coalesce(last_run_at, created_at), 
+    coalesce(nullif(sqlc.arg('expr'), ''), expr)
+  )
 where id = $1
 and executor = $2 
 returning *;
@@ -43,13 +53,14 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(run_at, name, state, status, executor)
+insert into tiny.job(expr, name, state, status, executor, run_at)
 values (
   $1,
   $2,
   $3,
   'READY',
-  $4
+  $4,
+  tiny.next(now(), $1)
 )
 returning *;
 
@@ -68,7 +79,8 @@ set last_run_at = $1,
   -- TODO: update
   state = $2,
   status = $3,
-  execution_amount = execution_amount + 1
+  execution_amount = execution_amount + 1,
+  run_at = tiny.next($1, expr)
 where id = $4
 and executor = $5; 
 
@@ -81,7 +93,7 @@ set status = 'PENDING',
 from (
   select *
   from tiny.job j
-  where tiny.is_due(j.run_at, coalesce(j.last_run_at, j.created_at), now())
+  where j.run_at < now()
   and j.status = 'READY'
   and j.executor = sqlc.arg('executor') 
   -- worker limit
@@ -101,3 +113,10 @@ from tiny.cron_next_run(
   sqlc.arg('from')::timestamptz,
   sqlc.arg('expr')::text
 ) as runs;
+
+-- name: Next :one
+select run_at::timestamptz
+from tiny.next(
+  sqlc.arg('from')::timestamptz,
+  sqlc.arg('expr')::text
+) as run_at;

@@ -55,7 +55,7 @@ func main() {
 
 			for i := 0; i < 1000; i++ {
 				_, err := tiny.CreateJob("admin", model.CreateJobArgs{
-					RunAt: "@after 1s",
+					Expr:  "@after 1s",
 					State: `http://localhost:8081/counter`,
 				})
 				if err != nil {

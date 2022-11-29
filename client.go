@@ -267,7 +267,7 @@ type Job struct {
 }
 
 func (j Job) Commit() {
-	if strings.HasPrefix(j.RunAt, "@at") {
+	if strings.HasPrefix(j.Expr, "@at") || strings.HasPrefix(j.Expr, "@after") {
 		j.Status = sqlc.TinyStatusSUCCESS
 	} else {
 		// Else is cron. Should be ready to be picked up again

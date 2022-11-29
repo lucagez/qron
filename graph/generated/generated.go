@@ -68,6 +68,7 @@ type ComplexityRoot struct {
 	TinyJob struct {
 		CreatedAt func(childComplexity int) int
 		Executor  func(childComplexity int) int
+		Expr      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		LastRunAt func(childComplexity int) int
 		Name      func(childComplexity int) int
@@ -275,6 +276,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TinyJob.Executor(childComplexity), true
 
+	case "TinyJob.expr":
+		if e.complexity.TinyJob.Expr == nil {
+			break
+		}
+
+		return e.complexity.TinyJob.Expr(childComplexity), true
+
 	case "TinyJob.id":
 		if e.complexity.TinyJob.ID == nil {
 			break
@@ -408,7 +416,8 @@ directive @goTag(
 type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
   name: String
-  run_at: String!
+  expr: String!
+  run_at: Time!
   last_run_at: Time
   created_at: Time!
   executor: String!
@@ -417,13 +426,13 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
 }
 
 input CreateJobArgs {
-  run_at: String!
+  expr: String!
   name: String!
   state: String!
 }
 
 input UpdateJobArgs {
-  run_at: String
+  expr: String
   state: String
 }
 
@@ -758,6 +767,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -831,6 +842,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -904,6 +917,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Cont
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -977,6 +992,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1050,6 +1067,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Cont
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1123,6 +1142,8 @@ func (ec *executionContext) fieldContext_Mutation_fetchForProcessing(ctx context
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1361,6 +1382,8 @@ func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, f
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1434,6 +1457,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Contex
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1507,6 +1532,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context,
 				return ec.fieldContext_TinyJob_id(ctx, field)
 			case "name":
 				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
 			case "run_at":
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
@@ -1751,6 +1778,50 @@ func (ec *executionContext) fieldContext_TinyJob_name(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _TinyJob_expr(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TinyJob_expr(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TinyJob_expr(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TinyJob",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TinyJob_run_at(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TinyJob_run_at(ctx, field)
 	if err != nil {
@@ -1777,9 +1848,9 @@ func (ec *executionContext) _TinyJob_run_at(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TinyJob_run_at(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1789,7 +1860,7 @@ func (ec *executionContext) fieldContext_TinyJob_run_at(ctx context.Context, fie
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3789,18 +3860,18 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"run_at", "name", "state"}
+	fieldsInOrder := [...]string{"expr", "name", "state"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "run_at":
+		case "expr":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("run_at"))
-			it.RunAt, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expr"))
+			it.Expr, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3884,18 +3955,18 @@ func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"run_at", "state"}
+	fieldsInOrder := [...]string{"expr", "state"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "run_at":
+		case "expr":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("run_at"))
-			it.RunAt, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expr"))
+			it.Expr, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4177,6 +4248,13 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
+		case "expr":
+
+			out.Values[i] = ec._TinyJob_expr(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "run_at":
 
 			out.Values[i] = ec._TinyJob_run_at(ctx, field, obj)

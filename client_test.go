@@ -29,19 +29,19 @@ func TestClient(t *testing.T) {
 	t.Run("Should fetch", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			client.CreateJob("backup", model.CreateJobArgs{
-				RunAt: "@after 1s",
-				Name:  "test",
+				Expr: "@after 100ms",
+				Name: "test",
 			})
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Second)
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
 		jobs, close := client.Fetch("backup")
 
 		go func() {
-			<-time.After(1 * time.Second)
+			<-time.After(200 * time.Millisecond)
 			close()
 		}()
 
@@ -105,8 +105,8 @@ func TestClient(t *testing.T) {
 
 		for i := 0; i < 100; i++ {
 			_, err := q0.CreateJob("other-executor", model.CreateJobArgs{
-				RunAt: "@after 100ms",
-				Name:  "test",
+				Expr: "@after 100ms",
+				Name: "test",
 			})
 			assert.Nil(t, err)
 		}
@@ -123,7 +123,7 @@ func TestClient(t *testing.T) {
 			defer wg.Done()
 			ch, close := q0.Fetch("other-executor")
 			go func() {
-				<-time.After(1 * time.Second)
+				<-time.After(100 * time.Millisecond)
 				close()
 			}()
 

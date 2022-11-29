@@ -57,7 +57,8 @@ func (ns NullTinyStatus) Value() (driver.Value, error) {
 
 type TinyJob struct {
 	ID              int64
-	RunAt           string
+	Expr            string
+	RunAt           sql.NullTime
 	Name            sql.NullString
 	LastRunAt       sql.NullTime
 	CreatedAt       time.Time

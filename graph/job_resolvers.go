@@ -19,7 +19,7 @@ import (
 // CreateJob is the resolver for the createJob field.
 func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
-		RunAt:    args.RunAt,
+		Expr:     args.Expr,
 		Name:     sql.NullString{String: args.Name, Valid: true},
 		State:    sql.NullString{String: args.State, Valid: true},
 		Executor: executor.FromCtx(ctx),
@@ -32,8 +32,8 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 		Name:     sql.NullString{String: name, Valid: true},
 		Executor: executor.FromCtx(ctx),
 	}
-	if args.RunAt != nil {
-		params.RunAt = args.RunAt
+	if args.Expr != nil {
+		params.Expr = args.Expr
 	}
 	if args.State != nil {
 		params.State = args.State
@@ -47,8 +47,8 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args mod
 		ID:       id,
 		Executor: executor.FromCtx(ctx),
 	}
-	if args.RunAt != nil {
-		params.RunAt = args.RunAt
+	if args.Expr != nil {
+		params.Expr = args.Expr
 	}
 	if args.State != nil {
 		params.State = args.State

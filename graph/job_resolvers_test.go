@@ -44,61 +44,61 @@ func TestJobResolvers(t *testing.T) {
 
 	t.Run("Should create job", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "lmao",
 			State: "{}",
 		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "lmao"))
-		assert.Equal(t, "@weekly", job.RunAt)
+		assert.Equal(t, "@weekly", job.Expr)
 		assert.Equal(t, "lmao", job.Name.String)
 		assert.Equal(t, "{}", job.State.String)
 	})
 
 	t.Run("Should update job by ID", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "update-lmao",
 			State: "{}",
 		})
 		assert.Nil(t, err)
 
 		updated, err := resolver.Mutation().UpdateJobByID(ctx, job.ID, model.UpdateJobArgs{
-			RunAt: ptrstring("@yearly"),
+			Expr:  ptrstring("@yearly"),
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-lmao"))
-		assert.Equal(t, "@yearly", updated.RunAt)
+		assert.Equal(t, "@yearly", updated.Expr)
 		assert.Equal(t, "update-lmao", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
 	})
 
 	t.Run("Should update job by name", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "update-lmao-by-name",
 			State: "{}",
 		})
 		assert.Nil(t, err)
 
 		updated, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{
-			RunAt: ptrstring("@yearly"),
+			Expr:  ptrstring("@yearly"),
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-lmao-by-name"))
-		assert.Equal(t, "@yearly", updated.RunAt)
+		assert.Equal(t, "@yearly", updated.Expr)
 		assert.Equal(t, "update-lmao-by-name", updated.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
 	})
 
 	t.Run("Should conditionally update job config by name", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "update-cond-lmao-by-name",
 			State: "{}",
 		})
@@ -110,7 +110,7 @@ func TestJobResolvers(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
-		assert.Equal(t, "@weekly", updated0.RunAt)
+		assert.Equal(t, "@weekly", updated0.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
 
@@ -118,7 +118,7 @@ func TestJobResolvers(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
-		assert.Equal(t, "@weekly", updated1.RunAt)
+		assert.Equal(t, "@weekly", updated1.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
 
@@ -128,14 +128,14 @@ func TestJobResolvers(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
-		assert.Equal(t, "@weekly", updated2.RunAt)
+		assert.Equal(t, "@weekly", updated2.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
 		assert.Equal(t, `{"hello":"world2"}`, updated2.State.String)
 	})
 
 	t.Run("Should delete job by name", func(t *testing.T) {
 		_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "delete-lmao-by-name",
 			State: "{}",
 		})
@@ -150,7 +150,7 @@ func TestJobResolvers(t *testing.T) {
 
 	t.Run("Should delete job by ID", func(t *testing.T) {
 		_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "delete-lmao-by-id",
 			State: "{}",
 		})
@@ -165,7 +165,7 @@ func TestJobResolvers(t *testing.T) {
 
 	t.Run("Should query job by ID", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "query-lmao-by-id",
 			State: "{}",
 		})
@@ -176,14 +176,14 @@ func TestJobResolvers(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-id"))
-		assert.Equal(t, "@weekly", queried.RunAt)
+		assert.Equal(t, "@weekly", queried.Expr)
 		assert.Equal(t, "query-lmao-by-id", queried.Name.String)
 		assert.Equal(t, `{}`, queried.State.String)
 	})
 
 	t.Run("Should query job by name", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-			RunAt: "@weekly",
+			Expr:  "@weekly",
 			Name:  "query-lmao-by-name",
 			State: "{}",
 		})
@@ -194,7 +194,7 @@ func TestJobResolvers(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-name"))
-		assert.Equal(t, "@weekly", queried.RunAt)
+		assert.Equal(t, "@weekly", queried.Expr)
 		assert.Equal(t, "query-lmao-by-name", queried.Name.String)
 		assert.Equal(t, `{}`, queried.State.String)
 	})
@@ -202,7 +202,7 @@ func TestJobResolvers(t *testing.T) {
 	t.Run("Should search jobs", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@weekly",
+				Expr:  "@weekly",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
@@ -247,7 +247,7 @@ func TestProcessing(t *testing.T) {
 	t.Run("Should fetch for processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@after 1 second",
+				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
@@ -320,7 +320,7 @@ func TestConcurrentProcessing(t *testing.T) {
 	t.Run("Should fetch for concurrent processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@after 1 second",
+				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
@@ -382,7 +382,7 @@ func TestCommit(t *testing.T) {
 	t.Run("Should commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@after 1 second",
+				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
@@ -443,7 +443,7 @@ func TestFailure(t *testing.T) {
 	t.Run("Should fail commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@after 1 second",
+				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
@@ -509,7 +509,7 @@ func TestRetry(t *testing.T) {
 	t.Run("Should retry commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			_, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
-				RunAt: "@after 1 second",
+				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})

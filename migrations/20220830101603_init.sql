@@ -158,20 +158,51 @@ $code$
     strict
     language plpgsql;
 
+create or replace function tiny.next(last_run_at timestamptz, cron text)
+    returns timestamptz as
+$code$
+begin
+    return case
+               when substr(cron, 1, 6) in ('@every', '@after')
+                   then (last_run_at + substr(cron, 7)::interval)
+               when substr(cron, 1, 3) = '@at'
+                   then substr(cron, 4)::timestamp
+               when cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+                   then case
+                            when cron in ('@annually', '@yearly')
+                                then (last_run_at + '1 year'::interval)
+                            when cron = '@monthly'
+                                then (last_run_at + '1 month'::interval)
+                            when cron = '@weekly'
+                                then (last_run_at + '1 week'::interval)
+                            when cron = '@daily'
+                                then (last_run_at + '1 day'::interval)
+                            when cron = '@hourly'
+                                then (last_run_at + '1 hour'::interval)
+                            when cron = '@minutely'
+                                then (last_run_at + '1 minute'::interval)
+                   end
+               else tiny.cron_next_run(last_run_at, cron)
+        end;
+end;
+$code$
+    strict
+    language plpgsql;
+
 create table tiny.job
 (
     id               bigserial primary key,
-    run_at           text not null,
+    expr             text not null,
     -- RIPARTIRE QUI!<---
-    -- [] Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
-    -- [] `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
+    -- [✅] Turn tiny.is_due into tiny.next. Should give timestamptz of any cron experssion (@every, * * * * *, ...)
+    -- [✅] `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
     --    👆 Should be updated automatically on each insertion
-    -- [] FetchDueJobs should just compare on `next_run_at`
+    -- [✅] FetchDueJobs should just compare on `next_run_at`
     -- [] refactor signatures (make consistent)
     -- [] rename run_at to `expr`
     -- [] move tiny functions to separate migration
     -- [] should truncate by time unit to avoid future drifting?
-    -- next_run_at      timestamptz not null default (custom function),
+    run_at           timestamptz,
 
     -- TODO: Should `name` ever be null??
     name             text,
@@ -187,10 +218,10 @@ create table tiny.job
 );
 
 alter table tiny.job add constraint run_format check (
-  substr(run_at, 1, 6) in ('@every', '@after') and (substr(run_at, 7)::interval) is not null
-  or run_at ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
-  or substr(run_at, 1, 3) = '@at' and (substr(run_at, 4)::timestamptz) is not null
-  or tiny.crontab(run_at)
+  substr(expr, 1, 6) in ('@every', '@after') and (substr(expr, 7)::interval) is not null
+  or expr ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+  or substr(expr, 1, 3) = '@at' and (substr(expr, 4)::timestamptz) is not null
+  or tiny.crontab(expr)
 );
 
 create index idx_job_name

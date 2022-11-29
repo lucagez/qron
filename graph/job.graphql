@@ -18,7 +18,8 @@ directive @goTag(
 type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   id: ID!
   name: String
-  run_at: String!
+  expr: String!
+  run_at: Time!
   last_run_at: Time
   created_at: Time!
   executor: String!
@@ -27,13 +28,13 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
 }
 
 input CreateJobArgs {
-  run_at: String!
+  expr: String!
   name: String!
   state: String!
 }
 
 input UpdateJobArgs {
-  run_at: String
+  expr: String
   state: String
 }
 

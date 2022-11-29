@@ -19,7 +19,8 @@ set last_run_at = $1,
   -- TODO: update
   state = $2,
   status = $3,
-  execution_amount = execution_amount + 1
+  execution_amount = execution_amount + 1,
+  run_at = tiny.next($1, expr)
 where id = $4
 and executor = $5
 `

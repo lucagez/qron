@@ -12,19 +12,20 @@ import (
 )
 
 const createJob = `-- name: CreateJob :one
-insert into tiny.job(run_at, name, state, status, executor)
+insert into tiny.job(expr, name, state, status, executor, run_at)
 values (
   $1,
   $2,
   $3,
   'READY',
-  $4
+  $4,
+  tiny.next(now(), $1)
 )
-returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
 
 type CreateJobParams struct {
-	RunAt    string
+	Expr     string
 	Name     sql.NullString
 	State    sql.NullString
 	Executor string
@@ -32,7 +33,7 @@ type CreateJobParams struct {
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, createJob,
-		arg.RunAt,
+		arg.Expr,
 		arg.Name,
 		arg.State,
 		arg.Executor,
@@ -40,6 +41,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -57,7 +59,7 @@ const deleteJobByID = `-- name: DeleteJobByID :one
 delete from tiny.job
 where id = $1
 and executor = $2 
-returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
 
 type DeleteJobByIDParams struct {
@@ -70,6 +72,7 @@ func (q *Queries) DeleteJobByID(ctx context.Context, arg DeleteJobByIDParams) (T
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -87,7 +90,7 @@ const deleteJobByName = `-- name: DeleteJobByName :one
 delete from tiny.job
 where name = $1
 and executor = $2 
-returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
 
 type DeleteJobByNameParams struct {
@@ -100,6 +103,7 @@ func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -118,9 +122,10 @@ update tiny.job as updated_jobs
 set status = 'PENDING',
   last_run_at = now()
 from (
-  select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+  select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
   from tiny.job j
-  where tiny.is_due(j.run_at, coalesce(j.last_run_at, j.created_at), now())
+  where j.run_at < now()
+  -- where tiny.is_due(j.run_at, coalesce(j.last_run_at, j.created_at), now())
   and j.status = 'READY'
   and j.executor = $2 
   -- worker limit
@@ -128,7 +133,7 @@ from (
   skip locked
 ) as due_jobs
 where due_jobs.id = updated_jobs.id
-returning updated_jobs.id, updated_jobs.run_at, updated_jobs.name, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.execution_amount, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor
+returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.name, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.execution_amount, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor
 `
 
 type FetchDueJobsParams struct {
@@ -149,6 +154,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 		var i TinyJob
 		if err := rows.Scan(
 			&i.ID,
+			&i.Expr,
 			&i.RunAt,
 			&i.Name,
 			&i.LastRunAt,
@@ -170,7 +176,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 }
 
 const getJobByID = `-- name: GetJobByID :one
-select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
+select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
 where id = $1
 and executor = $2 
 limit 1
@@ -186,6 +192,7 @@ func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -200,7 +207,7 @@ func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob
 }
 
 const getJobByName = `-- name: GetJobByName :one
-select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
+select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
 where name = $1 
 and executor = $2
 limit 1
@@ -216,6 +223,7 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -227,6 +235,26 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 		&i.Executor,
 	)
 	return i, err
+}
+
+const next = `-- name: Next :one
+select run_at::timestamptz
+from tiny.next(
+  $1::timestamptz,
+  $2::text
+) as run_at
+`
+
+type NextParams struct {
+	From time.Time
+	Expr string
+}
+
+func (q *Queries) Next(ctx context.Context, arg NextParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, next, arg.From, arg.Expr)
+	var run_at time.Time
+	err := row.Scan(&run_at)
+	return run_at, err
 }
 
 const nextRuns = `-- name: NextRuns :one
@@ -268,7 +296,7 @@ func (q *Queries) NextRuns(ctx context.Context, arg NextRunsParams) (NextRunsRow
 }
 
 const searchJobs = `-- name: SearchJobs :many
-select id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
+select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
 where (name like concat($4::text, '%')
   or name like concat('%', $4::text))
 and executor = $3 
@@ -300,6 +328,7 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 		var i TinyJob
 		if err := rows.Scan(
 			&i.ID,
+			&i.Expr,
 			&i.RunAt,
 			&i.Name,
 			&i.LastRunAt,
@@ -323,17 +352,22 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 const updateJobByID = `-- name: UpdateJobByID :one
 
 update tiny.job
-set run_at = coalesce(nullif($3, ''), run_at),
-  state = coalesce(nullif($4, ''), state)
+set expr = coalesce(nullif($3, ''), expr),
+  state = coalesce(nullif($4, ''), state),
+  -- ` + "`" + `run_at` + "`" + ` should always be consistent
+  run_at = tiny.next(
+    coalesce(last_run_at, created_at), 
+    coalesce(nullif($3, ''), expr)
+  )
 where id = $1
 and executor = $2 
-returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
 
 type UpdateJobByIDParams struct {
 	ID       int64
 	Executor string
-	RunAt    interface{}
+	Expr     interface{}
 	State    interface{}
 }
 
@@ -342,12 +376,13 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 	row := q.db.QueryRow(ctx, updateJobByID,
 		arg.ID,
 		arg.Executor,
-		arg.RunAt,
+		arg.Expr,
 		arg.State,
 	)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
@@ -364,17 +399,22 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 const updateJobByName = `-- name: UpdateJobByName :one
 
 update tiny.job
-set run_at = coalesce(nullif($3, ''), run_at),
-  state = coalesce(nullif($4, ''), state)
+set expr = coalesce(nullif($3, ''), expr),
+  state = coalesce(nullif($4, ''), state),
+  -- ` + "`" + `run_at` + "`" + ` should always be consistent
+  run_at = tiny.next(
+    coalesce(last_run_at, created_at), 
+    coalesce(nullif($3, ''), expr)
+  )
 where name = $1
 and executor = $2 
-returning id, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
+returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
 
 type UpdateJobByNameParams struct {
 	Name     sql.NullString
 	Executor string
-	RunAt    interface{}
+	Expr     interface{}
 	State    interface{}
 }
 
@@ -383,12 +423,13 @@ func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams
 	row := q.db.QueryRow(ctx, updateJobByName,
 		arg.Name,
 		arg.Executor,
-		arg.RunAt,
+		arg.Expr,
 		arg.State,
 	)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
+		&i.Expr,
 		&i.RunAt,
 		&i.Name,
 		&i.LastRunAt,
