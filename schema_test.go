@@ -350,7 +350,7 @@ func TestSchema(t *testing.T) {
 		for _, job := range jobs {
 			rows, err := db.Query(context.Background(), `
 				select tiny.is_due($1, $2, $3)
-			`, job.Expr, job.LastRunAt, job.By)
+			`, job.LastRunAt, job.By, job.Expr)
 			assert.Nil(t, err)
 
 			var result bool

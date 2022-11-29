@@ -113,43 +113,43 @@ end;
 $$ language plpgsql strict;
 
 -- last run default should be creation date
-create or replace function tiny.is_due(cron text, last_run_at timestamptz, by timestamptz)
+create or replace function tiny.is_due(last_run_at timestamptz, by timestamptz, expr text)
     returns boolean as
 $code$
 begin
     return case
-               when substr(cron, 1, 6) in ('@every', '@after')
-                   and (last_run_at + substr(cron, 7)::interval) <= by
+               when substr(expr, 1, 6) in ('@every', '@after')
+                   and (last_run_at + substr(expr, 7)::interval) <= by
                    then true
-               when substr(cron, 1, 3) = '@at'
-                   and substr(cron, 4)::timestamp <= by
+               when substr(expr, 1, 3) = '@at'
+                   and substr(expr, 4)::timestamp <= by
                    and last_run_at < by
                    then true
-               when cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+               when expr ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
                    then case
-                            when cron in ('@annually', '@yearly')
+                            when expr in ('@annually', '@yearly')
                                 and (last_run_at + '1 year'::interval) <= by
                                 then true
-                            when cron = '@monthly'
+                            when expr = '@monthly'
                                 and (last_run_at + '1 month'::interval) <= by
                                 then true
-                            when cron = '@weekly'
+                            when expr = '@weekly'
                                 and (last_run_at + '1 week'::interval) <= by
                                 then true
-                            when cron = '@daily'
+                            when expr = '@daily'
                                 and (last_run_at + '1 day'::interval) <= by
                                 then true
-                            when cron = '@hourly'
+                            when expr = '@hourly'
                                 and (last_run_at + '1 hour'::interval) <= by
                                 then true
-                            when cron = '@minutely'
+                            when expr = '@minutely'
                                 and (last_run_at + '1 minute'::interval) <= by
                                 then true
                             else false
                    end
-               when tiny.crontab(cron)
+               when tiny.crontab(expr)
                   -- can't be more granular than minute for cron jobs
-                  and date_trunc('minute', now()) - tiny.cron_next_run(last_run_at, cron) >= '1 minute'::interval
+                  and date_trunc('minute', now()) - tiny.cron_next_run(last_run_at, expr) >= '1 minute'::interval
                   then true
                else false
         end;
@@ -158,31 +158,31 @@ $code$
     strict
     language plpgsql;
 
-create or replace function tiny.next(last_run_at timestamptz, cron text)
+create or replace function tiny.next(last_run_at timestamptz, expr text)
     returns timestamptz as
 $code$
 begin
     return case
-               when substr(cron, 1, 6) in ('@every', '@after')
-                   then (last_run_at + substr(cron, 7)::interval)
-               when substr(cron, 1, 3) = '@at'
-                   then substr(cron, 4)::timestamp
-               when cron ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+               when substr(expr, 1, 6) in ('@every', '@after')
+                   then (last_run_at + substr(expr, 7)::interval)
+               when substr(expr, 1, 3) = '@at'
+                   then substr(expr, 4)::timestamp
+               when expr ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
                    then case
-                            when cron in ('@annually', '@yearly')
+                            when expr in ('@annually', '@yearly')
                                 then (last_run_at + '1 year'::interval)
-                            when cron = '@monthly'
+                            when expr = '@monthly'
                                 then (last_run_at + '1 month'::interval)
-                            when cron = '@weekly'
+                            when expr = '@weekly'
                                 then (last_run_at + '1 week'::interval)
-                            when cron = '@daily'
+                            when expr = '@daily'
                                 then (last_run_at + '1 day'::interval)
-                            when cron = '@hourly'
+                            when expr = '@hourly'
                                 then (last_run_at + '1 hour'::interval)
-                            when cron = '@minutely'
+                            when expr = '@minutely'
                                 then (last_run_at + '1 minute'::interval)
                    end
-               else tiny.cron_next_run(last_run_at, cron)
+               else tiny.cron_next_run(last_run_at, expr)
         end;
 end;
 $code$
@@ -198,10 +198,11 @@ create table tiny.job
     -- [✅] `next_run_at` should be 👉 default tiny.next(coalesce(last_run_at, created_at), run_at)
     --    👆 Should be updated automatically on each insertion
     -- [✅] FetchDueJobs should just compare on `next_run_at`
-    -- [] refactor signatures (make consistent)
-    -- [] rename run_at to `expr`
+    -- [✅] refactor signatures (make consistent)
+    -- [✅] rename run_at to `expr`
     -- [] move tiny functions to separate migration
-    -- [] should truncate by time unit to avoid future drifting?
+
+    -- TODO: should truncate by time unit to avoid future drifting?
     run_at           timestamptz,
 
     -- TODO: Should `name` ever be null??
