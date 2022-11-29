@@ -3,9 +3,10 @@
 package model
 
 type CreateJobArgs struct {
-	Expr  string `json:"expr"`
-	Name  string `json:"name"`
-	State string `json:"state"`
+	Expr    string `json:"expr"`
+	Name    string `json:"name"`
+	State   string `json:"state"`
+	Timeout *int   `json:"timeout"`
 }
 
 type QueryJobsArgs struct {
@@ -15,6 +16,7 @@ type QueryJobsArgs struct {
 }
 
 type UpdateJobArgs struct {
-	Expr  *string `json:"expr"`
-	State *string `json:"state"`
+	Expr    *string `json:"expr"`
+	State   *string `json:"state"`
+	Timeout *int    `json:"timeout"`
 }

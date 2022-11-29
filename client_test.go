@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkFetch(b *testing.B) {
+	// TODO: benchmark fetch
+}
+
 func TestClient(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("client_0")
 	defer cleanup()
@@ -21,6 +25,7 @@ func TestClient(t *testing.T) {
 		Dsn:           fmt.Sprintf("postgres://postgres:postgres@localhost:%d/client_0", port),
 		PollInterval:  10 * time.Millisecond,
 		FlushInterval: 10 * time.Millisecond,
+		ResetInterval: 10 * time.Millisecond,
 		MaxInFlight:   5,
 	})
 	assert.Nil(t, err)
@@ -113,6 +118,45 @@ func TestClient(t *testing.T) {
 
 		// 2 jobs executed 4 times
 		assert.Equal(t, 8, counter)
+	})
+
+	t.Run("Should reset jobs after timeout is reached", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			timeout := 1
+			client.CreateJob("timeout", model.CreateJobArgs{
+				Expr:    "@after 100ms",
+				Name:    "test",
+				Timeout: &timeout,
+			})
+		}
+
+		jobs, close := client.Fetch("timeout")
+
+		go func() {
+			<-time.After(1500 * time.Millisecond)
+			close()
+		}()
+
+		counter := 0
+		for range jobs {
+			counter += 1
+			// Jobs are never committed
+		}
+
+		// RIPARTIRE QUI!<---
+		// - reset timeout jobs does not work
+		all, err := client.SearchJobs("timeout", model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "test",
+		})
+		assert.Nil(t, err)
+
+		for _, job := range all {
+			// Jobs are executed again as the timeout exceeded
+			assert.Greater(t, 1, int(job.ExecutionAmount))
+		}
+		assert.Equal(t, 100, counter)
 	})
 
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {

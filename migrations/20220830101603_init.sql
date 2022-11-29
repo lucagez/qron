@@ -202,7 +202,9 @@ create table tiny.job
     last_run_at      timestamptz,
     created_at       timestamptz not null default now(),
     execution_amount integer     not null default 0,
-    timeout          integer              default 0,
+    
+    -- timeout in seconds
+    timeout          integer,
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data

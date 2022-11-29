@@ -16,6 +16,7 @@ limit 1;
 update tiny.job
 set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
   state = coalesce(nullif(sqlc.arg('state'), ''), state),
+  timeout = coalesce(nullif(sqlc.arg('timeout'), 0), timeout),
   -- `run_at` should always be consistent
   run_at = tiny.next(
     coalesce(last_run_at, created_at), 
@@ -31,6 +32,7 @@ returning *;
 update tiny.job
 set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
   state = coalesce(nullif(sqlc.arg('state'), ''), state),
+  timeout = coalesce(nullif(sqlc.arg('timeout'), 0), timeout),
   -- `run_at` should always be consistent
   run_at = tiny.next(
     coalesce(last_run_at, created_at), 
@@ -53,14 +55,15 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout)
 values (
   $1,
   $2,
   $3,
   'READY',
   $4,
-  tiny.next(now(), $1)
+  tiny.next(now(), $1),
+  $5
 )
 returning *;
 
@@ -103,6 +106,15 @@ from (
 where due_jobs.id = updated_jobs.id
 returning updated_jobs.*;
 
+-- name: ResetTimeoutJobs :many
+update tiny.job
+set status = 'READY'
+where timeout is not null
+and timeout > 0
+and now() - last_run_at > make_interval(secs => timeout)
+and executor = $1
+returning id;
+
 -- name: NextRuns :one
 select date_part('year', runs) as year,
   date_part('month', runs) as month,
@@ -120,3 +132,8 @@ from tiny.next(
   sqlc.arg('from')::timestamptz,
   sqlc.arg('expr')::text
 ) as run_at;
+
+-- name: CountJobsInStatus :one
+select count(*) from tiny.job
+where executor = $1
+and status = $2;

@@ -75,6 +75,7 @@ type ComplexityRoot struct {
 		RunAt     func(childComplexity int) int
 		State     func(childComplexity int) int
 		Status    func(childComplexity int) int
+		Timeout   func(childComplexity int) int
 	}
 }
 
@@ -97,7 +98,9 @@ type QueryResolver interface {
 type TinyJobResolver interface {
 	Name(ctx context.Context, obj *sqlc.TinyJob) (*string, error)
 
+	RunAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error)
 	LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error)
+	Timeout(ctx context.Context, obj *sqlc.TinyJob) (*int, error)
 
 	State(ctx context.Context, obj *sqlc.TinyJob) (*string, error)
 	Status(ctx context.Context, obj *sqlc.TinyJob) (string, error)
@@ -325,6 +328,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TinyJob.Status(childComplexity), true
 
+	case "TinyJob.timeout":
+		if e.complexity.TinyJob.Timeout == nil {
+			break
+		}
+
+		return e.complexity.TinyJob.Timeout(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -419,6 +429,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   expr: String!
   run_at: Time!
   last_run_at: Time
+  timeout: Int
   created_at: Time!
   executor: String!
   state: String
@@ -429,11 +440,13 @@ input CreateJobArgs {
   expr: String!
   name: String!
   state: String!
+  timeout: Int
 }
 
 input UpdateJobArgs {
   expr: String
   state: String
+  timeout: Int
 }
 
 type Mutation {
@@ -773,6 +786,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -848,6 +863,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -923,6 +940,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Cont
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -998,6 +1017,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1073,6 +1094,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Cont
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1148,6 +1171,8 @@ func (ec *executionContext) fieldContext_Mutation_fetchForProcessing(ctx context
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1388,6 +1413,8 @@ func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, f
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1463,6 +1490,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Contex
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1538,6 +1567,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context,
 				return ec.fieldContext_TinyJob_run_at(ctx, field)
 			case "last_run_at":
 				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
 			case "created_at":
 				return ec.fieldContext_TinyJob_created_at(ctx, field)
 			case "executor":
@@ -1836,7 +1867,7 @@ func (ec *executionContext) _TinyJob_run_at(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RunAt, nil
+		return ec.resolvers.TinyJob().RunAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1857,8 +1888,8 @@ func (ec *executionContext) fieldContext_TinyJob_run_at(ctx context.Context, fie
 	fc = &graphql.FieldContext{
 		Object:     "TinyJob",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
 		},
@@ -1902,6 +1933,47 @@ func (ec *executionContext) fieldContext_TinyJob_last_run_at(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TinyJob_timeout(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TinyJob_timeout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TinyJob().Timeout(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TinyJob_timeout(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TinyJob",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3860,7 +3932,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "name", "state"}
+	fieldsInOrder := [...]string{"expr", "name", "state", "timeout"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3888,6 +3960,14 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
 			it.State, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeout":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeout"))
+			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3955,7 +4035,7 @@ func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "state"}
+	fieldsInOrder := [...]string{"expr", "state", "timeout"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3975,6 +4055,14 @@ func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("state"))
 			it.State, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeout":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeout"))
+			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4256,12 +4344,25 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "run_at":
+			field := field
 
-			out.Values[i] = ec._TinyJob_run_at(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TinyJob_run_at(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "last_run_at":
 			field := field
 
@@ -4272,6 +4373,23 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._TinyJob_last_run_at(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "timeout":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TinyJob_timeout(ctx, field, obj)
 				return res
 			}
 
@@ -5105,6 +5223,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

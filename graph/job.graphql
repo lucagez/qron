@@ -21,6 +21,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   expr: String!
   run_at: Time!
   last_run_at: Time
+  timeout: Int
   created_at: Time!
   executor: String!
   state: String
@@ -31,11 +32,13 @@ input CreateJobArgs {
   expr: String!
   name: String!
   state: String!
+  timeout: Int
 }
 
 input UpdateJobArgs {
   expr: String
   state: String
+  timeout: Int
 }
 
 type Mutation {

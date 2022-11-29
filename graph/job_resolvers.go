@@ -18,11 +18,16 @@ import (
 
 // CreateJob is the resolver for the createJob field.
 func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobArgs) (sqlc.TinyJob, error) {
+	var timeout int32
+	if args.Timeout != nil {
+		timeout = int32(*args.Timeout)
+	}
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		Expr:     args.Expr,
 		Name:     sql.NullString{String: args.Name, Valid: true},
 		State:    sql.NullString{String: args.State, Valid: true},
 		Executor: executor.FromCtx(ctx),
+		Timeout:  sql.NullInt32{Valid: true, Int32: timeout},
 	})
 }
 
@@ -38,6 +43,9 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 	if args.State != nil {
 		params.State = args.State
 	}
+	if args.Timeout != nil {
+		params.Timeout = args.Timeout
+	}
 	return r.Queries.UpdateJobByName(ctx, params)
 }
 
@@ -52,6 +60,9 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args mod
 	}
 	if args.State != nil {
 		params.State = args.State
+	}
+	if args.Timeout != nil {
+		params.Timeout = args.Timeout
 	}
 	return r.Queries.UpdateJobByID(ctx, params)
 }
@@ -206,13 +217,23 @@ func (r *queryResolver) QueryJobByID(ctx context.Context, id int64) (sqlc.TinyJo
 
 // Name is the resolver for the Name field.
 func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
-	// TODO: might panic
 	return &obj.Name.String, nil
+}
+
+// RunAt is the resolver for the run_at field.
+func (r *tinyJobResolver) RunAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error) {
+	return obj.RunAt.Time, nil
 }
 
 // LastRunAt is the resolver for the last_run_at field.
 func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error) {
 	return &obj.LastRunAt.Time, nil
+}
+
+// Timeout is the resolver for the timeout field.
+func (r *tinyJobResolver) Timeout(ctx context.Context, obj *sqlc.TinyJob) (*int, error) {
+	timeout := int(obj.Timeout.Int32)
+	return &timeout, nil
 }
 
 // State is the resolver for the state field.

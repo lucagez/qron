@@ -23,7 +23,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-var processedCh = make(chan Job)
+// var processedCh = make(chan Job)
 
 type Client struct {
 	resolver       graph.Resolver
@@ -31,7 +31,9 @@ type Client struct {
 	MaxInFlight    uint64
 	FlushInterval  time.Duration
 	PollInterval   time.Duration
+	ResetInterval  time.Duration
 	ExecutorSetter func(http.Handler) http.Handler
+	processedCh    chan Job
 }
 
 type Config struct {
@@ -39,6 +41,7 @@ type Config struct {
 	MaxInFlight    uint64
 	FlushInterval  time.Duration
 	PollInterval   time.Duration
+	ResetInterval  time.Duration
 	ExecutorSetter func(http.Handler) http.Handler
 }
 
@@ -65,6 +68,9 @@ func NewClient(cfg Config) (Client, error) {
 	if cfg.ExecutorSetter == nil {
 		cfg.ExecutorSetter = executor.ExecutorSetterMiddleware
 	}
+	if cfg.ResetInterval == 0 {
+		cfg.ResetInterval = 1 * time.Second
+	}
 
 	return Client{
 		resolver:       resolver,
@@ -73,6 +79,8 @@ func NewClient(cfg Config) (Client, error) {
 		FlushInterval:  cfg.FlushInterval,
 		PollInterval:   cfg.PollInterval,
 		ExecutorSetter: cfg.ExecutorSetter,
+		ResetInterval:  cfg.ResetInterval,
+		processedCh:    make(chan Job),
 	}, nil
 }
 
@@ -82,6 +90,22 @@ func (t *Client) IncreaseInFlight() {
 
 func (t *Client) DecreaseInFlight() {
 	atomic.AddUint64(&t.MaxInFlight, ^uint64(0))
+}
+
+func (t *Client) reset(ctx context.Context, executorName string) {
+	ticker := time.NewTicker(t.ResetInterval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_, err := t.resolver.Queries.ResetTimeoutJobs(context.Background(), executorName)
+			if err != nil {
+				log.Println("error while resetting timed out jobs:", err)
+			}
+		}
+	}
 }
 
 // TODO: Should optimize `flush` behavior. It currently
@@ -101,7 +125,7 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			return
 		case <-ticker.C:
 			shouldFlush = true
-		case job := <-processedCh:
+		case job := <-t.processedCh:
 			switch job.Status {
 			case sqlc.TinyStatusSUCCESS:
 				commitBatch = append(commitBatch, job.ID)
@@ -153,12 +177,12 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 	ch := make(chan Job)
 
 	go c.flush(ctx, executorName)
+	go c.reset(ctx, executorName)
 
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				// BUG: sometimes it panics when closing channel (send to closed channel)
 				return
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
@@ -169,7 +193,10 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 					log.Println(err)
 				}
 				for _, job := range jobs {
-					ch <- Job{job}
+					ch <- Job{
+						job,
+						c.processedCh,
+					}
 				}
 			}
 		}
@@ -266,6 +293,7 @@ func (c *Client) Migrate() error {
 
 type Job struct {
 	sqlc.TinyJob
+	ch chan<- Job
 }
 
 func (j Job) Commit() {
@@ -275,15 +303,15 @@ func (j Job) Commit() {
 		// Else is cron. Should be ready to be picked up again
 		j.Status = sqlc.TinyStatusREADY
 	}
-	processedCh <- j
+	j.ch <- j
 }
 
 func (j Job) Fail() {
 	j.Status = sqlc.TinyStatusFAILURE
-	processedCh <- j
+	j.ch <- j
 }
 
 func (j Job) Retry() {
 	j.Status = sqlc.TinyStatusREADY
-	processedCh <- j
+	j.ch <- j
 }

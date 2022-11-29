@@ -11,15 +11,34 @@ import (
 	"time"
 )
 
+const countJobsInStatus = `-- name: CountJobsInStatus :one
+select count(*) from tiny.job
+where executor = $1
+and status = $2
+`
+
+type CountJobsInStatusParams struct {
+	Executor string
+	Status   TinyStatus
+}
+
+func (q *Queries) CountJobsInStatus(ctx context.Context, arg CountJobsInStatusParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countJobsInStatus, arg.Executor, arg.Status)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createJob = `-- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout)
 values (
   $1,
   $2,
   $3,
   'READY',
   $4,
-  tiny.next(now(), $1)
+  tiny.next(now(), $1),
+  $5
 )
 returning id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor
 `
@@ -29,6 +48,7 @@ type CreateJobParams struct {
 	Name     sql.NullString
 	State    sql.NullString
 	Executor string
+	Timeout  sql.NullInt32
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
@@ -37,6 +57,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		arg.Name,
 		arg.State,
 		arg.Executor,
+		arg.Timeout,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -294,6 +315,36 @@ func (q *Queries) NextRuns(ctx context.Context, arg NextRunsParams) (NextRunsRow
 	return i, err
 }
 
+const resetTimeoutJobs = `-- name: ResetTimeoutJobs :many
+update tiny.job
+set status = 'READY'
+where timeout is not null
+and timeout > 0
+and now() - last_run_at > make_interval(secs => timeout)
+and executor = $1
+returning id
+`
+
+func (q *Queries) ResetTimeoutJobs(ctx context.Context, executor string) ([]int64, error) {
+	rows, err := q.db.Query(ctx, resetTimeoutJobs, executor)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchJobs = `-- name: SearchJobs :many
 select id, expr, run_at, name, last_run_at, created_at, execution_amount, timeout, status, state, executor from tiny.job
 where (name like concat($4::text, '%')
@@ -353,6 +404,7 @@ const updateJobByID = `-- name: UpdateJobByID :one
 update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
+  timeout = coalesce(nullif($5, 0), timeout),
   -- ` + "`" + `run_at` + "`" + ` should always be consistent
   run_at = tiny.next(
     coalesce(last_run_at, created_at), 
@@ -368,6 +420,7 @@ type UpdateJobByIDParams struct {
 	Executor string
 	Expr     interface{}
 	State    interface{}
+	Timeout  interface{}
 }
 
 // TODO: Should refactor usage of `name`
@@ -377,6 +430,7 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 		arg.Executor,
 		arg.Expr,
 		arg.State,
+		arg.Timeout,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -400,6 +454,7 @@ const updateJobByName = `-- name: UpdateJobByName :one
 update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
+  timeout = coalesce(nullif($5, 0), timeout),
   -- ` + "`" + `run_at` + "`" + ` should always be consistent
   run_at = tiny.next(
     coalesce(last_run_at, created_at), 
@@ -415,6 +470,7 @@ type UpdateJobByNameParams struct {
 	Executor string
 	Expr     interface{}
 	State    interface{}
+	Timeout  interface{}
 }
 
 // TODO: Implement search
@@ -424,6 +480,7 @@ func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams
 		arg.Executor,
 		arg.Expr,
 		arg.State,
+		arg.Timeout,
 	)
 	var i TinyJob
 	err := row.Scan(
