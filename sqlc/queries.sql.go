@@ -149,7 +149,7 @@ update tiny.job as updated_jobs
 set status = 'PENDING',
   last_run_at = now()
 from (
-  select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+  select id
   from tiny.job j
   where j.run_at < now()
   and j.status = 'READY'
@@ -167,8 +167,6 @@ type FetchDueJobsParams struct {
 	Executor string
 }
 
-// TODO: Add check for not running ever a job if
-// `last_run_at` happened less than x seconds ago
 func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]TinyJob, error) {
 	rows, err := q.db.Query(ctx, fetchDueJobs, arg.Limit, arg.Executor)
 	if err != nil {

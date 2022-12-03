@@ -95,7 +95,7 @@ func TestClient(t *testing.T) {
 		jobs, close := client.Fetch("flush")
 
 		go func() {
-			<-time.After(550 * time.Millisecond)
+			<-time.After(600 * time.Millisecond)
 			close()
 		}()
 
@@ -113,11 +113,11 @@ func TestClient(t *testing.T) {
 		assert.Nil(t, err)
 
 		for _, job := range all {
-			assert.Equal(t, 4, int(job.ExecutionAmount))
+			assert.Equal(t, 5, int(job.ExecutionAmount))
 		}
 
-		// 2 jobs executed 4 times
-		assert.Equal(t, 8, counter)
+		// 2 jobs executed 5 times
+		assert.Equal(t, 10, counter)
 	})
 
 	t.Run("Should reset jobs after timeout is reached", func(t *testing.T) {

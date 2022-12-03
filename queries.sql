@@ -88,14 +88,12 @@ set last_run_at = $1,
 where id = $4
 and executor = $5; 
 
--- TODO: Add check for not running ever a job if
--- `last_run_at` happened less than x seconds ago
 -- name: FetchDueJobs :many
 update tiny.job as updated_jobs
 set status = 'PENDING',
   last_run_at = now()
 from (
-  select *
+  select id
   from tiny.job j
   where j.run_at < now()
   and j.status = 'READY'
