@@ -2,7 +2,7 @@
 
 test: 
 	@echo "Running TinyQ tests..."
-	@go test ./...
+	@go test ./... -race -count=1
 
 gqlgen:
 	@echo "Generating gqlgen graph..."

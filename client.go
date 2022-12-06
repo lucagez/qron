@@ -121,7 +121,6 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		select {
 		case <-ctx.Done():
-			// time.Sleep(10 * time.Millisecond)
 			return
 		case <-ticker.C:
 			shouldFlush = true
@@ -183,6 +182,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 		for {
 			select {
 			case <-ctx.Done():
+				close(ch)
 				return
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
@@ -202,10 +202,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 		}
 	}()
 
-	return ch, func() {
-		close(ch)
-		cancel()
-	}
+	return ch, cancel
 }
 
 func (c *Client) Handler() http.Handler {
