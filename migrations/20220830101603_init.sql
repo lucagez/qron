@@ -194,6 +194,10 @@ alter table tiny.job add constraint run_format check (
 
 create index idx_job_name
     on tiny.job (name);
+
+create index idx_job_run_at 
+  on tiny.job (run_at);
+
 -- +goose StatementEnd
 
 -- +goose Down
