@@ -20,20 +20,15 @@ begin
 end
 $$ language 'plpgsql' immutable;
 
-create or replace function tiny.cron_next_run_wrap(
+create or replace function tiny.cron_next_run(
 	from_ts timestamptz,
-	page int,
-	h_page int,
-  expr text
+  expr text,
+	page int default 0
 ) returns timestamptz as $$
 declare
 	day_ts timestamptz;
-	hour_ts timestamptz;
-	min_ts timestamptz;
-	ts_parts int[];
+	result timestamptz;
 	groups text[];
-	field_min int[] := '{ 0,  0,  1,  1, 0}';
-  field_max int[] := '{59, 23, 31, 12, 7}';
   day_fields int[];
   month_fields int[];
   dow_fields int[];
@@ -57,7 +52,7 @@ begin
   
   -- Find month, day and dow
   select ts into day_ts
-  from pg_catalog.generate_series(date_trunc('day', from_ts), date_trunc('day', from_ts) + '1 year'::interval, '1 day'::interval) as ts
+  from pg_catalog.generate_series(date_trunc('day', from_ts), date_trunc('day', from_ts) + '5 year'::interval, '1 day'::interval) as ts
   where ts >= date_trunc('day', from_ts)
   and array [date_part('day', ts)::int] <@ day_fields
   and array [date_part('month', ts)::int] <@ month_fields
@@ -70,24 +65,9 @@ begin
     return day_ts;
   end if;
 
-  -- Find hour
-  select ts into hour_ts
-  from pg_catalog.generate_series(day_ts, day_ts + '1 day'::interval, '1 hour'::interval) as ts
-  where ts >= date_trunc('hour', from_ts)
-  and array [date_part('day', ts)::int] <@ day_fields
-  and array [date_part('month', ts)::int] <@ month_fields
-  and array [date_part('dow', ts)::int] <@ dow_fields
-  and array [date_part('hour', ts)::int] <@ hour_fields
-  limit 1
-  offset h_page;
-  
-  if hour_ts is null then
-    return tiny.cron_next_run_wrap(day_ts, page+1, h_page, expr);
-  end if;
-
-  -- Find minute
-  select ts into min_ts
-  from pg_catalog.generate_series(hour_ts, hour_ts + '1 hour'::interval, '1 minute'::interval) as ts
+  -- Find hour and minute
+  select ts into result
+  from pg_catalog.generate_series(day_ts, day_ts + '1 day'::interval, '1 minute'::interval) as ts
   where ts > date_trunc('minute', from_ts)
   and array [date_part('day', ts)::int] <@ day_fields
   and array [date_part('month', ts)::int] <@ month_fields
@@ -95,20 +75,11 @@ begin
   and array [date_part('hour', ts)::int] <@ hour_fields
   and array [date_part('minute', ts)::int] <@ minute_fields;
   
-  if min_ts is null then
-    return tiny.cron_next_run_wrap(hour_ts, page, h_page+1, expr);
+  if result is null then
+    return tiny.cron_next_run(day_ts, expr, page+1);
   end if;
   
-	return min_ts;
-end;
-$$ language plpgsql strict;
-
-create or replace function tiny.cron_next_run(
-	from_ts timestamptz,
-  	expr text
-) returns timestamptz as $$
-begin
-	return tiny.cron_next_run_wrap(from_ts, 0, 0, expr);
+	return result;
 end;
 $$ language plpgsql strict;
 

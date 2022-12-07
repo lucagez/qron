@@ -47,6 +47,8 @@ func NewPgFactory() PgFactory {
 			"POSTGRES_USER=postgres",
 			"POSTGRES_DB=postgres",
 			"listen_addresses='*'",
+			// "TZ='GMT+1'",
+			// "PGTZ='GMT+1'",
 		},
 	}, func(config *docker.HostConfig) {
 		// set AutoRemove to true so that stopped container goes away by itself

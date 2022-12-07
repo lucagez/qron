@@ -80,6 +80,26 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 	return i, err
 }
 
+const cronNextRun = `-- name: CronNextRun :one
+select run_at::timestamptz 
+from tiny.cron_next_run(
+  $1::timestamptz,
+  $2::text
+) as run_at
+`
+
+type CronNextRunParams struct {
+	From time.Time
+	Expr string
+}
+
+func (q *Queries) CronNextRun(ctx context.Context, arg CronNextRunParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, cronNextRun, arg.From, arg.Expr)
+	var run_at time.Time
+	err := row.Scan(&run_at)
+	return run_at, err
+}
+
 const deleteJobByID = `-- name: DeleteJobByID :one
 delete from tiny.job
 where id = $1
@@ -282,44 +302,6 @@ func (q *Queries) Next(ctx context.Context, arg NextParams) (time.Time, error) {
 	var run_at time.Time
 	err := row.Scan(&run_at)
 	return run_at, err
-}
-
-const nextRuns = `-- name: NextRuns :one
-select date_part('year', runs) as year,
-  date_part('month', runs) as month,
-  date_part('day', runs) as day,
-  date_part('minute', runs) as min,
-  date_part('dow', runs) as dow 
-from tiny.cron_next_run(
-  $1::timestamptz,
-  $2::text
-) as runs
-`
-
-type NextRunsParams struct {
-	From time.Time
-	Expr string
-}
-
-type NextRunsRow struct {
-	Year  float64
-	Month float64
-	Day   float64
-	Min   float64
-	Dow   float64
-}
-
-func (q *Queries) NextRuns(ctx context.Context, arg NextRunsParams) (NextRunsRow, error) {
-	row := q.db.QueryRow(ctx, nextRuns, arg.From, arg.Expr)
-	var i NextRunsRow
-	err := row.Scan(
-		&i.Year,
-		&i.Month,
-		&i.Day,
-		&i.Min,
-		&i.Dow,
-	)
-	return i, err
 }
 
 const resetTimeoutJobs = `-- name: ResetTimeoutJobs :many

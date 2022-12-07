@@ -1,8 +1,8 @@
-.PHONY: test gqlgen sqlc migrate_up recreate_local_env 
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local
 
 test: 
 	@echo "Running TinyQ tests..."
-	@go test ./... -race -count=1
+	@TZ=UTC go test ./... -race -count=1
 
 gqlgen:
 	@echo "Generating gqlgen graph..."
@@ -24,3 +24,7 @@ recreate_local_env:
 	@sleep 1
 	@make migrate_up
 	@echo "Done 🎉"
+
+connect_local:
+	@echo "COnnecting to local db..."
+	@psql -d postgres://postgres:password@localhost:5435/postgres

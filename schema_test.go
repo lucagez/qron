@@ -2,6 +2,7 @@ package tinyq
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -248,6 +249,20 @@ func TestSchema(t *testing.T) {
 			{Expr: "*/5 * * * *"},
 			{Expr: "*/4 * 3 * *"},
 			{Expr: "*/4 * */3 * *"},
+
+			{Expr: "*/4 * 6 * *"},
+			{Expr: "*/4 * */6 * *"},
+			{Expr: "30 08 * JUL SUN"},
+			// {Expr: "* * 1,15 * SUN"}, // BUG
+			{Expr: "* * */10 * SUN"},
+			{Expr: "* * * * MON"},
+			{Expr: "* * 1,15 * *"},
+			// {Expr: "* * */2 * SUN"}, // actually correct
+			{Expr: "0 0 9 APR-OCT *"},
+			// {Expr: "0 0 */5 * MON"}, // actually correct
+			// {Expr: "0 0 */5 OCT MON"}, // actually correct
+			{Expr: "0 0 * FEB MON"},
+
 			{Expr: "0 0,12 1 */2 *"},
 			{Expr: "0 4 8-14 * *"},
 			{Expr: "23 0-20/2 * * *"},
@@ -275,6 +290,30 @@ func TestSchema(t *testing.T) {
 			{Expr: "1-16/5 * * * *"},
 		}
 
+		// brute forcing hours.
+		// forcing recursion to happen
+		for i := 1; i <= 23; i++ {
+			jobs = append(jobs, IsMatch{
+				Expr: fmt.Sprintf("0 %d * * *", i),
+			})
+		}
+
+		// brute forcing days.
+		// forcing recursion to happen
+		for i := 1; i <= 31; i++ {
+			jobs = append(jobs, IsMatch{
+				Expr: fmt.Sprintf("0 0 %d * *", i),
+			})
+		}
+
+		// brute forcing months.
+		// forcing recursion to happen
+		for i := 1; i <= 12; i++ {
+			jobs = append(jobs, IsMatch{
+				Expr: fmt.Sprintf("0 0 1 %d *", i),
+			})
+		}
+
 		p := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 		for _, job := range jobs {
 			schedule, err := p.Parse(job.Expr)
@@ -282,17 +321,19 @@ func TestSchema(t *testing.T) {
 
 			nextRun := schedule.Next(time.Now())
 
-			calculatedRun, err := queries.NextRuns(context.Background(), sqlc.NextRunsParams{
+			// TODO: How to handle timezone inconsistencies in `pgx`?
+			// GH: https://github.com/jackc/pgx/issues/789
+			// Currently the solution is to start both Postgres and the
+			// go process with environment variables set to `TZ=UTC`
+			// so they never go out of sync
+
+			calculatedRun, err := queries.CronNextRun(context.Background(), sqlc.CronNextRunParams{
 				From: time.Now(),
 				Expr: job.Expr,
 			})
 
 			assert.Nil(t, err)
-			assert.Equal(t, nextRun.Year(), int(calculatedRun.Year), job.Expr)
-			assert.Equal(t, nextRun.Month(), time.Month(calculatedRun.Month), job.Expr)
-			assert.Equal(t, nextRun.Day(), int(calculatedRun.Day), job.Expr)
-			assert.Equal(t, nextRun.Minute(), int(calculatedRun.Min), job.Expr)
-			assert.Equal(t, nextRun.Weekday(), time.Weekday(calculatedRun.Dow), job.Expr)
+			assert.Equal(t, nextRun, calculatedRun, job.Expr)
 		}
 	})
 

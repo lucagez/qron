@@ -106,7 +106,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// Wait for next flush to happen
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 
 		all, err := client.SearchJobs("flush", model.QueryJobsArgs{
 			Limit:  100,

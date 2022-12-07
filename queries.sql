@@ -114,16 +114,12 @@ and now() - last_run_at > make_interval(secs => timeout)
 and executor = $1
 returning id;
 
--- name: NextRuns :one
-select date_part('year', runs) as year,
-  date_part('month', runs) as month,
-  date_part('day', runs) as day,
-  date_part('minute', runs) as min,
-  date_part('dow', runs) as dow 
+-- name: CronNextRun :one
+select run_at::timestamptz 
 from tiny.cron_next_run(
   sqlc.arg('from')::timestamptz,
   sqlc.arg('expr')::text
-) as runs;
+) as run_at;
 
 -- name: Next :one
 select run_at::timestamptz

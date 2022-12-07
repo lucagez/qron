@@ -4,6 +4,9 @@ services:
     image: postgres
     environment:
       - POSTGRES_PASSWORD=password
+      # Can be set at session level
+      # - TZ=UTC
+      # - PGTZ=UTC
     ports:
       - 5435:5432
   pyroscope:
