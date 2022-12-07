@@ -26,6 +26,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   executor: String!
   state: String
   status: String!
+  meta: String!
 }
 
 input CreateJobArgs {
@@ -34,6 +35,7 @@ input CreateJobArgs {
   state: String!
   timeout: Int
   start_at: Time
+  meta: String
 }
 
 input UpdateJobArgs {

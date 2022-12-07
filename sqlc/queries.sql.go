@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/jackc/pgtype"
 )
 
 const countJobsInStatus = `-- name: CountJobsInStatus :one
@@ -30,7 +32,7 @@ func (q *Queries) CountJobsInStatus(ctx context.Context, arg CountJobsInStatusPa
 }
 
 const createJob = `-- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta)
 values (
   $1,
   $2,
@@ -39,9 +41,10 @@ values (
   $4,
   tiny.next($6, $1),
   $5,
-  $6
+  $6,
+  $7
 )
-returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type CreateJobParams struct {
@@ -51,6 +54,7 @@ type CreateJobParams struct {
 	Executor string
 	Timeout  sql.NullInt32
 	StartAt  time.Time
+	Meta     pgtype.JSON
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
@@ -61,6 +65,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		arg.Executor,
 		arg.Timeout,
 		arg.StartAt,
+		arg.Meta,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -72,6 +77,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -104,7 +110,7 @@ const deleteJobByID = `-- name: DeleteJobByID :one
 delete from tiny.job
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type DeleteJobByIDParams struct {
@@ -124,6 +130,7 @@ func (q *Queries) DeleteJobByID(ctx context.Context, arg DeleteJobByIDParams) (T
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -136,7 +143,7 @@ const deleteJobByName = `-- name: DeleteJobByName :one
 delete from tiny.job
 where name = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type DeleteJobByNameParams struct {
@@ -156,6 +163,7 @@ func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -179,7 +187,7 @@ from (
   skip locked
 ) as due_jobs
 where due_jobs.id = updated_jobs.id
-returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.start_at, updated_jobs.execution_amount, updated_jobs.name, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor
+returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.start_at, updated_jobs.execution_amount, updated_jobs.name, updated_jobs.meta, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor
 `
 
 type FetchDueJobsParams struct {
@@ -205,6 +213,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 			&i.StartAt,
 			&i.ExecutionAmount,
 			&i.Name,
+			&i.Meta,
 			&i.Timeout,
 			&i.Status,
 			&i.State,
@@ -221,7 +230,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 }
 
 const getJobByID = `-- name: GetJobByID :one
-select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor from tiny.job
+select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor from tiny.job
 where id = $1
 and executor = $2 
 limit 1
@@ -244,6 +253,7 @@ func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -253,7 +263,7 @@ func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob
 }
 
 const getJobByName = `-- name: GetJobByName :one
-select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor from tiny.job
+select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor from tiny.job
 where name = $1 
 and executor = $2
 limit 1
@@ -276,6 +286,7 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -335,7 +346,7 @@ func (q *Queries) ResetTimeoutJobs(ctx context.Context, executor string) ([]int6
 }
 
 const searchJobs = `-- name: SearchJobs :many
-select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor from tiny.job
+select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor from tiny.job
 where (name like concat($4::text, '%')
   or name like concat('%', $4::text))
 and executor = $3 
@@ -374,6 +385,7 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 			&i.StartAt,
 			&i.ExecutionAmount,
 			&i.Name,
+			&i.Meta,
 			&i.Timeout,
 			&i.Status,
 			&i.State,
@@ -402,7 +414,7 @@ set expr = coalesce(nullif($3, ''), expr),
   )
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type UpdateJobByIDParams struct {
@@ -432,6 +444,7 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,
@@ -453,7 +466,7 @@ set expr = coalesce(nullif($3, ''), expr),
   )
 where name = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, timeout, status, state, executor
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type UpdateJobByNameParams struct {
@@ -483,6 +496,7 @@ func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams
 		&i.StartAt,
 		&i.ExecutionAmount,
 		&i.Name,
+		&i.Meta,
 		&i.Timeout,
 		&i.Status,
 		&i.State,

@@ -71,6 +71,7 @@ type ComplexityRoot struct {
 		Expr      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		LastRunAt func(childComplexity int) int
+		Meta      func(childComplexity int) int
 		Name      func(childComplexity int) int
 		RunAt     func(childComplexity int) int
 		State     func(childComplexity int) int
@@ -104,6 +105,7 @@ type TinyJobResolver interface {
 
 	State(ctx context.Context, obj *sqlc.TinyJob) (*string, error)
 	Status(ctx context.Context, obj *sqlc.TinyJob) (string, error)
+	Meta(ctx context.Context, obj *sqlc.TinyJob) (string, error)
 }
 
 type executableSchema struct {
@@ -300,6 +302,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TinyJob.LastRunAt(childComplexity), true
 
+	case "TinyJob.meta":
+		if e.complexity.TinyJob.Meta == nil {
+			break
+		}
+
+		return e.complexity.TinyJob.Meta(childComplexity), true
+
 	case "TinyJob.name":
 		if e.complexity.TinyJob.Name == nil {
 			break
@@ -434,6 +443,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   executor: String!
   state: String
   status: String!
+  meta: String!
 }
 
 input CreateJobArgs {
@@ -442,6 +452,7 @@ input CreateJobArgs {
   state: String!
   timeout: Int
   start_at: Time
+  meta: String
 }
 
 input UpdateJobArgs {
@@ -797,6 +808,8 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -874,6 +887,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -951,6 +966,8 @@ func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Cont
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1028,6 +1045,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1105,6 +1124,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Cont
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1182,6 +1203,8 @@ func (ec *executionContext) fieldContext_Mutation_fetchForProcessing(ctx context
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1424,6 +1447,8 @@ func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, f
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1501,6 +1526,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Contex
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1578,6 +1605,8 @@ func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context,
 				return ec.fieldContext_TinyJob_state(ctx, field)
 			case "status":
 				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -2141,6 +2170,50 @@ func (ec *executionContext) _TinyJob_status(ctx context.Context, field graphql.C
 }
 
 func (ec *executionContext) fieldContext_TinyJob_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TinyJob",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TinyJob_meta(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TinyJob_meta(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TinyJob().Meta(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TinyJob_meta(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TinyJob",
 		Field:      field,
@@ -3933,7 +4006,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at"}
+	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at", "meta"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3977,6 +4050,14 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start_at"))
 			it.StartAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "meta":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("meta"))
+			it.Meta, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4447,6 +4528,26 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._TinyJob_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "meta":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TinyJob_meta(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

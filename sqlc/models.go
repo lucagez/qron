@@ -9,6 +9,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgtype"
 )
 
 type TinyStatus string
@@ -64,6 +66,7 @@ type TinyJob struct {
 	StartAt         time.Time
 	ExecutionAmount int32
 	Name            sql.NullString
+	Meta            pgtype.JSON
 	Timeout         sql.NullInt32
 	Status          TinyStatus
 	State           sql.NullString

@@ -55,7 +55,7 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta)
 values (
   $1,
   $2,
@@ -64,7 +64,8 @@ values (
   $4,
   tiny.next($6, $1),
   $5,
-  $6
+  $6,
+  $7
 )
 returning *;
 

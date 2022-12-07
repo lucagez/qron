@@ -175,6 +175,10 @@ create table tiny.job
 
     -- TODO: Should `name` ever be null??
     name             text,
+
+    -- meta is used by the executor to
+    -- understand how to invoke the job
+    meta             json not null default '{}',
     
     -- timeout in seconds
     timeout          integer,
