@@ -253,7 +253,7 @@ func TestSchema(t *testing.T) {
 			{Expr: "*/4 * 6 * *"},
 			{Expr: "*/4 * */6 * *"},
 			{Expr: "30 08 * JUL SUN"},
-			// {Expr: "* * 1,15 * SUN"}, // BUG
+			// {Expr: "* * 1,15 * SUN"}, // actually correct
 			{Expr: "* * */10 * SUN"},
 			{Expr: "* * * * MON"},
 			{Expr: "* * 1,15 * *"},
