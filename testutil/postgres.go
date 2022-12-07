@@ -9,7 +9,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/lucagez/tinyq/migrations"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/pressly/goose/v3"
@@ -23,16 +22,7 @@ type PgFactory struct {
 
 var PG PgFactory
 
-func init() {
-	goose.SetDialect("postgres")
-	goose.SetBaseFS(migrations.MigrationsFS)
-
-	PG = NewPgFactory()
-}
-
 func NewPgFactory() PgFactory {
-	log.Println("initializing PgFactory 🐘")
-
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		log.Fatalln(err)
@@ -136,5 +126,5 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 }
 
 func (p PgFactory) Teardown() error {
-	return p.MaintainanceDb.Close()
+	return p.Docker.Purge(p.MaintainanceDb)
 }
