@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/lucagez/tinyq/executor"
+	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
@@ -66,7 +66,7 @@ func NewClient(cfg Config) (Client, error) {
 		cfg.PollInterval = 1 * time.Second
 	}
 	if cfg.ExecutorSetter == nil {
-		cfg.ExecutorSetter = executor.ExecutorSetterMiddleware
+		cfg.ExecutorSetter = tinyctx.ExecutorSetterMiddleware
 	}
 	if cfg.ResetInterval == 0 {
 		cfg.ResetInterval = 1 * time.Second
@@ -144,21 +144,21 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		// TODO: Handle failed commits + flush errors
 		if len(commitBatch) > 0 {
-			_, err := t.resolver.Mutation().CommitJobs(executor.NewCtx(ctx, executorName), commitBatch)
+			_, err := t.resolver.Mutation().CommitJobs(tinyctx.NewCtx(ctx, executorName), commitBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			commitBatch = []int64{}
 		}
 		if len(failBatch) > 0 {
-			_, err := t.resolver.Mutation().FailJobs(executor.NewCtx(ctx, executorName), failBatch)
+			_, err := t.resolver.Mutation().FailJobs(tinyctx.NewCtx(ctx, executorName), failBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			failBatch = []int64{}
 		}
 		if len(retryBatch) > 0 {
-			_, err := t.resolver.Mutation().RetryJobs(executor.NewCtx(ctx, executorName), retryBatch)
+			_, err := t.resolver.Mutation().RetryJobs(tinyctx.NewCtx(ctx, executorName), retryBatch)
 			if err != nil {
 				log.Println(err)
 			}
@@ -187,7 +187,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
 					Mutation().
-					FetchForProcessing(executor.NewCtx(ctx, executorName), int(c.MaxInFlight))
+					FetchForProcessing(tinyctx.NewCtx(ctx, executorName), int(c.MaxInFlight))
 				if err != nil {
 					// TODO: how to handle err?
 					log.Println(err)
@@ -220,14 +220,14 @@ func (c *Client) Handler() http.Handler {
 
 func (c *Client) CreateJob(executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().CreateJob(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		args,
 	)
 }
 
 func (c *Client) UpdateJobByName(executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByName(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		name,
 		args,
 	)
@@ -235,7 +235,7 @@ func (c *Client) UpdateJobByName(executorName, name string, args model.UpdateJob
 
 func (c *Client) UpdateJobByID(executorName string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByID(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		id,
 		args,
 	)
@@ -243,35 +243,35 @@ func (c *Client) UpdateJobByID(executorName string, id int64, args model.UpdateJ
 
 func (c *Client) DeleteJobByName(executorName, name string) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().DeleteJobByName(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		name,
 	)
 }
 
 func (c *Client) DeleteJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().DeleteJobByID(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		id,
 	)
 }
 
 func (c *Client) SearchJobs(executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
 	return c.resolver.Query().SearchJobs(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		args,
 	)
 }
 
 func (c *Client) QueryJobByName(executorName, name string) (sqlc.TinyJob, error) {
 	return c.resolver.Query().QueryJobByName(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		name,
 	)
 }
 
 func (c *Client) QueryJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Query().QueryJobByID(
-		executor.NewCtx(context.Background(), executorName),
+		tinyctx.NewCtx(context.Background(), executorName),
 		id,
 	)
 }

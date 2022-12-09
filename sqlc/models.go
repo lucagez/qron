@@ -58,17 +58,17 @@ func (ns NullTinyStatus) Value() (driver.Value, error) {
 }
 
 type TinyJob struct {
-	ID              int64
-	Expr            string
-	RunAt           sql.NullTime
-	LastRunAt       sql.NullTime
-	CreatedAt       time.Time
-	StartAt         time.Time
-	ExecutionAmount int32
-	Name            sql.NullString
-	Meta            pgtype.JSON
-	Timeout         sql.NullInt32
-	Status          TinyStatus
-	State           sql.NullString
-	Executor        string
+	ID              int64          `json:"id"`
+	Expr            string         `json:"expr"`
+	RunAt           sql.NullTime   `json:"run_at"`
+	LastRunAt       sql.NullTime   `json:"last_run_at"`
+	CreatedAt       time.Time      `json:"created_at"`
+	StartAt         time.Time      `json:"start_at"`
+	ExecutionAmount int32          `json:"execution_amount"`
+	Name            sql.NullString `json:"name"`
+	Meta            pgtype.JSON    `json:"meta"`
+	Timeout         sql.NullInt32  `json:"timeout"`
+	Status          TinyStatus     `json:"status"`
+	State           string         `json:"state"`
+	Executor        string         `json:"executor"`
 }

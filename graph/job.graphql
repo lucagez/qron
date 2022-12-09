@@ -21,6 +21,7 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   expr: String!
   run_at: Time!
   last_run_at: Time
+  start_at: Time
   timeout: Int
   created_at: Time!
   executor: String!

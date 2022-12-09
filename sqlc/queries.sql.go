@@ -20,8 +20,8 @@ and status = $2
 `
 
 type CountJobsInStatusParams struct {
-	Executor string
-	Status   TinyStatus
+	Executor string     `json:"executor"`
+	Status   TinyStatus `json:"status"`
 }
 
 func (q *Queries) CountJobsInStatus(ctx context.Context, arg CountJobsInStatusParams) (int64, error) {
@@ -48,13 +48,13 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type CreateJobParams struct {
-	Expr     string
-	Name     sql.NullString
-	State    sql.NullString
-	Executor string
-	Timeout  sql.NullInt32
-	StartAt  time.Time
-	Meta     pgtype.JSON
+	Expr     string         `json:"expr"`
+	Name     sql.NullString `json:"name"`
+	State    string         `json:"state"`
+	Executor string         `json:"executor"`
+	Timeout  sql.NullInt32  `json:"timeout"`
+	StartAt  time.Time      `json:"start_at"`
+	Meta     pgtype.JSON    `json:"meta"`
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
@@ -95,8 +95,8 @@ from tiny.cron_next_run(
 `
 
 type CronNextRunParams struct {
-	From time.Time
-	Expr string
+	From time.Time `json:"from"`
+	Expr string    `json:"expr"`
 }
 
 func (q *Queries) CronNextRun(ctx context.Context, arg CronNextRunParams) (time.Time, error) {
@@ -114,8 +114,8 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type DeleteJobByIDParams struct {
-	ID       int64
-	Executor string
+	ID       int64  `json:"id"`
+	Executor string `json:"executor"`
 }
 
 func (q *Queries) DeleteJobByID(ctx context.Context, arg DeleteJobByIDParams) (TinyJob, error) {
@@ -147,8 +147,8 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type DeleteJobByNameParams struct {
-	Name     sql.NullString
-	Executor string
+	Name     sql.NullString `json:"name"`
+	Executor string         `json:"executor"`
 }
 
 func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams) (TinyJob, error) {
@@ -191,8 +191,8 @@ returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.
 `
 
 type FetchDueJobsParams struct {
-	Limit    int32
-	Executor string
+	Limit    int32  `json:"limit"`
+	Executor string `json:"executor"`
 }
 
 func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]TinyJob, error) {
@@ -237,8 +237,8 @@ limit 1
 `
 
 type GetJobByIDParams struct {
-	ID       int64
-	Executor string
+	ID       int64  `json:"id"`
+	Executor string `json:"executor"`
 }
 
 func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob, error) {
@@ -270,8 +270,8 @@ limit 1
 `
 
 type GetJobByNameParams struct {
-	Name     sql.NullString
-	Executor string
+	Name     sql.NullString `json:"name"`
+	Executor string         `json:"executor"`
 }
 
 func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (TinyJob, error) {
@@ -304,8 +304,8 @@ from tiny.next(
 `
 
 type NextParams struct {
-	From time.Time
-	Expr string
+	From time.Time `json:"from"`
+	Expr string    `json:"expr"`
 }
 
 func (q *Queries) Next(ctx context.Context, arg NextParams) (time.Time, error) {
@@ -355,10 +355,10 @@ limit $2
 `
 
 type SearchJobsParams struct {
-	Offset   int32
-	Limit    int32
-	Executor string
-	Query    string
+	Offset   int32  `json:"offset"`
+	Limit    int32  `json:"limit"`
+	Executor string `json:"executor"`
+	Query    string `json:"query"`
 }
 
 // TODO: This query is not working wit dynamic params 🤔
@@ -418,11 +418,11 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type UpdateJobByIDParams struct {
-	ID       int64
-	Executor string
-	Expr     interface{}
-	State    interface{}
-	Timeout  interface{}
+	ID       int64       `json:"id"`
+	Executor string      `json:"executor"`
+	Expr     interface{} `json:"expr"`
+	State    interface{} `json:"state"`
+	Timeout  interface{} `json:"timeout"`
 }
 
 // TODO: Should refactor usage of `name`
@@ -470,11 +470,11 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type UpdateJobByNameParams struct {
-	Name     sql.NullString
-	Executor string
-	Expr     interface{}
-	State    interface{}
-	Timeout  interface{}
+	Name     sql.NullString `json:"name"`
+	Executor string         `json:"executor"`
+	Expr     interface{}    `json:"expr"`
+	State    interface{}    `json:"state"`
+	Timeout  interface{}    `json:"timeout"`
 }
 
 // TODO: Implement search

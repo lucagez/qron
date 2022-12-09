@@ -32,11 +32,11 @@ type BatchUpdateJobsBatchResults struct {
 }
 
 type BatchUpdateJobsParams struct {
-	LastRunAt sql.NullTime
-	State     sql.NullString
-	Status    TinyStatus
-	ID        int64
-	Executor  string
+	LastRunAt sql.NullTime `json:"last_run_at"`
+	State     string       `json:"state"`
+	Status    TinyStatus   `json:"status"`
+	ID        int64        `json:"id"`
+	Executor  string       `json:"executor"`
 }
 
 func (q *Queries) BatchUpdateJobs(ctx context.Context, arg []BatchUpdateJobsParams) *BatchUpdateJobsBatchResults {

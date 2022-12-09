@@ -11,7 +11,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/lucagez/tinyq/executor"
+	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
@@ -40,7 +40,7 @@ func TestJobResolvers(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should create job", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, model.CreateJobArgs{
@@ -53,7 +53,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "lmao"))
 		assert.Equal(t, "@weekly", job.Expr)
 		assert.Equal(t, "lmao", job.Name.String)
-		assert.Equal(t, "{}", job.State.String)
+		assert.Equal(t, "{}", job.State)
 	})
 
 	t.Run("Should update job by ID", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "update-lmao"))
 		assert.Equal(t, "@yearly", updated.Expr)
 		assert.Equal(t, "update-lmao", updated.Name.String)
-		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
+		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
 	t.Run("Should update job by name", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "update-lmao-by-name"))
 		assert.Equal(t, "@yearly", updated.Expr)
 		assert.Equal(t, "update-lmao-by-name", updated.Name.String)
-		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
+		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
 	t.Run("Should conditionally update job config by name", func(t *testing.T) {
@@ -112,7 +112,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated0.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
-		assert.Equal(t, `{"hello":"world"}`, updated0.State.String)
+		assert.Equal(t, `{"hello":"world"}`, updated0.State)
 
 		updated1, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{})
 
@@ -120,7 +120,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated1.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
-		assert.Equal(t, `{"hello":"world"}`, updated1.State.String)
+		assert.Equal(t, `{"hello":"world"}`, updated1.State)
 
 		updated2, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{
 			State: ptrstring(`{"hello":"world2"}`),
@@ -130,7 +130,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated2.Expr)
 		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
-		assert.Equal(t, `{"hello":"world2"}`, updated2.State.String)
+		assert.Equal(t, `{"hello":"world2"}`, updated2.State)
 	})
 
 	t.Run("Should delete job by name", func(t *testing.T) {
@@ -178,7 +178,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-id"))
 		assert.Equal(t, "@weekly", queried.Expr)
 		assert.Equal(t, "query-lmao-by-id", queried.Name.String)
-		assert.Equal(t, `{}`, queried.State.String)
+		assert.Equal(t, `{}`, queried.State)
 	})
 
 	t.Run("Should query job by name", func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-name"))
 		assert.Equal(t, "@weekly", queried.Expr)
 		assert.Equal(t, "query-lmao-by-name", queried.Name.String)
-		assert.Equal(t, `{}`, queried.State.String)
+		assert.Equal(t, `{}`, queried.State)
 	})
 
 	t.Run("Should search jobs", func(t *testing.T) {
@@ -242,7 +242,7 @@ func TestProcessing(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should fetch for processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
@@ -315,7 +315,7 @@ func TestConcurrentProcessing(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should fetch for concurrent processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
@@ -377,7 +377,7 @@ func TestCommit(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
@@ -438,7 +438,7 @@ func TestFailure(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should fail commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
@@ -504,7 +504,7 @@ func TestRetry(t *testing.T) {
 
 	queries := sqlc.New(pool)
 	resolver := Resolver{Queries: queries, DB: pool}
-	ctx := executor.NewCtx(context.Background(), "test-executor")
+	ctx := tinyctx.NewCtx(context.Background(), "test-executor")
 
 	t.Run("Should retry commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {

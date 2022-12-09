@@ -75,7 +75,7 @@ func main() {
 				// profiler
 				go func(j tinyq.Job) {
 					pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
-						_, err := httpClient.Get(j.State.String)
+						_, err := httpClient.Get(j.State)
 						if err != nil {
 							log.Println("failed to execute:", j.ID, err)
 							j.Fail()

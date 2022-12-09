@@ -185,7 +185,7 @@ create table tiny.job
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data
-    state            text,
+    state            text not null,
     executor         text not null
 );
 
