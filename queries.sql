@@ -80,14 +80,15 @@ limit $2;
 
 -- name: BatchUpdateJobs :batchexec
 update tiny.job
-set last_run_at = $1,
+set last_run_at = sqlc.arg('last_run_at'),
   -- TODO: update
-  state = $2,
-  status = $3,
+  state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
+  expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
+  status = sqlc.arg('status'),
   execution_amount = execution_amount + 1,
-  run_at = tiny.next($1, expr)
-where id = $4
-and executor = $5; 
+  run_at = tiny.next(sqlc.arg('last_run_at'), expr)
+where id = sqlc.arg('id')
+and executor = sqlc.arg('executor'); 
 
 -- name: FetchDueJobs :many
 update tiny.job as updated_jobs

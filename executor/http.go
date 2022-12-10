@@ -1,10 +1,11 @@
 package executor
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/lucagez/tinyq"
@@ -48,15 +49,36 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 		return
 	}
 
+	fmt.Println("============")
+	fmt.Println("INITIAL STATE:", job.State)
+	fmt.Println("============")
+
 	// TODO: Check null readers do not cause issues
 	// TODO: auth happens via e2e encrypted state
 	// TODO: provide signature?
-	req, err := http.NewRequest(config.Method, config.Url, strings.NewReader(job.State))
+	payload, _ := json.Marshal(TinyDto{
+		ID:              job.ID,
+		Expr:            job.Expr,
+		RunAt:           job.RunAt.Time,
+		LastRunAt:       job.LastRunAt.Time,
+		StartAt:         job.StartAt,
+		ExecutionAmount: job.ExecutionAmount,
+		Name:            job.Name.String,
+		Meta:            string(job.Meta.Bytes),
+		Timeout:         job.Timeout.Int32,
+		Status:          job.Status,
+		State:           job.State,
+		Executor:        job.Executor,
+	})
+	log.Println("sending payload:", string(payload))
+	req, err := http.NewRequest(config.Method, config.Url, bytes.NewReader(payload))
 	if err != nil {
 		log.Println("error while assembling http request", err)
 		job.Fail()
 		return
 	}
+
+	req.Header.Add("content-type", "application/json")
 
 	h.limiter <- 0
 
@@ -70,7 +92,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 
 	<-h.limiter
 
-	var execRes tinyq.Job
+	var execRes TinyDto
 	err = json.NewDecoder(res.Body).Decode(&execRes)
 	if err != nil {
 		// TODO: In case body arrives but it's null
@@ -83,10 +105,16 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	}
 
 	if execRes.Expr != "" {
+		fmt.Println("============")
+		fmt.Println("UPDATED EXPR:", execRes.Expr)
+		fmt.Println("============")
 		job.Expr = execRes.Expr
 	}
 
 	if execRes.State != "" {
+		fmt.Println("============")
+		fmt.Println("UPDATED STATE:", execRes.State)
+		fmt.Println("============")
 		job.State = execRes.State
 	}
 

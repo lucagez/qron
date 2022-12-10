@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/lucagez/tinyq"
@@ -35,7 +36,8 @@ func main() {
 			Username("tiny").
 			Password("tiny").
 			Database("tiny").
-			Port(uint32(port)),
+			Port(uint32(port)).
+			Logger(os.Stdout),
 	)
 	err := postgres.Start()
 	if err != nil {

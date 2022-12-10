@@ -69,7 +69,7 @@ func NewClient(cfg Config) (Client, error) {
 		cfg.ExecutorSetter = tinyctx.ExecutorSetterMiddleware
 	}
 	if cfg.ResetInterval == 0 {
-		cfg.ResetInterval = 1 * time.Second
+		cfg.ResetInterval = 60 * time.Second
 	}
 
 	return Client{
@@ -108,12 +108,10 @@ func (t *Client) reset(ctx context.Context, executorName string) {
 	}
 }
 
-// TODO: Should optimize `flush` behavior. It currently
-// weights for 80% of total ram
 func (t *Client) flush(ctx context.Context, executorName string) {
-	var commitBatch []int64
-	var failBatch []int64
-	var retryBatch []int64
+	var commitBatch []model.CommitArgs
+	var failBatch []model.CommitArgs
+	var retryBatch []model.CommitArgs
 	ticker := time.NewTicker(t.FlushInterval)
 
 	for {
@@ -121,17 +119,28 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		select {
 		case <-ctx.Done():
-			return
+			// Force flush after stop fetching
+			shouldFlush = true
 		case <-ticker.C:
 			shouldFlush = true
 		case job := <-t.processedCh:
+			commit := model.CommitArgs{
+				ID: job.ID,
+			}
+			if job.State != "" {
+				commit.State = &job.State
+			}
+			if job.Expr != "" {
+				commit.Expr = &job.Expr
+			}
+
 			switch job.Status {
 			case sqlc.TinyStatusSUCCESS:
-				commitBatch = append(commitBatch, job.ID)
+				commitBatch = append(commitBatch, commit)
 			case sqlc.TinyStatusFAILURE:
-				failBatch = append(failBatch, job.ID)
+				failBatch = append(failBatch, commit)
 			case sqlc.TinyStatusREADY:
-				retryBatch = append(retryBatch, job.ID)
+				retryBatch = append(retryBatch, commit)
 			}
 			if len(commitBatch)+len(failBatch)+len(retryBatch) > 100 {
 				shouldFlush = true
@@ -148,21 +157,21 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			if err != nil {
 				log.Println(err)
 			}
-			commitBatch = []int64{}
+			commitBatch = []model.CommitArgs{}
 		}
 		if len(failBatch) > 0 {
 			_, err := t.resolver.Mutation().FailJobs(tinyctx.NewCtx(ctx, executorName), failBatch)
 			if err != nil {
 				log.Println(err)
 			}
-			failBatch = []int64{}
+			failBatch = []model.CommitArgs{}
 		}
 		if len(retryBatch) > 0 {
 			_, err := t.resolver.Mutation().RetryJobs(tinyctx.NewCtx(ctx, executorName), retryBatch)
 			if err != nil {
 				log.Println(err)
 			}
-			retryBatch = []int64{}
+			retryBatch = []model.CommitArgs{}
 		}
 	}
 }

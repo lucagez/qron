@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.16
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
+	github.com/fergusstrange/embedded-postgres v1.19.0
 	github.com/georgysavva/scany v1.1.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/jackc/pgconn v1.13.0
@@ -33,7 +34,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/fergusstrange/embedded-postgres v1.19.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect

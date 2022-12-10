@@ -4,18 +4,19 @@ import { createHandler, TinyRequest, Retry, Commit, Fail, Stop } from 'sdk'
 
 
 const tinyNext = <T>(
-  x: (state: TinyRequest<T>) => Promise<Retry<T> | Commit<T> | Stop<T> | Fail<T>>
+  x: (request: TinyRequest<T>) => Promise<Retry<T> | Commit<T> | Stop<T> | Fail<T>>
 ) => {
-  const { requestUtil, job, cron } = createHandler<T>()
+  const { requestUtil, hydrateRequest, job, cron } = createHandler<T>()
 
   const handle: NextApiHandler = async (req, res) => {
     try {
-      const tinyResponse = await x(requestUtil({
-        state: JSON.parse(req.body),
-      } as any) as any)
+      console.log('received raw request:', req.body)
+      const hydrated = hydrateRequest(req.body)
+      console.log('received request:', hydrated)
+      const tinyResponse = await x(requestUtil(hydrated))
 
       // RIPARTIRE QUI!<---
-      // - Should be able to serialize/deserialize TinyJob to/from json
+      // - test flow
 
       console.log('sending back:', tinyResponse.dump())
       res.status(200)

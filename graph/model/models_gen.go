@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+type CommitArgs struct {
+	ID    int64   `json:"id"`
+	Expr  *string `json:"expr"`
+	State *string `json:"state"`
+}
+
 type CreateJobArgs struct {
 	Expr    string     `json:"expr"`
 	Name    string     `json:"name"`

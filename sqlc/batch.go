@@ -17,12 +17,13 @@ const batchUpdateJobs = `-- name: BatchUpdateJobs :batchexec
 update tiny.job
 set last_run_at = $1,
   -- TODO: update
-  state = $2,
-  status = $3,
+  state = coalesce(nullif($2::text, ''), state),
+  expr = coalesce(nullif($3::text, ''), expr),
+  status = $4,
   execution_amount = execution_amount + 1,
   run_at = tiny.next($1, expr)
-where id = $4
-and executor = $5
+where id = $5
+and executor = $6
 `
 
 type BatchUpdateJobsBatchResults struct {
@@ -34,6 +35,7 @@ type BatchUpdateJobsBatchResults struct {
 type BatchUpdateJobsParams struct {
 	LastRunAt sql.NullTime `json:"last_run_at"`
 	State     string       `json:"state"`
+	Expr      string       `json:"expr"`
 	Status    TinyStatus   `json:"status"`
 	ID        int64        `json:"id"`
 	Executor  string       `json:"executor"`
@@ -45,6 +47,7 @@ func (q *Queries) BatchUpdateJobs(ctx context.Context, arg []BatchUpdateJobsPara
 		vals := []interface{}{
 			a.LastRunAt,
 			a.State,
+			a.Expr,
 			a.Status,
 			a.ID,
 			a.Executor,

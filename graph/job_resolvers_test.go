@@ -395,9 +395,11 @@ func TestCommit(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []int64
+		var commits []model.CommitArgs
 		for _, job := range fetch {
-			commits = append(commits, job.ID)
+			commits = append(commits, model.CommitArgs{
+				ID: job.ID,
+			})
 		}
 
 		failedCommits, err := resolver.Mutation().CommitJobs(ctx, commits)
@@ -456,9 +458,11 @@ func TestFailure(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []int64
+		var commits []model.CommitArgs
 		for _, job := range fetch {
-			commits = append(commits, job.ID)
+			commits = append(commits, model.CommitArgs{
+				ID: job.ID,
+			})
 		}
 
 		failedCommits, err := resolver.Mutation().FailJobs(ctx, commits)
@@ -522,9 +526,11 @@ func TestRetry(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Len(t, fetch, 5)
 
-		var commits []int64
+		var commits []model.CommitArgs
 		for _, job := range fetch {
-			commits = append(commits, job.ID)
+			commits = append(commits, model.CommitArgs{
+				ID: job.ID,
+			})
 		}
 
 		failedCommits, err := resolver.Mutation().RetryJobs(ctx, commits)

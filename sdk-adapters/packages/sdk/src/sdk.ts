@@ -266,27 +266,46 @@ export const createHandler = <T>() =>{
   const requestUtil = (request: TinyRequest<T>) => {
     return {
       ...request,
-      retry: (state: T) => {
+      retry: (state?: T) => {
         const _retry = new Retry(request)
         return state ? _retry.withState(state) : _retry
       },
-      commit: (state: T) => {
+      commit: (state?: T) => {
         const _commit = new Commit(request)
         return state ? _commit.withState(state) : _commit
       },
-      stop: (state: T) => {
+      stop: (state?: T) => {
         const _stop = new Stop(request)
         return state ? _stop.withState(state) : _stop
       },
-      fail: (state: T) => {
+      fail: (state?: T) => {
         const _fail = new Fail(request)
         return state ? _fail.withState(state) : _fail
       },
     }
   }
 
+  const hydrateRequest = (raw: any) => {
+    try {
+      // decrypt state + deserialize
+      const state = JSON.parse(raw.state)
+      return {
+        ...raw,
+        state,
+      }
+    } catch (err) {
+      // TODO: do something for automatic retry
+      console.error(err)
+      throw new Error('wrong format for request')
+    }
+  }
+
+  // TODO: implement dehydrate response with encryption
+  // -> move here from class
+
   return {
     requestUtil,
+    hydrateRequest,
     cron: new Cron<T>(),
     job: new Job<T>(),
   }
