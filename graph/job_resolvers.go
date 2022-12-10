@@ -137,7 +137,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.Commi
 
 		var expr string
 		if commit.Expr != nil {
-			state = *commit.Expr
+			expr = *commit.Expr
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
@@ -175,7 +175,7 @@ func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitA
 
 		var expr string
 		if commit.Expr != nil {
-			state = *commit.Expr
+			expr = *commit.Expr
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
@@ -213,13 +213,12 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 
 		var expr string
 		if commit.Expr != nil {
-			state = *commit.Expr
+			expr = *commit.Expr
 		}
 
 		// RIPARTIRE QUI!<---
-		// 🚨 refactor client to use `CommitArgs` so on commit it is possible
-		// to update state and expr (and therefore calculate next execution time)
-		// remove `status` from CommitArgs as it is automatically set by the client implementation
+		// 🚨 BUG: After job update, the job is immediately retried (on next fetch)
+		// Probably the query does not update correctly and ignore th updated expr?
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
 			ID: commit.ID,
 			LastRunAt: sql.NullTime{
