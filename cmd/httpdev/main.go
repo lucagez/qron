@@ -60,16 +60,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpJobs, cancel := client.Fetch("http")
-	defer cancel()
+	httpJobs, cancelHttp := client.Fetch("http")
+	defer cancelHttp()
+
+	dockerJobs, cancelDocker := client.Fetch("docker")
+	defer cancelDocker()
 
 	httpExecutor := executor.NewHttpExecutor(100)
+	dockerExecutor := executor.NewDockerExecutor()
 
 	go func() {
 		for {
-			job := <-httpJobs
-			httpExecutor.Run(job)
-			log.Println("executoing http job", job)
+			select {
+			case job := <-httpJobs:
+				httpExecutor.Run(job)
+			case job := <-dockerJobs:
+				go dockerExecutor.Run(job)
+			}
 		}
 	}()
 
