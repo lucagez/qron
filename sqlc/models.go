@@ -5,7 +5,6 @@
 package sqlc
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -58,17 +57,17 @@ func (ns NullTinyStatus) Value() (driver.Value, error) {
 }
 
 type TinyJob struct {
-	ID              int64          `json:"id"`
-	Expr            string         `json:"expr"`
-	RunAt           time.Time      `json:"run_at"`
-	LastRunAt       time.Time      `json:"last_run_at"`
-	CreatedAt       time.Time      `json:"created_at"`
-	StartAt         time.Time      `json:"start_at"`
-	ExecutionAmount int32          `json:"execution_amount"`
-	Name            sql.NullString `json:"name"`
-	Meta            pgtype.JSON    `json:"meta"`
-	Timeout         int32          `json:"timeout"`
-	Status          TinyStatus     `json:"status"`
-	State           string         `json:"state"`
-	Executor        string         `json:"executor"`
+	ID              int64       `json:"id"`
+	Expr            string      `json:"expr"`
+	RunAt           time.Time   `json:"run_at"`
+	LastRunAt       time.Time   `json:"last_run_at"`
+	CreatedAt       time.Time   `json:"created_at"`
+	StartAt         time.Time   `json:"start_at"`
+	ExecutionAmount int32       `json:"execution_amount"`
+	Name            string      `json:"name"`
+	Meta            pgtype.JSON `json:"meta"`
+	Timeout         int32       `json:"timeout"`
+	Status          TinyStatus  `json:"status"`
+	State           string      `json:"state"`
+	Executor        string      `json:"executor"`
 }

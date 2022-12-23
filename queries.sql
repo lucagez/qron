@@ -58,14 +58,14 @@ returning *;
 insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta)
 values (
   $1,
+  coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
   $2,
-  $3,
   'READY',
-  $4,
-  tiny.next(greatest($5, now()), $1),
+  $3,
+  tiny.next(greatest($4, now()), $1),
   coalesce(nullif(sqlc.arg('timeout'), 0), 120),
-  $5,
-  $6
+  $4,
+  $5
 )
 returning *;
 

@@ -57,7 +57,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 		LastRunAt:       job.LastRunAt,
 		StartAt:         job.StartAt,
 		ExecutionAmount: job.ExecutionAmount,
-		Name:            job.Name.String,
+		Name:            job.Name,
 		Meta:            string(job.Meta.Bytes),
 		Timeout:         job.Timeout,
 		Status:          job.Status,

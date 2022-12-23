@@ -52,7 +52,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "lmao"))
 		assert.Equal(t, "@weekly", job.Expr)
-		assert.Equal(t, "lmao", job.Name.String)
+		assert.Equal(t, "lmao", job.Name)
 		assert.Equal(t, "{}", job.State)
 	})
 
@@ -72,7 +72,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-lmao"))
 		assert.Equal(t, "@yearly", updated.Expr)
-		assert.Equal(t, "update-lmao", updated.Name.String)
+		assert.Equal(t, "update-lmao", updated.Name)
 		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
@@ -84,7 +84,7 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{
+		updated, err := resolver.Mutation().UpdateJobByName(ctx, job.Name, model.UpdateJobArgs{
 			Expr:  ptrstring("@yearly"),
 			State: ptrstring(`{"hello":"world"}`),
 		})
@@ -92,7 +92,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-lmao-by-name"))
 		assert.Equal(t, "@yearly", updated.Expr)
-		assert.Equal(t, "update-lmao-by-name", updated.Name.String)
+		assert.Equal(t, "update-lmao-by-name", updated.Name)
 		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
@@ -104,32 +104,32 @@ func TestJobResolvers(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		updated0, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{
+		updated0, err := resolver.Mutation().UpdateJobByName(ctx, job.Name, model.UpdateJobArgs{
 			State: ptrstring(`{"hello":"world"}`),
 		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated0.Expr)
-		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-name", updated0.Name)
 		assert.Equal(t, `{"hello":"world"}`, updated0.State)
 
-		updated1, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{})
+		updated1, err := resolver.Mutation().UpdateJobByName(ctx, job.Name, model.UpdateJobArgs{})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated1.Expr)
-		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-name", updated1.Name)
 		assert.Equal(t, `{"hello":"world"}`, updated1.State)
 
-		updated2, err := resolver.Mutation().UpdateJobByName(ctx, job.Name.String, model.UpdateJobArgs{
+		updated2, err := resolver.Mutation().UpdateJobByName(ctx, job.Name, model.UpdateJobArgs{
 			State: ptrstring(`{"hello":"world2"}`),
 		})
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "update-cond-lmao-by-name"))
 		assert.Equal(t, "@weekly", updated2.Expr)
-		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name.String)
+		assert.Equal(t, "update-cond-lmao-by-name", updated2.Name)
 		assert.Equal(t, `{"hello":"world2"}`, updated2.State)
 	})
 
@@ -177,7 +177,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-id"))
 		assert.Equal(t, "@weekly", queried.Expr)
-		assert.Equal(t, "query-lmao-by-id", queried.Name.String)
+		assert.Equal(t, "query-lmao-by-id", queried.Name)
 		assert.Equal(t, `{}`, queried.State)
 	})
 
@@ -195,7 +195,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, countJobs(pool, "query-lmao-by-name"))
 		assert.Equal(t, "@weekly", queried.Expr)
-		assert.Equal(t, "query-lmao-by-name", queried.Name.String)
+		assert.Equal(t, "query-lmao-by-name", queried.Name)
 		assert.Equal(t, `{}`, queried.State)
 	})
 
@@ -218,7 +218,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Len(t, search0, 10)
 
 		for index, s := range search0 {
-			assert.Equal(t, fmt.Sprintf("search-%d", index+0), s.Name.String)
+			assert.Equal(t, fmt.Sprintf("search-%d", index+0), s.Name)
 		}
 
 		search1, err := resolver.Query().SearchJobs(ctx, model.QueryJobsArgs{
@@ -230,7 +230,7 @@ func TestJobResolvers(t *testing.T) {
 		assert.Len(t, search1, 40)
 
 		for index, s := range search1 {
-			assert.Equal(t, fmt.Sprintf("search-%d", index+10), s.Name.String)
+			assert.Equal(t, fmt.Sprintf("search-%d", index+10), s.Name)
 		}
 	})
 
@@ -282,7 +282,7 @@ func TestProcessing(t *testing.T) {
 		assert.Len(t, fetch, 20)
 
 		for index, job := range fetch {
-			assert.Equal(t, fmt.Sprintf("search-%d", index+0), job.Name.String)
+			assert.Equal(t, fmt.Sprintf("search-%d", index+0), job.Name)
 			assert.Equal(t, sqlc.TinyStatusPENDING, job.Status)
 		}
 

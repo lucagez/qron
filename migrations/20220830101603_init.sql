@@ -174,7 +174,7 @@ create table tiny.job
     execution_amount integer     not null default 0,
 
     -- TODO: Should `name` ever be null??
-    name             text,
+    name             text unique not null default substr(md5(random()::text), 0, 25),
 
     -- meta is used by the executor to
     -- understand how to invoke the job

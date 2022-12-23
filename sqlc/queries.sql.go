@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/jackc/pgtype"
@@ -35,36 +34,36 @@ const createJob = `-- name: CreateJob :one
 insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta)
 values (
   $1,
+  coalesce(nullif($6, ''), substr(md5(random()::text), 0, 25)),
   $2,
-  $3,
   'READY',
-  $4,
-  tiny.next(greatest($5, now()), $1),
+  $3,
+  tiny.next(greatest($4, now()), $1),
   coalesce(nullif($7, 0), 120),
-  $5,
-  $6
+  $4,
+  $5
 )
 returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
 
 type CreateJobParams struct {
-	Expr     string         `json:"expr"`
-	Name     sql.NullString `json:"name"`
-	State    string         `json:"state"`
-	Executor string         `json:"executor"`
-	StartAt  time.Time      `json:"start_at"`
-	Meta     pgtype.JSON    `json:"meta"`
-	Timeout  interface{}    `json:"timeout"`
+	Expr     string      `json:"expr"`
+	State    string      `json:"state"`
+	Executor string      `json:"executor"`
+	StartAt  time.Time   `json:"start_at"`
+	Meta     pgtype.JSON `json:"meta"`
+	Name     interface{} `json:"name"`
+	Timeout  interface{} `json:"timeout"`
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, createJob,
 		arg.Expr,
-		arg.Name,
 		arg.State,
 		arg.Executor,
 		arg.StartAt,
 		arg.Meta,
+		arg.Name,
 		arg.Timeout,
 	)
 	var i TinyJob
@@ -147,8 +146,8 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type DeleteJobByNameParams struct {
-	Name     sql.NullString `json:"name"`
-	Executor string         `json:"executor"`
+	Name     string `json:"name"`
+	Executor string `json:"executor"`
 }
 
 func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams) (TinyJob, error) {
@@ -270,8 +269,8 @@ limit 1
 `
 
 type GetJobByNameParams struct {
-	Name     sql.NullString `json:"name"`
-	Executor string         `json:"executor"`
+	Name     string `json:"name"`
+	Executor string `json:"executor"`
 }
 
 func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (TinyJob, error) {
@@ -470,11 +469,11 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type UpdateJobByNameParams struct {
-	Name     sql.NullString `json:"name"`
-	Executor string         `json:"executor"`
-	Expr     interface{}    `json:"expr"`
-	State    interface{}    `json:"state"`
-	Timeout  interface{}    `json:"timeout"`
+	Name     string      `json:"name"`
+	Executor string      `json:"executor"`
+	Expr     interface{} `json:"expr"`
+	State    interface{} `json:"state"`
+	Timeout  interface{} `json:"timeout"`
 }
 
 // TODO: Implement search

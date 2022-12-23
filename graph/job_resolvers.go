@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -41,7 +40,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		Expr:     args.Expr,
-		Name:     sql.NullString{String: args.Name, Valid: true},
+		Name:     args.Name,
 		State:    args.State,
 		Executor: tinyctx.FromCtx(ctx),
 		Timeout:  timeout,
@@ -53,7 +52,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 // UpdateJobByName is the resolver for the updateJobByName field.
 func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{
-		Name:     sql.NullString{String: name, Valid: true},
+		Name:     name,
 		Executor: tinyctx.FromCtx(ctx),
 	}
 	if args.Expr != nil {
@@ -89,7 +88,7 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args mod
 // DeleteJobByName is the resolver for the deleteJobByName field.
 func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
 	return r.Queries.DeleteJobByName(ctx, sqlc.DeleteJobByNameParams{
-		Name:     sql.NullString{String: name, Valid: true},
+		Name:     name,
 		Executor: tinyctx.FromCtx(ctx),
 	})
 }
@@ -248,7 +247,7 @@ func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs
 // QueryJobByName is the resolver for the queryJobByName field.
 func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
 	return r.Queries.GetJobByName(ctx, sqlc.GetJobByNameParams{
-		Name:     sql.NullString{String: name, Valid: true},
+		Name:     name,
 		Executor: tinyctx.FromCtx(ctx),
 	})
 }
@@ -263,7 +262,7 @@ func (r *queryResolver) QueryJobByID(ctx context.Context, id int64) (sqlc.TinyJo
 
 // Name is the resolver for the Name field.
 func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
-	return &obj.Name.String, nil
+	return &obj.Name, nil
 }
 
 // RunAt is the resolver for the run_at field.

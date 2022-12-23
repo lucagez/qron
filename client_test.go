@@ -36,7 +36,7 @@ func TestClient(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			client.CreateJob("backup", model.CreateJobArgs{
 				Expr: "@after 100ms",
-				Name: "test",
+				Name: fmt.Sprintf("test-%d", i),
 			})
 		}
 
@@ -87,7 +87,7 @@ func TestClient(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			client.CreateJob("flush", model.CreateJobArgs{
 				Expr: "@every 100ms",
-				Name: "test",
+				Name: fmt.Sprintf("test-%d", i),
 			})
 		}
 
@@ -132,7 +132,6 @@ func TestClient(t *testing.T) {
 			timeout := 1
 			client.CreateJob("timeout", model.CreateJobArgs{
 				Expr:    "@after 100ms",
-				Name:    "test",
 				Timeout: &timeout,
 			})
 		}
@@ -168,7 +167,6 @@ func TestClient(t *testing.T) {
 		startAt := time.Now().Add(1 * time.Second)
 		j, _ := client.CreateJob("delayed_start", model.CreateJobArgs{
 			Expr:    "@after 100ms",
-			Name:    "test",
 			StartAt: &startAt,
 		})
 
@@ -202,7 +200,6 @@ func TestClient(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			_, err := q0.CreateJob("other-executor", model.CreateJobArgs{
 				Expr: "@after 100ms",
-				Name: "test",
 			})
 			assert.Nil(t, err)
 		}
@@ -254,7 +251,6 @@ func TestClient(t *testing.T) {
 	t.Run("Should reschedule job", func(t *testing.T) {
 		created, err := client.CreateJob("reschedule", model.CreateJobArgs{
 			Expr: "@after 100ms",
-			Name: "test",
 		})
 		assert.Nil(t, err)
 
@@ -294,6 +290,11 @@ func TestClient(t *testing.T) {
 		serialized, err := json.Marshal(created)
 		assert.Nil(t, err)
 
-		assert.Equal(t, "{}", string(serialized))
+		var job Job
+		json.Unmarshal(serialized, &job)
+		reserialized, err := json.Marshal(job)
+		assert.Nil(t, err)
+
+		assert.Equal(t, string(serialized), string(reserialized))
 	})
 }
