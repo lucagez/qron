@@ -1,6 +1,7 @@
 package tinyq
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -171,7 +172,7 @@ func TestClient(t *testing.T) {
 			StartAt: &startAt,
 		})
 
-		assert.Equal(t, j.RunAt.Time.Sub(startAt).Milliseconds(), int64(100))
+		assert.Equal(t, j.RunAt.Sub(startAt).Milliseconds(), int64(100))
 	})
 
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {
@@ -274,5 +275,25 @@ func TestClient(t *testing.T) {
 		}
 
 		assert.Equal(t, 3, counter)
+	})
+
+	t.Run("Should serialize job generated from sqlc", func(t *testing.T) {
+		timeout := 100
+		startAt := time.Now().Add(1 * time.Hour)
+		meta := `{"some":"meta"}`
+		created, err := client.CreateJob("serialize", model.CreateJobArgs{
+			Expr:    "@after 100ms",
+			Name:    "test",
+			State:   "some rand state",
+			Timeout: &timeout,
+			StartAt: &startAt,
+			Meta:    &meta,
+		})
+		assert.Nil(t, err)
+
+		serialized, err := json.Marshal(created)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "{}", string(serialized))
 	})
 }

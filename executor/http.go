@@ -53,8 +53,8 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	payload, _ := json.Marshal(TinyDto{
 		ID:              job.ID,
 		Expr:            job.Expr,
-		RunAt:           job.RunAt.Time,
-		LastRunAt:       job.LastRunAt.Time,
+		RunAt:           job.RunAt,
+		LastRunAt:       job.LastRunAt,
 		StartAt:         job.StartAt,
 		ExecutionAmount: job.ExecutionAmount,
 		Name:            job.Name.String,

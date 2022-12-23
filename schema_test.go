@@ -83,7 +83,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (expr, executor, state) values ($1, 'BANANA', '{}')
+				insert into tiny.job (expr, executor, state, run_at) values ($1, 'BANANA', '{}', now())
 			`, expr)
 
 			if valid {
@@ -108,7 +108,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (expr, executor, state) values ($1, 'BANANA', '{}')
+				insert into tiny.job (expr, executor, state, run_at) values ($1, 'BANANA', '{}', now())
 			`, expr)
 
 			if valid {
@@ -131,7 +131,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (expr, executor, state) values ($1, 'BANANA', '{}')
+				insert into tiny.job (expr, executor, state, run_at) values ($1, 'BANANA', '{}', now())
 			`, expr)
 
 			if valid {
@@ -154,7 +154,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (expr, executor, state) values ($1, 'BANANA', '{}')
+				insert into tiny.job (expr, executor, state, run_at) values ($1, 'BANANA', '{}', now())
 			`, expr)
 
 			if valid {
@@ -180,7 +180,7 @@ func TestSchema(t *testing.T) {
 
 		for expr, valid := range expressions {
 			_, err := db.Exec(context.Background(), `
-				insert into tiny.job (expr, executor, state) values ($1, 'BANANA', '{}')
+				insert into tiny.job (expr, executor, state, run_at) values ($1, 'BANANA', '{}', now())
 			`, expr)
 
 			if valid {

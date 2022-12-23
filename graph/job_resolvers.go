@@ -141,15 +141,12 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.Commi
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: commit.ID,
-			LastRunAt: sql.NullTime{
-				Time:  time.Now(),
-				Valid: true,
-			},
-			State:    state,
-			Expr:     expr,
-			Status:   sqlc.TinyStatusSUCCESS,
-			Executor: tinyctx.FromCtx(ctx),
+			ID:        commit.ID,
+			LastRunAt: time.Now(),
+			State:     state,
+			Expr:      expr,
+			Status:    sqlc.TinyStatusSUCCESS,
+			Executor:  tinyctx.FromCtx(ctx),
 		})
 	}
 
@@ -179,15 +176,12 @@ func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitA
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: commit.ID,
-			LastRunAt: sql.NullTime{
-				Time:  time.Now(),
-				Valid: true,
-			},
-			State:    state,
-			Expr:     expr,
-			Status:   sqlc.TinyStatusFAILURE,
-			Executor: tinyctx.FromCtx(ctx),
+			ID:        commit.ID,
+			LastRunAt: time.Now(),
+			State:     state,
+			Expr:      expr,
+			Status:    sqlc.TinyStatusFAILURE,
+			Executor:  tinyctx.FromCtx(ctx),
 		})
 	}
 
@@ -217,15 +211,12 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID: commit.ID,
-			LastRunAt: sql.NullTime{
-				Time:  time.Now(),
-				Valid: true,
-			},
-			State:    state,
-			Expr:     expr,
-			Status:   sqlc.TinyStatusREADY,
-			Executor: tinyctx.FromCtx(ctx),
+			ID:        commit.ID,
+			LastRunAt: time.Now(),
+			State:     state,
+			Expr:      expr,
+			Status:    sqlc.TinyStatusREADY,
+			Executor:  tinyctx.FromCtx(ctx),
 		})
 	}
 
@@ -277,12 +268,12 @@ func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string,
 
 // RunAt is the resolver for the run_at field.
 func (r *tinyJobResolver) RunAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error) {
-	return obj.RunAt.Time, nil
+	return obj.RunAt, nil
 }
 
 // LastRunAt is the resolver for the last_run_at field.
 func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error) {
-	return &obj.LastRunAt.Time, nil
+	return &obj.LastRunAt, nil
 }
 
 // Timeout is the resolver for the timeout field.

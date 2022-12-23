@@ -166,8 +166,8 @@ create table tiny.job
     expr             text not null,
 
     -- TODO: should truncate by time unit to avoid future drifting?
-    run_at           timestamptz,
-    last_run_at      timestamptz,
+    run_at           timestamptz not null,
+    last_run_at      timestamptz not null default now(),
     created_at       timestamptz not null default now(),
     start_at         timestamptz not null default now(),
 
