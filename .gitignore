@@ -3,3 +3,4 @@ node_modules/
 .idea/dataSources/
 .idea/httpRequests/
 .idea/codeStyles/
+sdk-adapters/

@@ -44,7 +44,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 		Name:     sql.NullString{String: args.Name, Valid: true},
 		State:    args.State,
 		Executor: tinyctx.FromCtx(ctx),
-		Timeout:  sql.NullInt32{Valid: true, Int32: timeout},
+		Timeout:  timeout,
 		StartAt:  startAt,
 		Meta:     meta,
 	})
@@ -290,7 +290,7 @@ func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*ti
 
 // Timeout is the resolver for the timeout field.
 func (r *tinyJobResolver) Timeout(ctx context.Context, obj *sqlc.TinyJob) (*int, error) {
-	timeout := int(obj.Timeout.Int32)
+	timeout := int(obj.Timeout)
 	return &timeout, nil
 }
 

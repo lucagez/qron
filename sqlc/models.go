@@ -67,7 +67,7 @@ type TinyJob struct {
 	ExecutionAmount int32          `json:"execution_amount"`
 	Name            sql.NullString `json:"name"`
 	Meta            pgtype.JSON    `json:"meta"`
-	Timeout         sql.NullInt32  `json:"timeout"`
+	Timeout         int32          `json:"timeout"`
 	Status          TinyStatus     `json:"status"`
 	State           string         `json:"state"`
 	Executor        string         `json:"executor"`

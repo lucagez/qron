@@ -41,11 +41,11 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, close := client.Fetch("backup")
+		jobs, stop := client.Fetch("backup")
 
 		go func() {
 			<-time.After(300 * time.Millisecond)
-			close()
+			stop()
 		}()
 
 		counter := 0
@@ -92,11 +92,11 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, close := client.Fetch("flush")
+		jobs, stop := client.Fetch("flush")
 
 		go func() {
 			<-time.After(700 * time.Millisecond)
-			close()
+			stop()
 		}()
 
 		counter := 0
@@ -106,7 +106,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// Wait for next flush to happen
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(400 * time.Millisecond)
 
 		all, err := client.SearchJobs("flush", model.QueryJobsArgs{
 			Limit:  100,
@@ -135,11 +135,11 @@ func TestClient(t *testing.T) {
 			})
 		}
 
-		jobs, close := client.Fetch("timeout")
+		jobs, stop := client.Fetch("timeout")
 
 		go func() {
 			<-time.After(1500 * time.Millisecond)
-			close()
+			stop()
 		}()
 
 		counter := 0
@@ -156,7 +156,7 @@ func TestClient(t *testing.T) {
 		assert.Nil(t, err)
 
 		for _, job := range all {
-			// Jobs are executed again as the timeout exceeded
+			// Jobs are executed again as the timeout is exceeded
 			assert.Greater(t, 1, int(job.ExecutionAmount))
 		}
 		assert.Equal(t, 100, counter)
@@ -213,10 +213,10 @@ func TestClient(t *testing.T) {
 
 		go func() {
 			defer wg.Done()
-			ch, close := q0.Fetch("other-executor")
+			ch, stop := q0.Fetch("other-executor")
 			go func() {
 				<-time.After(100 * time.Millisecond)
-				close()
+				stop()
 			}()
 
 			for job := range ch {
@@ -225,10 +225,10 @@ func TestClient(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			ch, close := q1.Fetch("other-executor")
+			ch, stop := q1.Fetch("other-executor")
 			go func() {
 				<-time.After(1 * time.Second)
-				close()
+				stop()
 			}()
 
 			for job := range ch {
@@ -247,5 +247,31 @@ func TestClient(t *testing.T) {
 		}
 
 		assert.Equal(t, len(q0jobs)+len(q1jobs), 100)
+	})
+
+	t.Run("Should reschedule job", func(t *testing.T) {
+		created, err := client.CreateJob("reschedule", model.CreateJobArgs{
+			Expr: "@after 100ms",
+			Name: "test",
+		})
+		assert.Nil(t, err)
+
+		jobs, cleanup := client.Fetch("reschedule")
+
+		go func() {
+			<-time.After(600 * time.Millisecond)
+			cleanup()
+		}()
+
+		counter := 0
+		for job := range jobs {
+			if job.ID == created.ID {
+				counter++
+				job.Expr = "@after 200ms"
+				job.Retry()
+			}
+		}
+
+		assert.Equal(t, 3, counter)
 	})
 }

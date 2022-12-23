@@ -30,6 +30,8 @@ func main() {
 	log.Println("Initializing postgres 🐘")
 
 	port := freePort()
+	log.Println("free port:", port)
+
 	databaseUrl := fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
 	postgres := embeddedpostgres.NewDatabase(
 		embeddedpostgres.DefaultConfig().
@@ -37,7 +39,8 @@ func main() {
 			Password("tiny").
 			Database("tiny").
 			Port(uint32(port)).
-			Logger(os.Stdout),
+			Logger(os.Stdout).
+			Locale("en_US"),
 	)
 	err := postgres.Start()
 	if err != nil {

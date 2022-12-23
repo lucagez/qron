@@ -181,13 +181,15 @@ create table tiny.job
     meta             json not null default '{}',
     
     -- timeout in seconds
-    timeout          integer,
+    timeout          integer not null default 120,
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data
     state            text not null,
     executor         text not null
 );
+
+alter table tiny.job add constraint positive_timeout check (timeout > 0);
 
 alter table tiny.job add constraint run_format check (
   substr(expr, 1, 6) in ('@every', '@after') and (substr(expr, 7)::interval) is not null

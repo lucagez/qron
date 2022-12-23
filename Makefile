@@ -2,7 +2,7 @@
 
 test: 
 	@echo "Running TinyQ tests..."
-	@TZ=UTC go test ./... -race -count=1
+	@TZ=UTC go test ./... -race -count=1 -timeout=30s
 
 gqlgen:
 	@echo "Generating gqlgen graph..."

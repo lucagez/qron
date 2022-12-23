@@ -21,7 +21,10 @@ set last_run_at = $1,
   expr = coalesce(nullif($3::text, ''), expr),
   status = $4,
   execution_amount = execution_amount + 1,
-  run_at = tiny.next($1, expr)
+  run_at = tiny.next(
+    $1, -- 👈 
+    coalesce(nullif($3::text, ''), expr)
+  )
 where id = $5
 and executor = $6
 `

@@ -3,7 +3,6 @@ package executor
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -44,14 +43,9 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	var config HttpConfig
 	err := json.Unmarshal(job.Meta.Bytes, &config)
 	if err != nil {
-		log.Println("error while decoding config payload:", err, job)
 		job.Fail()
 		return
 	}
-
-	fmt.Println("============")
-	fmt.Println("INITIAL STATE:", job.State)
-	fmt.Println("============")
 
 	// TODO: Check null readers do not cause issues
 	// TODO: auth happens via e2e encrypted state
@@ -65,15 +59,13 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 		ExecutionAmount: job.ExecutionAmount,
 		Name:            job.Name.String,
 		Meta:            string(job.Meta.Bytes),
-		Timeout:         job.Timeout.Int32,
+		Timeout:         job.Timeout,
 		Status:          job.Status,
 		State:           job.State,
 		Executor:        job.Executor,
 	})
-	log.Println("sending payload:", string(payload))
 	req, err := http.NewRequest(config.Method, config.Url, bytes.NewReader(payload))
 	if err != nil {
-		log.Println("error while assembling http request", err)
 		job.Fail()
 		return
 	}
@@ -105,16 +97,10 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	}
 
 	if execRes.Expr != "" {
-		fmt.Println("============")
-		fmt.Println("UPDATED EXPR:", execRes.Expr)
-		fmt.Println("============")
 		job.Expr = execRes.Expr
 	}
 
 	if execRes.State != "" {
-		fmt.Println("============")
-		fmt.Println("UPDATED STATE:", execRes.State)
-		fmt.Println("============")
 		job.State = execRes.State
 	}
 

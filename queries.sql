@@ -62,14 +62,14 @@ values (
   $3,
   'READY',
   $4,
-  tiny.next($6, $1),
+  tiny.next(greatest($5, now()), $1),
+  coalesce(nullif(sqlc.arg('timeout'), 0), 120),
   $5,
-  $6,
-  $7
+  $6
 )
 returning *;
 
--- TODO: This query is not working wit dynamic params 🤔
+-- TODO: This query is not working with dynamic params 🤔
 -- name: SearchJobs :many
 select * from tiny.job
 where (name like concat(sqlc.arg('query')::text, '%')
@@ -86,7 +86,10 @@ set last_run_at = sqlc.arg('last_run_at'),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = sqlc.arg('status'),
   execution_amount = execution_amount + 1,
-  run_at = tiny.next(sqlc.arg('last_run_at'), expr)
+  run_at = tiny.next(
+    sqlc.arg('last_run_at'), -- 👈 
+    coalesce(nullif(sqlc.arg('expr')::text, ''), expr)
+  )
 where id = sqlc.arg('id')
 and executor = sqlc.arg('executor'); 
 

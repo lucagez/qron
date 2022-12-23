@@ -39,10 +39,10 @@ values (
   $3,
   'READY',
   $4,
-  tiny.next($6, $1),
+  tiny.next(greatest($5, now()), $1),
+  coalesce(nullif($7, 0), 120),
   $5,
-  $6,
-  $7
+  $6
 )
 returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, name, meta, timeout, status, state, executor
 `
@@ -52,9 +52,9 @@ type CreateJobParams struct {
 	Name     sql.NullString `json:"name"`
 	State    string         `json:"state"`
 	Executor string         `json:"executor"`
-	Timeout  sql.NullInt32  `json:"timeout"`
 	StartAt  time.Time      `json:"start_at"`
 	Meta     pgtype.JSON    `json:"meta"`
+	Timeout  interface{}    `json:"timeout"`
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
@@ -63,9 +63,9 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		arg.Name,
 		arg.State,
 		arg.Executor,
-		arg.Timeout,
 		arg.StartAt,
 		arg.Meta,
+		arg.Timeout,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -361,7 +361,7 @@ type SearchJobsParams struct {
 	Query    string `json:"query"`
 }
 
-// TODO: This query is not working wit dynamic params 🤔
+// TODO: This query is not working with dynamic params 🤔
 func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJob, error) {
 	rows, err := q.db.Query(ctx, searchJobs,
 		arg.Offset,

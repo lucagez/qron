@@ -18,6 +18,8 @@ import (
 // [✅] flush remaining jobs after cancel (use separate context for flush and fetch)
 // [] add test for flushing remaining in-flight job after canceling fetch
 // [] better handling for `state` field. Should it be optional?
+// [] implment idempotency for client
+// [] implement `@asap` operator
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
