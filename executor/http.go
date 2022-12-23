@@ -47,23 +47,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 		return
 	}
 
-	// TODO: Check null readers do not cause issues
-	// TODO: auth happens via e2e encrypted state
-	// TODO: provide signature?
-	payload, _ := json.Marshal(TinyDto{
-		ID:              job.ID,
-		Expr:            job.Expr,
-		RunAt:           job.RunAt,
-		LastRunAt:       job.LastRunAt,
-		StartAt:         job.StartAt,
-		ExecutionAmount: job.ExecutionAmount,
-		Name:            job.Name,
-		Meta:            string(job.Meta.Bytes),
-		Timeout:         job.Timeout,
-		Status:          job.Status,
-		State:           job.State,
-		Executor:        job.Executor,
-	})
+	payload, _ := json.Marshal(job)
 	req, err := http.NewRequest(config.Method, config.Url, bytes.NewReader(payload))
 	if err != nil {
 		job.Fail()
@@ -84,7 +68,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 
 	<-h.limiter
 
-	var execRes TinyDto
+	var execRes tinyq.Job
 	err = json.NewDecoder(res.Body).Decode(&execRes)
 	if err != nil {
 		// TODO: In case body arrives but it's null
