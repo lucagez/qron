@@ -104,22 +104,22 @@ func (r *mutationResolver) DeleteJobByID(ctx context.Context, id int64) (sqlc.Ti
 
 // FetchForProcessing is the resolver for the fetchForProcessing field.
 func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([]sqlc.TinyJob, error) {
-	tx, err := r.DB.BeginTx(context.Background(), pgx.TxOptions{})
+	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	q := r.Queries.WithTx(tx)
-	jobs, err := q.FetchDueJobs(context.Background(), sqlc.FetchDueJobsParams{
+	jobs, err := q.FetchDueJobs(ctx, sqlc.FetchDueJobsParams{
 		Limit:    int32(limit),
 		Executor: tinyctx.FromCtx(ctx),
 	})
 	if err != nil {
-		tx.Rollback(context.Background())
+		tx.Rollback(ctx)
 		return nil, err
 	}
 
-	if tx.Commit(context.Background()) != nil {
+	if tx.Commit(ctx) != nil {
 		return nil, err
 	}
 
@@ -216,9 +216,6 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 			expr = *commit.Expr
 		}
 
-		// RIPARTIRE QUI!<---
-		// 🚨 BUG: After job update, the job is immediately retried (on next fetch)
-		// Probably the query does not update correctly and ignore th updated expr?
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
 			ID: commit.ID,
 			LastRunAt: sql.NullTime{

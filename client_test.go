@@ -95,7 +95,7 @@ func TestClient(t *testing.T) {
 		jobs, stop := client.Fetch("flush")
 
 		go func() {
-			<-time.After(700 * time.Millisecond)
+			<-time.After(350 * time.Millisecond)
 			stop()
 		}()
 
@@ -117,11 +117,12 @@ func TestClient(t *testing.T) {
 
 		executions := 0
 		for _, job := range all {
+			// Flushing increases executions
 			executions += int(job.ExecutionAmount)
-			assert.GreaterOrEqual(t, int(job.ExecutionAmount), 5)
+			assert.GreaterOrEqual(t, int(job.ExecutionAmount), 3)
 		}
 
-		// 2 jobs executed 5 times
+		// 2 jobs executed 3 times
 		assert.Equal(t, executions, counter)
 	})
 
