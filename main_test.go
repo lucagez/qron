@@ -15,9 +15,9 @@ func TestMain(m *testing.M) {
 	goose.SetBaseFS(migrations.MigrationsFS)
 
 	testutil.PG = testutil.NewPgFactory()
+	defer testutil.PG.Teardown()
 
 	m.Run()
 
 	log.Println("cleaning up 🧹")
-	testutil.PG.Teardown()
 }
