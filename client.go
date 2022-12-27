@@ -100,7 +100,10 @@ func (t *Client) reset(ctx context.Context, executorName string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			_, err := t.resolver.Queries.ResetTimeoutJobs(context.Background(), executorName)
+			ids, err := t.resolver.Queries.ResetTimeoutJobs(context.Background(), executorName)
+			if len(ids) > 0 {
+				log.Println("[RESETTING]", ids)
+			}
 			if err != nil {
 				log.Println("error while resetting timed out jobs:", err)
 			}
@@ -151,6 +154,10 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			continue
 		}
 
+		if len(commitBatch)+len(failBatch)+len(retryBatch) > 0 {
+			log.Println("[FLUSHING]", len(commitBatch), "commit.", len(failBatch), "fail.", len(retryBatch), "retry.")
+		}
+
 		// TODO: Handle failed commits + flush errors
 		if len(commitBatch) > 0 {
 			_, err := t.resolver.Mutation().CommitJobs(tinyctx.NewCtx(ctx, executorName), commitBatch)
@@ -197,6 +204,9 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 				jobs, err := c.resolver.
 					Mutation().
 					FetchForProcessing(tinyctx.NewCtx(ctx, executorName), int(c.MaxInFlight))
+				if len(jobs) > 0 {
+					log.Println("[FETCHING]", len(jobs), "jobs")
+				}
 				if err != nil {
 					// TODO: how to handle err?
 					log.Println(err)

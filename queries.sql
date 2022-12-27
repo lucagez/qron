@@ -117,6 +117,7 @@ where timeout is not null
 and timeout > 0
 and now() - last_run_at > make_interval(secs => timeout)
 and executor = $1
+and status = 'PENDING'
 returning id;
 
 -- name: CronNextRun :one

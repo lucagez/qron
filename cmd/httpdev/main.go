@@ -1,13 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"os"
 
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/lucagez/tinyq"
 	"github.com/lucagez/tinyq/executor"
 )
@@ -29,27 +26,31 @@ func freePort() int {
 func main() {
 	log.Println("Initializing postgres 🐘")
 
-	port := freePort()
-	log.Println("free port:", port)
+	// port := freePort()
+	// log.Println("free port:", port)
 
-	databaseUrl := fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
-	postgres := embeddedpostgres.NewDatabase(
-		embeddedpostgres.DefaultConfig().
-			Username("tiny").
-			Password("tiny").
-			Database("tiny").
-			Port(uint32(port)).
-			Logger(os.Stdout).
-			Locale("en_US"),
-	)
-	err := postgres.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer postgres.Stop()
+	// databaseUrl := fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
+	// postgres := embeddedpostgres.NewDatabase(
+	// 	embeddedpostgres.DefaultConfig().
+	// 		Username("tiny").
+	// 		Password("tiny").
+	// 		Database("tiny").
+	// 		Port(uint32(port)).
+	// 		Logger(os.Stdout).
+	// 		Locale("en_US").
+	// 		BinariesPath("/tmp/.pg").
+	// 		DataPath("/tmp/.pg/data").
+	// 		RuntimePath("/tmp/.pg"),
+	// )
+	// err := postgres.Start()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer postgres.Stop()
 
 	client, err := tinyq.NewClient(tinyq.Config{
-		Dsn: databaseUrl,
+		// Dsn: databaseUrl,
+		Dsn: "postgres://postgres:password@localhost:5435/postgres",
 	})
 	if err != nil {
 		log.Fatal(err)
