@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
@@ -170,7 +170,7 @@ func TestClient(t *testing.T) {
 			StartAt: &startAt,
 		})
 
-		assert.Equal(t, j.RunAt.Sub(startAt).Milliseconds(), int64(100))
+		assert.Equal(t, j.RunAt.Time.Sub(startAt).Milliseconds(), int64(100))
 	})
 
 	t.Run("Should fetch jobs in parallel without overlaps", func(t *testing.T) {

@@ -34,7 +34,7 @@ type DockerConfig struct {
 }
 
 func (d *DockerExecutor) Run(job tinyq.Job) {
-	log.Println("meta:", string(job.Meta.Bytes))
+	log.Println("meta:", string(job.Meta))
 
 	// TODO: Add docker registry auth
 	t0 := time.Now()

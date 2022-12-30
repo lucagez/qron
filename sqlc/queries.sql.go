@@ -7,9 +7,8 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countJobsInStatus = `-- name: CountJobsInStatus :one
@@ -47,13 +46,13 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 `
 
 type CreateJobParams struct {
-	Expr     string      `json:"expr"`
-	State    string      `json:"state"`
-	Executor string      `json:"executor"`
-	StartAt  time.Time   `json:"start_at"`
-	Meta     pgtype.JSON `json:"meta"`
-	Name     interface{} `json:"name"`
-	Timeout  interface{} `json:"timeout"`
+	Expr     string             `json:"expr"`
+	State    string             `json:"state"`
+	Executor string             `json:"executor"`
+	StartAt  pgtype.Timestamptz `json:"start_at"`
+	Meta     []byte             `json:"meta"`
+	Name     interface{}        `json:"name"`
+	Timeout  interface{}        `json:"timeout"`
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
@@ -94,13 +93,13 @@ from tiny.cron_next_run(
 `
 
 type CronNextRunParams struct {
-	From time.Time `json:"from"`
-	Expr string    `json:"expr"`
+	From pgtype.Timestamptz `json:"from"`
+	Expr string             `json:"expr"`
 }
 
-func (q *Queries) CronNextRun(ctx context.Context, arg CronNextRunParams) (time.Time, error) {
+func (q *Queries) CronNextRun(ctx context.Context, arg CronNextRunParams) (pgtype.Timestamptz, error) {
 	row := q.db.QueryRow(ctx, cronNextRun, arg.From, arg.Expr)
-	var run_at time.Time
+	var run_at pgtype.Timestamptz
 	err := row.Scan(&run_at)
 	return run_at, err
 }
@@ -303,13 +302,13 @@ from tiny.next(
 `
 
 type NextParams struct {
-	From time.Time `json:"from"`
-	Expr string    `json:"expr"`
+	From pgtype.Timestamptz `json:"from"`
+	Expr string             `json:"expr"`
 }
 
-func (q *Queries) Next(ctx context.Context, arg NextParams) (time.Time, error) {
+func (q *Queries) Next(ctx context.Context, arg NextParams) (pgtype.Timestamptz, error) {
 	row := q.db.QueryRow(ctx, next, arg.From, arg.Expr)
-	var run_at time.Time
+	var run_at pgtype.Timestamptz
 	err := row.Scan(&run_at)
 	return run_at, err
 }

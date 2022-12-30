@@ -7,9 +7,8 @@ package sqlc
 import (
 	"database/sql/driver"
 	"fmt"
-	"time"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type TinyStatus string
@@ -57,17 +56,17 @@ func (ns NullTinyStatus) Value() (driver.Value, error) {
 }
 
 type TinyJob struct {
-	ID              int64       `json:"id"`
-	Expr            string      `json:"expr"`
-	RunAt           time.Time   `json:"run_at"`
-	LastRunAt       time.Time   `json:"last_run_at"`
-	CreatedAt       time.Time   `json:"created_at"`
-	StartAt         time.Time   `json:"start_at"`
-	ExecutionAmount int32       `json:"execution_amount"`
-	Name            string      `json:"name"`
-	Meta            pgtype.JSON `json:"meta"`
-	Timeout         int32       `json:"timeout"`
-	Status          TinyStatus  `json:"status"`
-	State           string      `json:"state"`
-	Executor        string      `json:"executor"`
+	ID              int64              `json:"id"`
+	Expr            string             `json:"expr"`
+	RunAt           pgtype.Timestamptz `json:"run_at"`
+	LastRunAt       pgtype.Timestamptz `json:"last_run_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	StartAt         pgtype.Timestamptz `json:"start_at"`
+	ExecutionAmount int32              `json:"execution_amount"`
+	Name            string             `json:"name"`
+	Meta            []byte             `json:"meta"`
+	Timeout         int32              `json:"timeout"`
+	Status          TinyStatus         `json:"status"`
+	State           string             `json:"state"`
+	Executor        string             `json:"executor"`
 }

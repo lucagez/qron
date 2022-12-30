@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgtype"
-	pgx "github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
@@ -30,12 +30,9 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 		startAt = *args.StartAt
 	}
 
-	meta := pgtype.JSON{
-		Bytes:  []byte("{}"),
-		Status: pgtype.Present,
-	}
+	meta := []byte("{}")
 	if args.Meta != nil {
-		meta.Set(*args.Meta)
+		meta = []byte(*args.Meta)
 	}
 
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
@@ -44,7 +41,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 		State:    args.State,
 		Executor: tinyctx.FromCtx(ctx),
 		Timeout:  timeout,
-		StartAt:  startAt,
+		StartAt:  pgtype.Timestamptz{Time: startAt, Valid: true},
 		Meta:     meta,
 	})
 }
@@ -141,7 +138,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.Commi
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
 			ID:        commit.ID,
-			LastRunAt: time.Now(),
+			LastRunAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusSUCCESS,
@@ -176,7 +173,7 @@ func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitA
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
 			ID:        commit.ID,
-			LastRunAt: time.Now(),
+			LastRunAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusFAILURE,
@@ -211,7 +208,7 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
 			ID:        commit.ID,
-			LastRunAt: time.Now(),
+			LastRunAt: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusREADY,
@@ -267,12 +264,12 @@ func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string,
 
 // RunAt is the resolver for the run_at field.
 func (r *tinyJobResolver) RunAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error) {
-	return obj.RunAt, nil
+	return obj.RunAt.Time, nil
 }
 
 // LastRunAt is the resolver for the last_run_at field.
 func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error) {
-	return &obj.LastRunAt, nil
+	return &obj.LastRunAt.Time, nil
 }
 
 // Timeout is the resolver for the timeout field.

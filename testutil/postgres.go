@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/pressly/goose/v3"
@@ -55,9 +55,9 @@ func NewPgFactory() PgFactory {
 	counter := 0
 
 	for {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 
-		client, err = pgxpool.Connect(
+		client, err = pgxpool.New(
 			context.Background(),
 			fmt.Sprintf(
 				"postgres://postgres:postgres@%s/%s?sslmode=disable",
@@ -87,7 +87,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 	_, err := p.MaintainanceClient.Exec(
 		context.Background(), fmt.Sprintf("create database %s", name))
 	if err != nil {
-		log.Fatalln("failed to created db", name, ":", err)
+		log.Fatalln("failed to create db", name, ":", err)
 	}
 
 	dbUrl := fmt.Sprintf(
@@ -107,7 +107,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 		log.Fatalln("unable to run migrations:", err)
 	}
 
-	client, err := pgxpool.Connect(
+	client, err := pgxpool.New(
 		context.Background(),
 		dbUrl,
 	)

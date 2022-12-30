@@ -11,7 +11,8 @@ gqlgen:
 
 sqlc:
 	@echo "Generating sqlc queries..."
-	@docker run --rm -v $(shell pwd):/src -w /src kjconroy/sqlc generate
+	# @docker run --rm -v $(shell pwd):/src -w /src kjconroy/sqlc generate
+	@sqlc-dev --experimental generate
 
 migrate_up:
 	@echo "Migrate local db..."

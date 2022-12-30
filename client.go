@@ -12,8 +12,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph"
 	"github.com/lucagez/tinyq/graph/generated"
@@ -49,7 +49,7 @@ type Config struct {
 // that tasks that exceed timeouts get cleared and set back to READY.
 // -> this behavior should be configurable?
 func NewClient(cfg Config) (Client, error) {
-	db, err := pgxpool.Connect(context.Background(), cfg.Dsn)
+	db, err := pgxpool.New(context.Background(), cfg.Dsn)
 	if err != nil {
 		return Client{}, err
 	}

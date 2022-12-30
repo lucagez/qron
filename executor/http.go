@@ -41,7 +41,7 @@ type HttpConfig struct {
 
 func (h HttpExecutor) Run(job tinyq.Job) {
 	var config HttpConfig
-	err := json.Unmarshal(job.Meta.Bytes, &config)
+	err := json.Unmarshal(job.Meta, &config)
 	if err != nil {
 		job.Fail()
 		return
