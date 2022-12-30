@@ -298,3 +298,51 @@ func TestClient(t *testing.T) {
 		assert.Equal(t, string(serialized), string(reserialized))
 	})
 }
+
+func TestDelivery(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("delivery")
+	defer cleanup()
+
+	port := pool.Config().ConnConfig.Port
+	client, err := NewClient(Config{
+		Dsn: fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port),
+	})
+	assert.Nil(t, err)
+	defer client.Close()
+
+	t.Run("Should deliver job at least once", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			client.CreateJob("backup", model.CreateJobArgs{
+				Expr: "@after 100ms",
+				Name: fmt.Sprintf("test-%d", i),
+			})
+		}
+
+		// Wait for job time to be elapsed
+		time.Sleep(500 * time.Millisecond)
+
+		delayedClient, err := NewClient(Config{
+			Dsn:           fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port),
+			FlushInterval: 10 * time.Millisecond,
+			PollInterval:  10 * time.Millisecond,
+		})
+		assert.Nil(t, err)
+		defer delayedClient.Close()
+
+		jobs, cleanup := delayedClient.Fetch("backup")
+
+		go func() {
+			<-time.After(500 * time.Millisecond)
+			cleanup()
+		}()
+
+		counter := 0
+		for job := range jobs {
+			counter++
+			job.Commit()
+		}
+
+		assert.Equal(t, 50, counter)
+	})
+
+}
