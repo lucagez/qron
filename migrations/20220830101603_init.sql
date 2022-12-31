@@ -186,7 +186,8 @@ create table tiny.job
     -- state is e2e encrypted so this is never
     -- visible from tinyq. this can hold sensitive data
     state            text not null,
-    executor         text not null
+    executor         text not null,
+    owner            text not null default 'default'
 );
 
 alter table tiny.job add constraint positive_timeout check (timeout > 0);

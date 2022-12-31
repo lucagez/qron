@@ -55,7 +55,7 @@ func NewPgFactory() PgFactory {
 	counter := 0
 
 	for {
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 
 		client, err = pgxpool.New(
 			context.Background(),
@@ -65,12 +65,13 @@ func NewPgFactory() PgFactory {
 				"postgres",
 			),
 		)
-		if client != nil {
-			log.Println("pool is up and running")
-			break
-		}
-		if err != nil && counter > 5 {
+		if err != nil && counter > 20 {
 			log.Fatalln("could not connect to maintenance db:", err)
+		}
+
+		rows, err := client.Query(context.Background(), "select 1")
+		if err == nil && rows.Next() {
+			break
 		}
 
 		counter++
