@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"net/http"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucagez/tinyq"
 	"github.com/lucagez/tinyq/executor"
 )
@@ -47,11 +49,12 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 	// defer postgres.Stop()
+	db, err := pgxpool.New(context.Background(), "postgres://postgres:password@localhost:5435/postgres")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	client, err := tinyq.NewClient(tinyq.Config{
-		// Dsn: databaseUrl,
-		Dsn: "postgres://postgres:password@localhost:5435/postgres",
-	})
+	client, err := tinyq.NewClient(db, tinyq.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

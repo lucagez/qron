@@ -1,14 +1,17 @@
 package tinyq
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucagez/tinyq/graph/model"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,8 +25,9 @@ func TestClient(t *testing.T) {
 	defer cleanup()
 
 	port := pool.Config().ConnConfig.Port
-	client, err := NewClient(Config{
-		Dsn:           fmt.Sprintf("postgres://postgres:postgres@localhost:%d/client_0", port),
+	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/client_0", port)
+	clientPool, _ := pgxpool.New(context.Background(), dsn)
+	client, err := NewClient(clientPool, Config{
 		PollInterval:  10 * time.Millisecond,
 		FlushInterval: 10 * time.Millisecond,
 		ResetInterval: 10 * time.Millisecond,
@@ -180,14 +184,18 @@ func TestClient(t *testing.T) {
 		port := pool.Config().ConnConfig.Port
 		dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/no_overlaps", port)
 
-		q0, err0 := NewClient(Config{
-			Dsn:           dsn,
+		q0Pool, _ := pgxpool.New(context.Background(), dsn)
+		defer q0Pool.Close()
+
+		q1Pool, _ := pgxpool.New(context.Background(), dsn)
+		defer q1Pool.Close()
+
+		q0, err0 := NewClient(q0Pool, Config{
 			FlushInterval: 10 * time.Millisecond,
 			PollInterval:  10 * time.Millisecond,
 			MaxInFlight:   5, // so to maximize chance of getting concurrent reads
 		})
-		q1, err1 := NewClient(Config{
-			Dsn:           dsn,
+		q1, err1 := NewClient(q1Pool, Config{
 			FlushInterval: 10 * time.Millisecond,
 			PollInterval:  10 * time.Millisecond,
 			MaxInFlight:   5,
@@ -304,9 +312,10 @@ func TestDelivery(t *testing.T) {
 	defer cleanup()
 
 	port := pool.Config().ConnConfig.Port
-	client, err := NewClient(Config{
-		Dsn: fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port),
-	})
+	deliveryPool, _ := pgxpool.New(context.Background(), fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port))
+	defer deliveryPool.Close()
+
+	client, err := NewClient(deliveryPool, Config{})
 	assert.Nil(t, err)
 	defer client.Close()
 
@@ -321,8 +330,9 @@ func TestDelivery(t *testing.T) {
 		// Wait for job time to be elapsed
 		time.Sleep(500 * time.Millisecond)
 
-		delayedClient, err := NewClient(Config{
-			Dsn:           fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port),
+		delayedPool, _ := pgxpool.New(context.Background(), fmt.Sprintf("postgres://postgres:postgres@localhost:%d/delivery", port))
+		defer delayedPool.Close()
+		delayedClient, err := NewClient(delayedPool, Config{
 			FlushInterval: 10 * time.Millisecond,
 			PollInterval:  10 * time.Millisecond,
 		})
@@ -343,5 +353,32 @@ func TestDelivery(t *testing.T) {
 		}
 
 		assert.Equal(t, 50, counter)
+	})
+}
+
+func TestOwner(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("owner")
+	defer cleanup()
+
+	port := pool.Config().ConnConfig.Port
+	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
+
+	// RIPARTIRE QUI!<---
+	// - test scopedConn against adminConn 👈
+
+	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
+	assert.Nil(t, err)
+
+	// RIPARTIRE QUI!<---
+	// - How to pass scopedConn?
+	scopedClient, err := NewClient(*pgxpool.Pool(scopedConn), Config{})
+	assert.Nil(t, err)
+	defer scopedClient.Close()
+
+	adminClient, err := NewClient(pool, Config{})
+	assert.Nil(t, err)
+	defer adminClient.Close()
+
+	t.Run("Should do the things", func(t *testing.T) {
 	})
 }

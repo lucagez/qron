@@ -37,7 +37,6 @@ type Client struct {
 }
 
 type Config struct {
-	Dsn            string
 	MaxInFlight    uint64
 	FlushInterval  time.Duration
 	PollInterval   time.Duration
@@ -48,11 +47,19 @@ type Config struct {
 // TODO: There should be alway a global job that make sure
 // that tasks that exceed timeouts get cleared and set back to READY.
 // -> this behavior should be configurable?
-func NewClient(cfg Config) (Client, error) {
-	db, err := pgxpool.New(context.Background(), cfg.Dsn)
-	if err != nil {
-		return Client{}, err
-	}
+func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
+	// if cfg.Dsn != "" {
+	// 	var err error
+	// 	db, err = pgxpool.New(context.Background(), cfg.Dsn)
+	// 	if err != nil {
+	// 		return Client{}, err
+	// 	}
+	// }
+
+	// if cfg.Conn != nil {
+	// 	db = cfg.Conn
+	// }
+
 	queries := sqlc.New(db)
 	resolver := graph.Resolver{Queries: queries, DB: db}
 
@@ -74,7 +81,6 @@ func NewClient(cfg Config) (Client, error) {
 
 	return Client{
 		resolver:       resolver,
-		dsn:            cfg.Dsn,
 		MaxInFlight:    cfg.MaxInFlight,
 		FlushInterval:  cfg.FlushInterval,
 		PollInterval:   cfg.PollInterval,

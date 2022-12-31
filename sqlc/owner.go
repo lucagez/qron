@@ -3,10 +3,8 @@ package sqlc
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -14,7 +12,7 @@ import (
 // only leverages a lower privileges postgres role
 // that is subject to RLS
 type ScopedPgx struct {
-	pool *pgxpool.Pool
+	*pgxpool.Pool
 }
 
 type ownerCtx struct{}
@@ -25,24 +23,24 @@ func NewCtx(ctx context.Context, owner string) context.Context {
 	return context.WithValue(ctx, key, owner)
 }
 
-func NewScopedPgx(dsn string) ScopedPgx {
+func NewScopedPgx(ctx context.Context, dsn string) (*ScopedPgx, error) {
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		log.Fatal("failed to parse config:", err)
+		return nil, err
 	}
-	config.AfterConnect = func(ctx context.Context, c *pgx.Conn) error {
-		_, err := c.Exec(ctx, "set role tinyrole")
+	config.AfterConnect = func(_ctx context.Context, c *pgx.Conn) error {
+		_, err := c.Exec(_ctx, "set role tinyrole")
 		return err
 	}
 
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Fatal("error while establishing pool connection:", err)
+		return nil, err
 	}
 
-	return ScopedPgx{
-		pool: pool,
-	}
+	return &ScopedPgx{
+		pool,
+	}, nil
 }
 
 // Query wraps each query into a separate transaction to
@@ -54,7 +52,7 @@ func (p *ScopedPgx) Query(ctx context.Context, query string, args ...any) (pgx.R
 	}
 
 	// TODO: Add additional timeout to prevent long hangs?
-	tx, err := p.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := p.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +62,7 @@ func (p *ScopedPgx) Query(ctx context.Context, query string, args ...any) (pgx.R
 		tx.Rollback(ctx)
 		return nil, err
 	}
-	rows, err := p.pool.Query(ctx, query, args...)
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		tx.Rollback(ctx)
 		return nil, err
@@ -73,14 +71,14 @@ func (p *ScopedPgx) Query(ctx context.Context, query string, args ...any) (pgx.R
 	return rows, tx.Commit(ctx)
 }
 
-func (p *ScopedPgx) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
-	return p.pool.Exec(ctx, query, args...)
-}
+// func (p *ScopedPgx) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
+// 	return p.pool.Exec(ctx, query, args...)
+// }
 
-func (p *ScopedPgx) QueryRow(ctx context.Context, query string, args ...any) pgx.Row {
-	return p.pool.QueryRow(ctx, query, args...)
-}
+// func (p *ScopedPgx) QueryRow(ctx context.Context, query string, args ...any) pgx.Row {
+// 	return p.pool.QueryRow(ctx, query, args...)
+// }
 
-func (p *ScopedPgx) SendBatch(ctx context.Context, batch *pgx.Batch) pgx.BatchResults {
-	return p.pool.SendBatch(ctx, batch)
-}
+// func (p *ScopedPgx) SendBatch(ctx context.Context, batch *pgx.Batch) pgx.BatchResults {
+// 	return p.pool.SendBatch(ctx, batch)
+// }

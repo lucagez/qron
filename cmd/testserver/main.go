@@ -10,14 +10,19 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucagez/tinyq"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/pyroscope-io/client/pyroscope"
 )
 
 func main() {
-	tiny, err := tinyq.NewClient(tinyq.Config{
-		Dsn:           "postgres://postgres:password@localhost:5435/postgres",
+	pool, err := pgxpool.New(context.Background(), "postgres://postgres:password@localhost:5435/postgres")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tiny, err := tinyq.NewClient(pool, tinyq.Config{
 		FlushInterval: 1 * time.Second,
 		PollInterval:  1 * time.Second,
 		MaxInFlight:   100,
