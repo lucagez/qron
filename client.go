@@ -200,6 +200,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 			case <-ctx.Done():
 				close(ch)
 				return
+			// TODO: replace with ticker!
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
 					Mutation().

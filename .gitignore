@@ -4,3 +4,4 @@ node_modules/
 .idea/httpRequests/
 .idea/codeStyles/
 sdk-adapters/
+cloud/

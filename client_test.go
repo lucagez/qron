@@ -344,5 +344,4 @@ func TestDelivery(t *testing.T) {
 
 		assert.Equal(t, 50, counter)
 	})
-
 }
