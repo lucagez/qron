@@ -371,7 +371,7 @@ func TestOwner(t *testing.T) {
 
 	// RIPARTIRE QUI!<---
 	// - How to pass scopedConn?
-	scopedClient, err := NewClient(*pgxpool.Pool(scopedConn), Config{})
+	scopedClient, err := NewClient(scopedConn, Config{})
 	assert.Nil(t, err)
 	defer scopedClient.Close()
 

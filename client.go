@@ -12,7 +12,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph"
@@ -47,7 +46,7 @@ type Config struct {
 // TODO: There should be alway a global job that make sure
 // that tasks that exceed timeouts get cleared and set back to READY.
 // -> this behavior should be configurable?
-func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
+func NewClient(db sqlc.Querier, cfg Config) (Client, error) {
 	// if cfg.Dsn != "" {
 	// 	var err error
 	// 	db, err = pgxpool.New(context.Background(), cfg.Dsn)

@@ -3,7 +3,6 @@ package graph
 //go:generate go run github.com/99designs/gqlgen@latest generate
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucagez/tinyq/sqlc"
 )
 
@@ -22,5 +21,5 @@ import (
 // [] implement `@asap` operator
 type Resolver struct {
 	Queries *sqlc.Queries
-	DB      *pgxpool.Pool
+	DB      sqlc.Querier
 }
