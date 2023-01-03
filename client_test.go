@@ -380,5 +380,27 @@ func TestOwner(t *testing.T) {
 	defer adminClient.Close()
 
 	t.Run("Should do the things", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			adminClient.CreateJob("backup", model.CreateJobArgs{
+				Expr: "@after 1 hour",
+				Name: fmt.Sprintf("test-%d", i),
+			})
+		}
+
+		adminJobs, err := adminClient.SearchJobs("backup", model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "test",
+		})
+		assert.Nil(t, err)
+		assert.Len(t, adminJobs, 50)
+
+		scopedJobs, err := scopedClient.SearchJobs("backup", model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "test",
+		})
+		assert.Nil(t, err)
+		assert.Len(t, scopedJobs, 50)
 	})
 }

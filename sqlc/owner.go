@@ -70,15 +70,3 @@ func (p *ScopedPgx) Query(ctx context.Context, query string, args ...any) (pgx.R
 
 	return rows, tx.Commit(ctx)
 }
-
-// func (p *ScopedPgx) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
-// 	return p.pool.Exec(ctx, query, args...)
-// }
-
-// func (p *ScopedPgx) QueryRow(ctx context.Context, query string, args ...any) pgx.Row {
-// 	return p.pool.QueryRow(ctx, query, args...)
-// }
-
-// func (p *ScopedPgx) SendBatch(ctx context.Context, batch *pgx.Batch) pgx.BatchResults {
-// 	return p.pool.SendBatch(ctx, batch)
-// }
