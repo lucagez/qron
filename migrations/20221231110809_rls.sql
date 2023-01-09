@@ -4,8 +4,9 @@ do $$
 begin
 create role tinyrole;
 grant all on schema public to tinyrole;
-grant usage, select on sequence tiny.job_id_seq to tinyrole;
+grant usage on schema tiny to tinyrole;
 grant all on schema tiny to tinyrole;
+grant usage, select on sequence tiny.job_id_seq to tinyrole;
 grant all on tiny.job to tinyrole;
 
 exception when duplicate_object then raise notice '%, skipping', sqlerrm using errcode = sqlstate;

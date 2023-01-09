@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucagez/tinyq/graph/model"
+	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -358,52 +359,74 @@ func TestDelivery(t *testing.T) {
 	})
 }
 
-// func TestOwner(t *testing.T) {
-// 	pool, cleanup := testutil.PG.CreateDb("owner")
-// 	defer cleanup()
+func TestOwner(t *testing.T) {
+	t.SkipNow()
 
-// 	port := pool.Config().ConnConfig.Port
-// 	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
+	pool, cleanup := testutil.PG.CreateDb("owner")
+	defer cleanup()
 
-// 	// RIPARTIRE QUI!<---
-// 	// - test scopedConn against adminConn 👈
+	port := pool.Config().ConnConfig.Port
+	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
 
-// 	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
-// 	assert.Nil(t, err)
+	// RIPARTIRE QUI!<---
+	// - test scopedConn against adminConn 👈
 
-// 	// RIPARTIRE QUI!<---
-// 	// - How to pass scopedConn?
-// 	scopedClient, err := NewClient(scopedConn, Config{})
-// 	assert.Nil(t, err)
-// 	defer scopedClient.Close()
+	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
+	assert.Nil(t, err)
+	// RIPARTIRE QUI!<---
+	// - How to pass scopedConn?
+	scopedClient, err := NewClient(scopedConn, Config{})
+	assert.Nil(t, err)
+	defer scopedClient.Close()
 
-// 	adminClient, err := NewClient(pool, Config{})
-// 	assert.Nil(t, err)
-// 	defer adminClient.Close()
-// 	ctx := context.Background()
+	adminClient, err := NewClient(pool, Config{})
+	assert.Nil(t, err)
+	defer adminClient.Close()
+	ctx := context.Background()
 
-// 	t.Run("Should do the things", func(t *testing.T) {
-// 		for i := 0; i < 50; i++ {
-// 			adminClient.CreateJob(ctx, "backup", model.CreateJobArgs{
-// 				Expr: "@after 1 hour",
-// 				Name: fmt.Sprintf("test-%d", i),
-// 			})
-// 		}
+	t.Run("Should configure scoped conn pool", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			adminClient.CreateJob(ctx, "backup", model.CreateJobArgs{
+				Expr: "@after 1 hour",
+				Name: fmt.Sprintf("test-%d", i),
+			})
+		}
 
-// 		adminJobs, err := adminClient.SearchJobs(ctx, "backup", model.QueryJobsArgs{
-// 			Limit:  100,
-// 			Skip:   0,
-// 			Filter: "test",
-// 		})
-// 		assert.Nil(t, err)
-// 		assert.Len(t, adminJobs, 50)
+		var wg sync.WaitGroup
+		wg.Add(2)
 
-// 		scopedJobs, err := scopedClient.SearchJobs(ctx, "backup", model.QueryJobsArgs{
-// 			Limit:  100,
-// 			Skip:   0,
-// 			Filter: "test",
-// 		})
-// 		assert.Nil(t, err)
-// 		assert.Len(t, scopedJobs, 50)
-// 	})
-// }
+		// Perform fetches concurrently to test connections
+		// are configured are reset to pool correctly
+		go func() {
+			for i := 0; i < 100; i++ {
+				adminJobs, err := adminClient.SearchJobs(ctx, "backup", model.QueryJobsArgs{
+					Limit:  100,
+					Skip:   0,
+					Filter: "test",
+				})
+				assert.Nil(t, err)
+				assert.Len(t, adminJobs, 50)
+			}
+
+			wg.Done()
+		}()
+
+		go func() {
+			// TODO: Bug when executing tests in parallel
+			// -> Permission denied for schema tiny
+			for i := 0; i < 100; i++ {
+				scopedJobs, err := scopedClient.SearchJobs(sqlc.NewCtx(ctx, "bobby"), "backup", model.QueryJobsArgs{
+					Limit:  100,
+					Skip:   0,
+					Filter: "test",
+				})
+				assert.Nil(t, err)
+				assert.Len(t, scopedJobs, 0)
+			}
+
+			wg.Done()
+		}()
+
+		wg.Wait()
+	})
+}
