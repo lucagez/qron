@@ -244,11 +244,6 @@ func (c *Client) Handler() http.Handler {
 	return router
 }
 
-// RIPARTIRE QUI!<---
-// - change signature. Pass executor name to sqlc queries
-// - do not use executor name in context
-// - use owner in context
-// - Query(context<owner>, executor, args)
 func (c *Client) CreateJob(ctx context.Context, executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().CreateJob(
 		ctx,

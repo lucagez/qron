@@ -368,13 +368,9 @@ func TestOwner(t *testing.T) {
 	port := pool.Config().ConnConfig.Port
 	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
 
-	// RIPARTIRE QUI!<---
-	// - test scopedConn against adminConn 👈
-
 	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
 	assert.Nil(t, err)
-	// RIPARTIRE QUI!<---
-	// - How to pass scopedConn?
+
 	scopedClient, err := NewClient(scopedConn, Config{})
 	assert.Nil(t, err)
 	defer scopedClient.Close()
