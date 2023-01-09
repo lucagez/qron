@@ -52,21 +52,21 @@ input CommitArgs {
 }
 
 type Mutation {
-  createJob(args: CreateJobArgs!): TinyJob!
-  updateJobByName(name: String!, args: UpdateJobArgs!): TinyJob!
-  updateJobById(id: ID!, args: UpdateJobArgs!): TinyJob!
-  deleteJobByName(name: String!): TinyJob!
-  deleteJobByID(id: ID!): TinyJob!
-  fetchForProcessing(limit: Int! = 50): [TinyJob!]!
+  createJob(executor: String!, args: CreateJobArgs!): TinyJob!
+  updateJobByName(executor: String!, name: String!, args: UpdateJobArgs!): TinyJob!
+  updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
+  deleteJobByName(executor: String!, name: String!): TinyJob!
+  deleteJobByID(executor: String!, id: ID!): TinyJob!
+  fetchForProcessing(executor: String!, limit: Int! = 50): [TinyJob!]!
 
   # returns jobs that the server failed to commit
-  commitJobs(commits: [CommitArgs!]!): [ID!]!
+  commitJobs(executor: String!, commits: [CommitArgs!]!): [ID!]!
 
   # returns jobs that the server failed to mark as failed
-  failJobs(commits: [CommitArgs!]!): [ID!]!
+  failJobs(executor: String!, commits: [CommitArgs!]!): [ID!]!
 
   # returns jobs that the server failed to queue for retry
-  retryJobs(commits: [CommitArgs!]!): [ID!]!
+  retryJobs(executor: String!, commits: [CommitArgs!]!): [ID!]!
 }
 
 input QueryJobsArgs {
@@ -76,7 +76,7 @@ input QueryJobsArgs {
 }
 
 type Query {
-  searchJobs(args: QueryJobsArgs!): [TinyJob!]!
-  queryJobByName(name: String!): TinyJob!
-  queryJobByID(id: ID!): TinyJob!
+  searchJobs(executor: String!, args: QueryJobsArgs!): [TinyJob!]!
+  queryJobByName(executor: String!, name: String!): TinyJob!
+  queryJobByID(executor: String!, id: ID!): TinyJob!
 }

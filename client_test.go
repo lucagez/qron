@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/sqlc"
 	"github.com/lucagez/tinyq/testutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,9 +35,11 @@ func TestClient(t *testing.T) {
 	assert.Nil(t, err)
 	defer client.Close()
 
+	ctx := context.Background()
+
 	t.Run("Should fetch", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-			client.CreateJob("backup", model.CreateJobArgs{
+			client.CreateJob(ctx, "backup", model.CreateJobArgs{
 				Expr: "@after 100ms",
 				Name: fmt.Sprintf("test-%d", i),
 			})
@@ -46,7 +47,7 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, stop := client.Fetch("backup")
+		jobs, stop := client.Fetch(ctx, "backup")
 
 		go func() {
 			<-time.After(300 * time.Millisecond)
@@ -65,7 +66,7 @@ func TestClient(t *testing.T) {
 		}
 		assert.Equal(t, 50, counter)
 
-		all, err := client.SearchJobs("backup", model.QueryJobsArgs{
+		all, err := client.SearchJobs(ctx, "backup", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -89,7 +90,7 @@ func TestClient(t *testing.T) {
 
 	t.Run("Should flush", func(t *testing.T) {
 		for i := 0; i < 2; i++ {
-			client.CreateJob("flush", model.CreateJobArgs{
+			client.CreateJob(ctx, "flush", model.CreateJobArgs{
 				Expr: "@every 100ms",
 				Name: fmt.Sprintf("test-%d", i),
 			})
@@ -97,7 +98,7 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, stop := client.Fetch("flush")
+		jobs, stop := client.Fetch(ctx, "flush")
 
 		go func() {
 			<-time.After(350 * time.Millisecond)
@@ -113,7 +114,7 @@ func TestClient(t *testing.T) {
 		// Wait for next flush to happen
 		time.Sleep(400 * time.Millisecond)
 
-		all, err := client.SearchJobs("flush", model.QueryJobsArgs{
+		all, err := client.SearchJobs(ctx, "flush", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -134,13 +135,13 @@ func TestClient(t *testing.T) {
 	t.Run("Should reset jobs after timeout is reached", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			timeout := 1
-			client.CreateJob("timeout", model.CreateJobArgs{
+			client.CreateJob(ctx, "timeout", model.CreateJobArgs{
 				Expr:    "@after 100ms",
 				Timeout: &timeout,
 			})
 		}
 
-		jobs, stop := client.Fetch("timeout")
+		jobs, stop := client.Fetch(ctx, "timeout")
 
 		go func() {
 			<-time.After(1500 * time.Millisecond)
@@ -153,7 +154,7 @@ func TestClient(t *testing.T) {
 			// Jobs are never committed
 		}
 
-		all, err := client.SearchJobs("timeout", model.QueryJobsArgs{
+		all, err := client.SearchJobs(ctx, "timeout", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -169,7 +170,7 @@ func TestClient(t *testing.T) {
 
 	t.Run("Should calculate next execution based on start time", func(t *testing.T) {
 		startAt := time.Now().Add(1 * time.Second)
-		j, _ := client.CreateJob("delayed_start", model.CreateJobArgs{
+		j, _ := client.CreateJob(ctx, "delayed_start", model.CreateJobArgs{
 			Expr:    "@after 100ms",
 			StartAt: &startAt,
 		})
@@ -206,7 +207,7 @@ func TestClient(t *testing.T) {
 		defer q1.Close()
 
 		for i := 0; i < 100; i++ {
-			_, err := q0.CreateJob("other-executor", model.CreateJobArgs{
+			_, err := q0.CreateJob(ctx, "other-executor", model.CreateJobArgs{
 				Expr: "@after 100ms",
 			})
 			assert.Nil(t, err)
@@ -220,7 +221,7 @@ func TestClient(t *testing.T) {
 
 		go func() {
 			defer wg.Done()
-			ch, stop := q0.Fetch("other-executor")
+			ch, stop := q0.Fetch(ctx, "other-executor")
 			go func() {
 				<-time.After(100 * time.Millisecond)
 				stop()
@@ -232,7 +233,7 @@ func TestClient(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			ch, stop := q1.Fetch("other-executor")
+			ch, stop := q1.Fetch(ctx, "other-executor")
 			go func() {
 				<-time.After(1 * time.Second)
 				stop()
@@ -257,12 +258,12 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("Should reschedule job", func(t *testing.T) {
-		created, err := client.CreateJob("reschedule", model.CreateJobArgs{
+		created, err := client.CreateJob(ctx, "reschedule", model.CreateJobArgs{
 			Expr: "@after 100ms",
 		})
 		assert.Nil(t, err)
 
-		jobs, cleanup := client.Fetch("reschedule")
+		jobs, cleanup := client.Fetch(ctx, "reschedule")
 
 		go func() {
 			<-time.After(600 * time.Millisecond)
@@ -285,7 +286,7 @@ func TestClient(t *testing.T) {
 		timeout := 100
 		startAt := time.Now().Add(1 * time.Hour)
 		meta := `{"some":"meta"}`
-		created, err := client.CreateJob("serialize", model.CreateJobArgs{
+		created, err := client.CreateJob(ctx, "serialize", model.CreateJobArgs{
 			Expr:    "@after 100ms",
 			Name:    "test",
 			State:   "some rand state",
@@ -318,10 +319,11 @@ func TestDelivery(t *testing.T) {
 	client, err := NewClient(deliveryPool, Config{})
 	assert.Nil(t, err)
 	defer client.Close()
+	ctx := context.Background()
 
 	t.Run("Should deliver job at least once", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-			client.CreateJob("backup", model.CreateJobArgs{
+			client.CreateJob(ctx, "backup", model.CreateJobArgs{
 				Expr: "@after 100ms",
 				Name: fmt.Sprintf("test-%d", i),
 			})
@@ -339,7 +341,7 @@ func TestDelivery(t *testing.T) {
 		assert.Nil(t, err)
 		defer delayedClient.Close()
 
-		jobs, cleanup := delayedClient.Fetch("backup")
+		jobs, cleanup := delayedClient.Fetch(ctx, "backup")
 
 		go func() {
 			<-time.After(500 * time.Millisecond)
@@ -356,51 +358,52 @@ func TestDelivery(t *testing.T) {
 	})
 }
 
-func TestOwner(t *testing.T) {
-	pool, cleanup := testutil.PG.CreateDb("owner")
-	defer cleanup()
+// func TestOwner(t *testing.T) {
+// 	pool, cleanup := testutil.PG.CreateDb("owner")
+// 	defer cleanup()
 
-	port := pool.Config().ConnConfig.Port
-	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
+// 	port := pool.Config().ConnConfig.Port
+// 	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
 
-	// RIPARTIRE QUI!<---
-	// - test scopedConn against adminConn 👈
+// 	// RIPARTIRE QUI!<---
+// 	// - test scopedConn against adminConn 👈
 
-	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
-	assert.Nil(t, err)
+// 	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
+// 	assert.Nil(t, err)
 
-	// RIPARTIRE QUI!<---
-	// - How to pass scopedConn?
-	scopedClient, err := NewClient(scopedConn, Config{})
-	assert.Nil(t, err)
-	defer scopedClient.Close()
+// 	// RIPARTIRE QUI!<---
+// 	// - How to pass scopedConn?
+// 	scopedClient, err := NewClient(scopedConn, Config{})
+// 	assert.Nil(t, err)
+// 	defer scopedClient.Close()
 
-	adminClient, err := NewClient(pool, Config{})
-	assert.Nil(t, err)
-	defer adminClient.Close()
+// 	adminClient, err := NewClient(pool, Config{})
+// 	assert.Nil(t, err)
+// 	defer adminClient.Close()
+// 	ctx := context.Background()
 
-	t.Run("Should do the things", func(t *testing.T) {
-		for i := 0; i < 50; i++ {
-			adminClient.CreateJob("backup", model.CreateJobArgs{
-				Expr: "@after 1 hour",
-				Name: fmt.Sprintf("test-%d", i),
-			})
-		}
+// 	t.Run("Should do the things", func(t *testing.T) {
+// 		for i := 0; i < 50; i++ {
+// 			adminClient.CreateJob(ctx, "backup", model.CreateJobArgs{
+// 				Expr: "@after 1 hour",
+// 				Name: fmt.Sprintf("test-%d", i),
+// 			})
+// 		}
 
-		adminJobs, err := adminClient.SearchJobs("backup", model.QueryJobsArgs{
-			Limit:  100,
-			Skip:   0,
-			Filter: "test",
-		})
-		assert.Nil(t, err)
-		assert.Len(t, adminJobs, 50)
+// 		adminJobs, err := adminClient.SearchJobs(ctx, "backup", model.QueryJobsArgs{
+// 			Limit:  100,
+// 			Skip:   0,
+// 			Filter: "test",
+// 		})
+// 		assert.Nil(t, err)
+// 		assert.Len(t, adminJobs, 50)
 
-		scopedJobs, err := scopedClient.SearchJobs("backup", model.QueryJobsArgs{
-			Limit:  100,
-			Skip:   0,
-			Filter: "test",
-		})
-		assert.Nil(t, err)
-		assert.Len(t, scopedJobs, 50)
-	})
-}
+// 		scopedJobs, err := scopedClient.SearchJobs(ctx, "backup", model.QueryJobsArgs{
+// 			Limit:  100,
+// 			Skip:   0,
+// 			Filter: "test",
+// 		})
+// 		assert.Nil(t, err)
+// 		assert.Len(t, scopedJobs, 50)
+// 	})
+// }

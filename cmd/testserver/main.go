@@ -59,7 +59,7 @@ func main() {
 			fmt.Println("creating jobs")
 
 			for i := 0; i < 1000; i++ {
-				_, err := tiny.CreateJob("admin", model.CreateJobArgs{
+				_, err := tiny.CreateJob(context.Background(), "admin", model.CreateJobArgs{
 					Expr:  "@after 1s",
 					State: `http://localhost:8081/counter`,
 				})
@@ -72,7 +72,7 @@ func main() {
 
 	go func() {
 		pyroscope.TagWrapper(context.Background(), pyroscope.Labels("fetching", "jobs"), func(c context.Context) {
-			jobs, _ := tiny.Fetch("admin")
+			jobs, _ := tiny.Fetch(c, "admin")
 			fmt.Println("============ FETCHING =============")
 
 			for job := range jobs {

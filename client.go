@@ -165,21 +165,21 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		// TODO: Handle failed commits + flush errors
 		if len(commitBatch) > 0 {
-			_, err := t.resolver.Mutation().CommitJobs(tinyctx.NewCtx(ctx, executorName), commitBatch)
+			_, err := t.resolver.Mutation().CommitJobs(ctx, executorName, commitBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			commitBatch = []model.CommitArgs{}
 		}
 		if len(failBatch) > 0 {
-			_, err := t.resolver.Mutation().FailJobs(tinyctx.NewCtx(ctx, executorName), failBatch)
+			_, err := t.resolver.Mutation().FailJobs(ctx, executorName, failBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			failBatch = []model.CommitArgs{}
 		}
 		if len(retryBatch) > 0 {
-			_, err := t.resolver.Mutation().RetryJobs(tinyctx.NewCtx(ctx, executorName), retryBatch)
+			_, err := t.resolver.Mutation().RetryJobs(ctx, executorName, retryBatch)
 			if err != nil {
 				log.Println(err)
 			}
@@ -192,8 +192,8 @@ func (c *Client) Close() {
 	c.resolver.DB.Close()
 }
 
-func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *Client) Fetch(ctx context.Context, executorName string) (chan Job, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
 	ch := make(chan Job)
 
 	go c.flush(ctx, executorName)
@@ -209,7 +209,7 @@ func (c *Client) Fetch(executorName string) (chan Job, context.CancelFunc) {
 			case <-time.After(c.PollInterval):
 				jobs, err := c.resolver.
 					Mutation().
-					FetchForProcessing(tinyctx.NewCtx(ctx, executorName), int(c.MaxInFlight))
+					FetchForProcessing(ctx, executorName, int(c.MaxInFlight))
 				if len(jobs) > 0 {
 					log.Println("[FETCHING]", len(jobs), "jobs")
 				}
@@ -243,60 +243,73 @@ func (c *Client) Handler() http.Handler {
 	return router
 }
 
-func (c *Client) CreateJob(executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
+// RIPARTIRE QUI!<---
+// - change signature. Pass executor name to sqlc queries
+// - do not use executor name in context
+// - use owner in context
+// - Query(context<owner>, executor, args)
+func (c *Client) CreateJob(ctx context.Context, executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().CreateJob(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		args,
 	)
 }
 
-func (c *Client) UpdateJobByName(executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) UpdateJobByName(ctx context.Context, executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByName(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		name,
 		args,
 	)
 }
 
-func (c *Client) UpdateJobByID(executorName string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (c *Client) UpdateJobByID(ctx context.Context, executorName string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().UpdateJobByID(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		id,
 		args,
 	)
 }
 
-func (c *Client) DeleteJobByName(executorName, name string) (sqlc.TinyJob, error) {
+func (c *Client) DeleteJobByName(ctx context.Context, executorName, name string) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().DeleteJobByName(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		name,
 	)
 }
 
-func (c *Client) DeleteJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
+func (c *Client) DeleteJobByID(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Mutation().DeleteJobByID(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		id,
 	)
 }
 
-func (c *Client) SearchJobs(executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
+func (c *Client) SearchJobs(ctx context.Context, executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
 	return c.resolver.Query().SearchJobs(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		args,
 	)
 }
 
-func (c *Client) QueryJobByName(executorName, name string) (sqlc.TinyJob, error) {
+func (c *Client) QueryJobByName(ctx context.Context, executorName, name string) (sqlc.TinyJob, error) {
 	return c.resolver.Query().QueryJobByName(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		name,
 	)
 }
 
-func (c *Client) QueryJobByID(executorName string, id int64) (sqlc.TinyJob, error) {
+func (c *Client) QueryJobByID(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
 	return c.resolver.Query().QueryJobByID(
-		tinyctx.NewCtx(context.Background(), executorName),
+		ctx,
+		executorName,
 		id,
 	)
 }

@@ -7,19 +7,17 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	tinyctx "github.com/lucagez/tinyq/ctx"
 	"github.com/lucagez/tinyq/graph/generated"
 	"github.com/lucagez/tinyq/graph/model"
 	"github.com/lucagez/tinyq/sqlc"
 )
 
 // CreateJob is the resolver for the createJob field.
-func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	var timeout int32
 	if args.Timeout != nil {
 		timeout = int32(*args.Timeout)
@@ -39,7 +37,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 		Expr:     args.Expr,
 		Name:     args.Name,
 		State:    args.State,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 		Timeout:  timeout,
 		StartAt:  pgtype.Timestamptz{Time: startAt, Valid: true},
 		Meta:     meta,
@@ -47,10 +45,10 @@ func (r *mutationResolver) CreateJob(ctx context.Context, args model.CreateJobAr
 }
 
 // UpdateJobByName is the resolver for the updateJobByName field.
-func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByName(ctx context.Context, executor string, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{
 		Name:     name,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	}
 	if args.Expr != nil {
 		params.Expr = args.Expr
@@ -65,10 +63,10 @@ func (r *mutationResolver) UpdateJobByName(ctx context.Context, name string, arg
 }
 
 // UpdateJobByID is the resolver for the updateJobById field.
-func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
+func (r *mutationResolver) UpdateJobByID(ctx context.Context, executor string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByIDParams{
 		ID:       id,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	}
 	if args.Expr != nil {
 		params.Expr = args.Expr
@@ -83,23 +81,23 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, id int64, args mod
 }
 
 // DeleteJobByName is the resolver for the deleteJobByName field.
-func (r *mutationResolver) DeleteJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
+func (r *mutationResolver) DeleteJobByName(ctx context.Context, executor string, name string) (sqlc.TinyJob, error) {
 	return r.Queries.DeleteJobByName(ctx, sqlc.DeleteJobByNameParams{
 		Name:     name,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
 }
 
 // DeleteJobByID is the resolver for the deleteJobByID field.
-func (r *mutationResolver) DeleteJobByID(ctx context.Context, id int64) (sqlc.TinyJob, error) {
+func (r *mutationResolver) DeleteJobByID(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error) {
 	return r.Queries.DeleteJobByID(ctx, sqlc.DeleteJobByIDParams{
 		ID:       id,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
 }
 
 // FetchForProcessing is the resolver for the fetchForProcessing field.
-func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([]sqlc.TinyJob, error) {
+func (r *mutationResolver) FetchForProcessing(ctx context.Context, executor string, limit int) ([]sqlc.TinyJob, error) {
 	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -108,7 +106,7 @@ func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([
 	q := r.Queries.WithTx(tx)
 	jobs, err := q.FetchDueJobs(ctx, sqlc.FetchDueJobsParams{
 		Limit:    int32(limit),
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
 	if err != nil {
 		tx.Rollback(ctx)
@@ -123,7 +121,7 @@ func (r *mutationResolver) FetchForProcessing(ctx context.Context, limit int) ([
 }
 
 // CommitJobs is the resolver for the commitJobs field.
-func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.CommitArgs) ([]int64, error) {
+func (r *mutationResolver) CommitJobs(ctx context.Context, executor string, commits []model.CommitArgs) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, commit := range commits {
 		var state string
@@ -142,7 +140,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.Commi
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusSUCCESS,
-			Executor:  tinyctx.FromCtx(ctx),
+			Executor:  executor,
 		})
 	}
 
@@ -158,7 +156,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, commits []model.Commi
 }
 
 // FailJobs is the resolver for the failJobs field.
-func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitArgs) ([]int64, error) {
+func (r *mutationResolver) FailJobs(ctx context.Context, executor string, commits []model.CommitArgs) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, commit := range commits {
 		var state string
@@ -177,7 +175,7 @@ func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitA
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusFAILURE,
-			Executor:  tinyctx.FromCtx(ctx),
+			Executor:  executor,
 		})
 	}
 
@@ -193,7 +191,7 @@ func (r *mutationResolver) FailJobs(ctx context.Context, commits []model.CommitA
 }
 
 // RetryJobs is the resolver for the retryJobs field.
-func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.CommitArgs) ([]int64, error) {
+func (r *mutationResolver) RetryJobs(ctx context.Context, executor string, commits []model.CommitArgs) ([]int64, error) {
 	var batch []sqlc.BatchUpdateJobsParams
 	for _, commit := range commits {
 		var state string
@@ -212,7 +210,7 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 			State:     state,
 			Expr:      expr,
 			Status:    sqlc.TinyStatusREADY,
-			Executor:  tinyctx.FromCtx(ctx),
+			Executor:  executor,
 		})
 	}
 
@@ -228,7 +226,7 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, commits []model.Commit
 }
 
 // SearchJobs is the resolver for the searchJobs field.
-func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
+func (r *queryResolver) SearchJobs(ctx context.Context, executor string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
 	if args.Limit > 1000 {
 		return nil, errors.New("requesting too many jobs")
 	}
@@ -237,29 +235,24 @@ func (r *queryResolver) SearchJobs(ctx context.Context, args model.QueryJobsArgs
 		Query:    args.Filter,
 		Offset:   int32(args.Skip),
 		Limit:    int32(args.Limit),
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
 }
 
 // QueryJobByName is the resolver for the queryJobByName field.
-func (r *queryResolver) QueryJobByName(ctx context.Context, name string) (sqlc.TinyJob, error) {
+func (r *queryResolver) QueryJobByName(ctx context.Context, executor string, name string) (sqlc.TinyJob, error) {
 	return r.Queries.GetJobByName(ctx, sqlc.GetJobByNameParams{
 		Name:     name,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
 }
 
 // QueryJobByID is the resolver for the queryJobByID field.
-func (r *queryResolver) QueryJobByID(ctx context.Context, id int64) (sqlc.TinyJob, error) {
+func (r *queryResolver) QueryJobByID(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error) {
 	return r.Queries.GetJobByID(ctx, sqlc.GetJobByIDParams{
 		ID:       id,
-		Executor: tinyctx.FromCtx(ctx),
+		Executor: executor,
 	})
-}
-
-// Name is the resolver for the Name field.
-func (r *tinyJobResolver) Name(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
-	return &obj.Name, nil
 }
 
 // RunAt is the resolver for the run_at field.
@@ -272,10 +265,14 @@ func (r *tinyJobResolver) LastRunAt(ctx context.Context, obj *sqlc.TinyJob) (*ti
 	return &obj.LastRunAt.Time, nil
 }
 
-// Timeout is the resolver for the timeout field.
-func (r *tinyJobResolver) Timeout(ctx context.Context, obj *sqlc.TinyJob) (*int, error) {
-	timeout := int(obj.Timeout)
-	return &timeout, nil
+// StartAt is the resolver for the start_at field.
+func (r *tinyJobResolver) StartAt(ctx context.Context, obj *sqlc.TinyJob) (*time.Time, error) {
+	return &obj.StartAt.Time, nil
+}
+
+// CreatedAt is the resolver for the created_at field.
+func (r *tinyJobResolver) CreatedAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error) {
+	return obj.CreatedAt.Time, nil
 }
 
 // Status is the resolver for the status field.
@@ -285,7 +282,7 @@ func (r *tinyJobResolver) Status(ctx context.Context, obj *sqlc.TinyJob) (string
 
 // Meta is the resolver for the meta field.
 func (r *tinyJobResolver) Meta(ctx context.Context, obj *sqlc.TinyJob) (string, error) {
-	panic(fmt.Errorf("not implemented: Meta - meta"))
+	return string(obj.Meta), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -300,14 +297,3 @@ func (r *Resolver) TinyJob() generated.TinyJobResolver { return &tinyJobResolver
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type tinyJobResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *tinyJobResolver) State(ctx context.Context, obj *sqlc.TinyJob) (*string, error) {
-	// TODO: might panic
-	return &obj.State, nil
-}
