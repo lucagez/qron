@@ -2,7 +2,6 @@ package sqlc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 
@@ -25,6 +24,11 @@ func NewCtx(ctx context.Context, owner string) context.Context {
 	return context.WithValue(ctx, key, owner)
 }
 
+func FromCtx(ctx context.Context) string {
+	key, _ := ctx.Value(key).(string)
+	return key
+}
+
 func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -43,7 +47,7 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 			return false
 		}
 
-		// TODO: use positional arguments. Currenlty it throws a syntax error
+		// TODO: use positional arguments. Currently it throws a syntax error
 		// TODO: After reset, tiny.owner is still set but empty
 		_, err := c.Exec(_ctx, fmt.Sprintf(`set tiny.owner = '%s'`, owner))
 		if err != nil {
@@ -71,40 +75,4 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	}
 
 	return pool, nil
-}
-
-// Query wraps each query into a separate transaction to
-// always enforce RLS on jobs by attaching local variables
-func (p *ScopedPgx) Query(ctx context.Context, query string, args ...any) (pgx.Rows, error) {
-	owner, ok := ctx.Value(key).(string)
-	if !ok {
-		return nil, errors.New("no owner found in context")
-	}
-
-	conn, err := p.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Release()
-
-	// TODO: Add additional timeout to prevent long hangs?
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println("SETTING OWNER:", owner)
-	_, err = tx.Exec(ctx, fmt.Sprintf(`set local tiny.owner = '%s'`, owner))
-	if err != nil {
-		tx.Rollback(ctx)
-		return nil, err
-	}
-
-	rows, err := tx.Query(ctx, query, args...)
-	if err != nil {
-		tx.Rollback(ctx)
-		return nil, err
-	}
-
-	return rows, tx.Commit(ctx)
 }

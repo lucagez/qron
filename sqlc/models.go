@@ -69,4 +69,5 @@ type TinyJob struct {
 	Status          TinyStatus         `json:"status"`
 	State           string             `json:"state"`
 	Executor        string             `json:"executor"`
+	Owner           string             `json:"owner"`
 }

@@ -54,6 +54,22 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, "@weekly", job.Expr)
 		assert.Equal(t, "lmao", job.Name)
 		assert.Equal(t, "{}", job.State)
+		assert.Equal(t, "default", job.Owner)
+	})
+
+	t.Run("Should create job with owner", func(t *testing.T) {
+		job, err := resolver.Mutation().CreateJob(sqlc.NewCtx(ctx, "bobby"), executor, model.CreateJobArgs{
+			Expr:  "@weekly",
+			Name:  "lmao-owned",
+			State: "{}",
+		})
+
+		assert.Nil(t, err)
+		assert.Equal(t, 1, countJobs(pool, "lmao"))
+		assert.Equal(t, "@weekly", job.Expr)
+		assert.Equal(t, "lmao-owned", job.Name)
+		assert.Equal(t, "{}", job.State)
+		assert.Equal(t, "bobby", job.Owner)
 	})
 
 	t.Run("Should update job by ID", func(t *testing.T) {

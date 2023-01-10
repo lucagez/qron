@@ -33,10 +33,6 @@ func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args 
 		meta = []byte(*args.Meta)
 	}
 
-	// RIPARTIRE QUI!<---
-	// Upgrade CreateJob with reading from context for
-	// creating a job with related owner
-
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		Expr:     args.Expr,
 		Name:     args.Name,
@@ -45,7 +41,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args 
 		Timeout:  timeout,
 		StartAt:  pgtype.Timestamptz{Time: startAt, Valid: true},
 		Meta:     meta,
-		// Owner: ownerFromCtx(ctx)
+		Owner:    sqlc.FromCtx(ctx),
 	})
 }
 

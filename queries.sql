@@ -55,7 +55,7 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner)
 values (
   $1,
   coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
@@ -65,7 +65,8 @@ values (
   tiny.next(greatest($4, now()), $1),
   coalesce(nullif(sqlc.arg('timeout'), 0), 120),
   $4,
-  $5
+  $5,
+  coalesce(nullif(sqlc.arg('owner'), ''), 'default')
 )
 returning *;
 

@@ -380,7 +380,7 @@ func TestOwner(t *testing.T) {
 	defer adminClient.Close()
 	ctx := context.Background()
 
-	t.Run("Should configure scoped conn pool", func(t *testing.T) {
+	t.Run("Should configure scoped conn pool for reading", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			adminClient.CreateJob(ctx, "backup", model.CreateJobArgs{
 				Expr: "@after 1 hour",
@@ -419,6 +419,54 @@ func TestOwner(t *testing.T) {
 				assert.Nil(t, err)
 				assert.Len(t, scopedJobs, 0)
 			}
+
+			wg.Done()
+		}()
+
+		wg.Wait()
+	})
+
+	t.Run("Should configure scoped conn pool for writing", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+			adminClient.CreateJob(ctx, "write", model.CreateJobArgs{
+				Expr: "@after 1 hour",
+				Name: fmt.Sprintf("owned-test-%d", i),
+			})
+		}
+		for i := 0; i < 20; i++ {
+			scopedClient.CreateJob(sqlc.NewCtx(ctx, "bobby"), "write", model.CreateJobArgs{
+				Expr: "@after 1 hour",
+				Name: fmt.Sprintf("owned-test-scoped-%d", i),
+			})
+		}
+
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		// Perform fetches concurrently to test connections
+		// are configured are reset to pool correctly
+		go func() {
+			adminJobs, err := adminClient.SearchJobs(ctx, "write", model.QueryJobsArgs{
+				Limit:  100,
+				Skip:   0,
+				Filter: "owned",
+			})
+			assert.Nil(t, err)
+			assert.Len(t, adminJobs, 70)
+
+			wg.Done()
+		}()
+
+		go func() {
+			// TODO: Bug when executing tests in parallel
+			// -> Permission denied for schema tiny
+			scopedJobs, err := scopedClient.SearchJobs(sqlc.NewCtx(ctx, "bobby"), "write", model.QueryJobsArgs{
+				Limit:  100,
+				Skip:   0,
+				Filter: "owned",
+			})
+			assert.Nil(t, err)
+			assert.Len(t, scopedJobs, 20)
 
 			wg.Done()
 		}()
