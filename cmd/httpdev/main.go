@@ -64,11 +64,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpJobs, cancelHttp := client.Fetch(context.Background(), "http")
-	defer cancelHttp()
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
 
-	dockerJobs, cancelDocker := client.Fetch(context.Background(), "docker")
-	defer cancelDocker()
+	httpJobs := client.Fetch(ctx, "http")
+	dockerJobs := client.Fetch(ctx, "docker")
 
 	httpExecutor := executor.NewHttpExecutor(100)
 	dockerExecutor := executor.NewDockerExecutor()

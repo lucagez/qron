@@ -72,10 +72,9 @@ func main() {
 
 	go func() {
 		pyroscope.TagWrapper(context.Background(), pyroscope.Labels("fetching", "jobs"), func(c context.Context) {
-			jobs, _ := tiny.Fetch(c, "admin")
 			fmt.Println("============ FETCHING =============")
 
-			for job := range jobs {
+			for job := range tiny.Fetch(c, "admin") {
 				fmt.Println("fetching job:", job.ID)
 				// profiler
 				go func(j tinyq.Job) {

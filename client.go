@@ -193,8 +193,8 @@ func (c *Client) Close() {
 	c.resolver.DB.Close()
 }
 
-func (c *Client) Fetch(ctx context.Context, executorName string) (chan Job, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
+func (c *Client) Fetch(ctx context.Context, executorName string) chan Job {
+	// ctx, cancel := context.WithCancel(ctx)
 	ch := make(chan Job)
 
 	go c.flush(ctx, executorName)
@@ -228,7 +228,7 @@ func (c *Client) Fetch(ctx context.Context, executorName string) (chan Job, cont
 		}
 	}()
 
-	return ch, cancel
+	return ch
 }
 
 func (c *Client) Handler() http.Handler {

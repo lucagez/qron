@@ -36,11 +36,9 @@ func TestClient(t *testing.T) {
 	assert.Nil(t, err)
 	defer client.Close()
 
-	ctx := context.Background()
-
 	t.Run("Should fetch", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-			client.CreateJob(ctx, "backup", model.CreateJobArgs{
+			client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
 				Expr: "@after 100ms",
 				Name: fmt.Sprintf("test-%d", i),
 			})
@@ -48,7 +46,8 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, stop := client.Fetch(ctx, "backup")
+		ctx, stop := context.WithCancel(context.Background())
+		jobs := client.Fetch(ctx, "backup")
 
 		go func() {
 			<-time.After(300 * time.Millisecond)
@@ -67,7 +66,7 @@ func TestClient(t *testing.T) {
 		}
 		assert.Equal(t, 50, counter)
 
-		all, err := client.SearchJobs(ctx, "backup", model.QueryJobsArgs{
+		all, err := client.SearchJobs(context.Background(), "backup", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -91,7 +90,7 @@ func TestClient(t *testing.T) {
 
 	t.Run("Should flush", func(t *testing.T) {
 		for i := 0; i < 2; i++ {
-			client.CreateJob(ctx, "flush", model.CreateJobArgs{
+			client.CreateJob(context.Background(), "flush", model.CreateJobArgs{
 				Expr: "@every 100ms",
 				Name: fmt.Sprintf("test-%d", i),
 			})
@@ -99,7 +98,7 @@ func TestClient(t *testing.T) {
 
 		// TODO: Probably not the best api for closing?
 		// TODO: Should close anyway when main client is closed
-		jobs, stop := client.Fetch(ctx, "flush")
+		ctx, stop := context.WithCancel(context.Background())
 
 		go func() {
 			<-time.After(350 * time.Millisecond)
@@ -107,7 +106,7 @@ func TestClient(t *testing.T) {
 		}()
 
 		counter := 0
-		for job := range jobs {
+		for job := range client.Fetch(ctx, "flush") {
 			counter += 1
 			job.Commit()
 		}
@@ -115,7 +114,7 @@ func TestClient(t *testing.T) {
 		// Wait for next flush to happen
 		time.Sleep(400 * time.Millisecond)
 
-		all, err := client.SearchJobs(ctx, "flush", model.QueryJobsArgs{
+		all, err := client.SearchJobs(context.Background(), "flush", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -136,13 +135,14 @@ func TestClient(t *testing.T) {
 	t.Run("Should reset jobs after timeout is reached", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
 			timeout := 1
-			client.CreateJob(ctx, "timeout", model.CreateJobArgs{
+			client.CreateJob(context.Background(), "timeout", model.CreateJobArgs{
 				Expr:    "@after 100ms",
 				Timeout: &timeout,
 			})
 		}
 
-		jobs, stop := client.Fetch(ctx, "timeout")
+		ctx, stop := context.WithCancel(context.Background())
+		jobs := client.Fetch(ctx, "timeout")
 
 		go func() {
 			<-time.After(1500 * time.Millisecond)
@@ -155,7 +155,7 @@ func TestClient(t *testing.T) {
 			// Jobs are never committed
 		}
 
-		all, err := client.SearchJobs(ctx, "timeout", model.QueryJobsArgs{
+		all, err := client.SearchJobs(context.Background(), "timeout", model.QueryJobsArgs{
 			Limit:  100,
 			Skip:   0,
 			Filter: "test",
@@ -171,7 +171,7 @@ func TestClient(t *testing.T) {
 
 	t.Run("Should calculate next execution based on start time", func(t *testing.T) {
 		startAt := time.Now().Add(1 * time.Second)
-		j, _ := client.CreateJob(ctx, "delayed_start", model.CreateJobArgs{
+		j, _ := client.CreateJob(context.Background(), "delayed_start", model.CreateJobArgs{
 			Expr:    "@after 100ms",
 			StartAt: &startAt,
 		})
@@ -208,7 +208,7 @@ func TestClient(t *testing.T) {
 		defer q1.Close()
 
 		for i := 0; i < 100; i++ {
-			_, err := q0.CreateJob(ctx, "other-executor", model.CreateJobArgs{
+			_, err := q0.CreateJob(context.Background(), "other-executor", model.CreateJobArgs{
 				Expr: "@after 100ms",
 			})
 			assert.Nil(t, err)
@@ -222,7 +222,8 @@ func TestClient(t *testing.T) {
 
 		go func() {
 			defer wg.Done()
-			ch, stop := q0.Fetch(ctx, "other-executor")
+			ctx, stop := context.WithCancel(context.Background())
+			ch := q0.Fetch(ctx, "other-executor")
 			go func() {
 				<-time.After(100 * time.Millisecond)
 				stop()
@@ -234,7 +235,8 @@ func TestClient(t *testing.T) {
 		}()
 		go func() {
 			defer wg.Done()
-			ch, stop := q1.Fetch(ctx, "other-executor")
+			ctx, stop := context.WithCancel(context.Background())
+			ch := q1.Fetch(ctx, "other-executor")
 			go func() {
 				<-time.After(1 * time.Second)
 				stop()
@@ -259,16 +261,17 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("Should reschedule job", func(t *testing.T) {
-		created, err := client.CreateJob(ctx, "reschedule", model.CreateJobArgs{
+		created, err := client.CreateJob(context.Background(), "reschedule", model.CreateJobArgs{
 			Expr: "@after 100ms",
 		})
 		assert.Nil(t, err)
 
-		jobs, cleanup := client.Fetch(ctx, "reschedule")
+		ctx, stop := context.WithCancel(context.Background())
+		jobs := client.Fetch(ctx, "reschedule")
 
 		go func() {
 			<-time.After(600 * time.Millisecond)
-			cleanup()
+			stop()
 		}()
 
 		counter := 0
@@ -287,7 +290,7 @@ func TestClient(t *testing.T) {
 		timeout := 100
 		startAt := time.Now().Add(1 * time.Hour)
 		meta := `{"some":"meta"}`
-		created, err := client.CreateJob(ctx, "serialize", model.CreateJobArgs{
+		created, err := client.CreateJob(context.Background(), "serialize", model.CreateJobArgs{
 			Expr:    "@after 100ms",
 			Name:    "test",
 			State:   "some rand state",
@@ -342,11 +345,12 @@ func TestDelivery(t *testing.T) {
 		assert.Nil(t, err)
 		defer delayedClient.Close()
 
-		jobs, cleanup := delayedClient.Fetch(ctx, "backup")
+		ctx, stop := context.WithCancel(context.Background())
+		jobs := delayedClient.Fetch(ctx, "backup")
 
 		go func() {
 			<-time.After(500 * time.Millisecond)
-			cleanup()
+			stop()
 		}()
 
 		counter := 0
