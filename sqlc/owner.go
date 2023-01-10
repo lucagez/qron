@@ -35,7 +35,6 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	config.AfterConnect = func(_ctx context.Context, c *pgx.Conn) error {
-		log.Println("Setting role to tinyrole")
 		_, err := c.Exec(_ctx, "set role tinyrole")
 		return err
 	}
@@ -55,7 +54,6 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 			return false
 		}
 
-		log.Println("Acquiring conn from pool")
 		return true
 	}
 
@@ -65,7 +63,6 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 		_, err := c.Exec(context.Background(), "reset tiny.owner")
 
 		// Destroy conn and remove from pool as it was not reset properly
-		log.Println("Returning conn to pool")
 		return err == nil
 	}
 
