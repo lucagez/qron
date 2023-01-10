@@ -77,7 +77,7 @@ func main() {
 		for {
 			select {
 			case job := <-httpJobs:
-				httpExecutor.Run(job)
+				go httpExecutor.Run(job)
 			case job := <-dockerJobs:
 				go dockerExecutor.Run(job)
 			}

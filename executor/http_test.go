@@ -2,11 +2,19 @@ package executor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"testing"
 	"time"
+
+	"github.com/lucagez/tinyq"
+	"github.com/lucagez/tinyq/graph/model"
+	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/tinyq/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestServer struct {
@@ -37,61 +45,68 @@ func createTestServer(handler http.HandlerFunc) (string, func()) {
 
 // TODO: Refactor http executor to read from state
 
-// func TestHttpExecutor(t *testing.T) {
+func TestHttpExecutor(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("http_test")
+	defer cleanup()
 
-// 	t.Run("Should perform http requests", func(t *testing.T) {
-// 		baseUrl, stop := createTestServer(func(w http.ResponseWriter, r *http.Request) {
-// 			w.WriteHeader(200)
-// 			json.NewEncoder(w).Encode(sqlc.TinyJob{ID: 1})
-// 		})
-// 		defer stop()
+	client, err := tinyq.NewClient(pool, tinyq.Config{
+		PollInterval:  10 * time.Millisecond,
+		FlushInterval: 10 * time.Millisecond,
+		ResetInterval: 10 * time.Millisecond,
+		MaxInFlight:   5,
+	})
+	assert.Nil(t, err)
 
-// 		exe := NewHttpExecutor(5)
+	t.Run("Should mutate job properties", func(t *testing.T) {
+		baseUrl, stop := createTestServer(func(w http.ResponseWriter, r *http.Request) {
+			var request sqlc.TinyJob
+			defer r.Body.Close()
+			err := json.NewDecoder(r.Body).Decode(&request)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-// 		job := sqlc.TinyJob{
-// 			Status: sqlc.TinyStatusPENDING,
-// 		}
+			log.Println("request:", request)
 
-// 		updated, err := exe.Run(job)
+			request.State = `{"count": 2}`
+			request.Status = sqlc.TinyStatusSUCCESS
+			request.Expr = "@after 300h"
 
-// 		assert.Nil(t, err)
-// 		assert.Equal(t, int64(1), updated.ID)
-// 	})
+			w.WriteHeader(200)
+			json.NewEncoder(w).Encode(request)
+		})
+		defer stop()
 
-// 	t.Run("Should mutate job properties", func(t *testing.T) {
-// 		baseUrl, stop := createTestServer(func(w http.ResponseWriter, r *http.Request) {
-// 			var request sqlc.TinyJob
-// 			defer r.Body.Close()
-// 			json.NewDecoder(r.Body).Decode(&request)
+		exe := NewHttpExecutor(5)
 
-// 			request.State = sql.NullString{String: `{"hello":"world"}`, Valid: true}
-// 			request.Status = sqlc.TinyStatusSUCCESS
-// 			// TODO: Should add validation to make impossible
-// 			// to pass invalid qron types
-// 			request.RunAt = "bananas"
+		meta, _ := json.Marshal(HttpConfig{
+			Url:    baseUrl,
+			Method: "POST",
+		})
+		m := string(meta)
+		j, err := client.CreateJob(context.Background(), "http_test_1", model.CreateJobArgs{
+			Expr:  "@after 10ms",
+			State: `{"count": 1}`,
+			Meta:  &m,
+		})
+		assert.Nil(t, err)
 
-// 			w.WriteHeader(200)
-// 			json.NewEncoder(w).Encode(request)
-// 		})
-// 		defer stop()
+		ctx, stop := context.WithCancel(context.Background())
 
-// 		exe := NewHttpExecutor(5)
+		go func() {
+			<-time.After(100 * time.Millisecond)
+			stop()
+		}()
 
-// 		conf, _ := json.Marshal(HttpConfig{
-// 			Url:    baseUrl,
-// 			Method: "GET",
-// 		})
-// 		job := sqlc.TinyJob{
-// 			Status: sqlc.TinyStatusPENDING,
-// 			Config: string(conf),
-// 			RunAt:  "@yearly",
-// 		}
+		for job := range client.Fetch(ctx, "http_test_1") {
+			exe.Run(job)
+		}
 
-// 		updated, err := exe.Run(job)
+		updated, err := client.QueryJobByID(context.Background(), "http_test_1", j.ID)
+		assert.Nil(t, err)
 
-// 		assert.Nil(t, err)
-// 		assert.Equal(t, sqlc.TinyStatusSUCCESS, updated.Status)
-// 		assert.Equal(t, `{"hello":"world"}`, updated.State.String)
-// 		assert.Equal(t, "bananas", updated.RunAt)
-// 	})
-// }
+		assert.Equal(t, sqlc.TinyStatusSUCCESS, updated.Status)
+		assert.Equal(t, `{"count": 2}`, updated.State)
+		assert.Equal(t, "@after 300h", updated.Expr)
+	})
+}
