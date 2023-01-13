@@ -66,18 +66,20 @@ type ComplexityRoot struct {
 	}
 
 	TinyJob struct {
-		CreatedAt func(childComplexity int) int
-		Executor  func(childComplexity int) int
-		Expr      func(childComplexity int) int
-		ID        func(childComplexity int) int
-		LastRunAt func(childComplexity int) int
-		Meta      func(childComplexity int) int
-		Name      func(childComplexity int) int
-		RunAt     func(childComplexity int) int
-		StartAt   func(childComplexity int) int
-		State     func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Timeout   func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		ExecutionAmount func(childComplexity int) int
+		Executor        func(childComplexity int) int
+		Expr            func(childComplexity int) int
+		ID              func(childComplexity int) int
+		LastRunAt       func(childComplexity int) int
+		Meta            func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Retries         func(childComplexity int) int
+		RunAt           func(childComplexity int) int
+		StartAt         func(childComplexity int) int
+		State           func(childComplexity int) int
+		Status          func(childComplexity int) int
+		Timeout         func(childComplexity int) int
 	}
 }
 
@@ -274,6 +276,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TinyJob.CreatedAt(childComplexity), true
 
+	case "TinyJob.execution_amount":
+		if e.complexity.TinyJob.ExecutionAmount == nil {
+			break
+		}
+
+		return e.complexity.TinyJob.ExecutionAmount(childComplexity), true
+
 	case "TinyJob.executor":
 		if e.complexity.TinyJob.Executor == nil {
 			break
@@ -315,6 +324,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TinyJob.Name(childComplexity), true
+
+	case "TinyJob.retries":
+		if e.complexity.TinyJob.Retries == nil {
+			break
+		}
+
+		return e.complexity.TinyJob.Retries(childComplexity), true
 
 	case "TinyJob.run_at":
 		if e.complexity.TinyJob.RunAt == nil {
@@ -453,6 +469,8 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   state: String
   status: String!
   meta: String!
+  retries: Int!
+  execution_amount: Int!
 }
 
 input CreateJobArgs {
@@ -462,6 +480,7 @@ input CreateJobArgs {
   timeout: Int
   start_at: Time
   meta: String
+  retries: Int
 }
 
 input UpdateJobArgs {
@@ -935,6 +954,10 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1016,6 +1039,10 @@ func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1097,6 +1124,10 @@ func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Cont
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1178,6 +1209,10 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Co
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1259,6 +1294,10 @@ func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Cont
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1340,6 +1379,10 @@ func (ec *executionContext) fieldContext_Mutation_fetchForProcessing(ctx context
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1586,6 +1629,10 @@ func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, f
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1667,6 +1714,10 @@ func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Contex
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -1748,6 +1799,10 @@ func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context,
 				return ec.fieldContext_TinyJob_status(ctx, field)
 			case "meta":
 				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
 		},
@@ -2403,6 +2458,94 @@ func (ec *executionContext) fieldContext_TinyJob_meta(ctx context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TinyJob_retries(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TinyJob_retries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Retries, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TinyJob_retries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TinyJob",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TinyJob_execution_amount(ctx context.Context, field graphql.CollectedField, obj *sqlc.TinyJob) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TinyJob_execution_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExecutionAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TinyJob_execution_amount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TinyJob",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4232,7 +4375,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at", "meta"}
+	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at", "meta", "retries"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4284,6 +4427,14 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("meta"))
 			it.Meta, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "retries":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("retries"))
+			it.Retries, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4775,6 +4926,20 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
+		case "retries":
+
+			out.Values[i] = ec._TinyJob_retries(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "execution_amount":
+
+			out.Values[i] = ec._TinyJob_execution_amount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5200,6 +5365,21 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v interface{}) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	res := graphql.MarshalInt32(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

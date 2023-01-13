@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	pgx "github.com/jackc/pgx/v5"
@@ -33,6 +34,11 @@ func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args 
 		meta = []byte(*args.Meta)
 	}
 
+	var retries int32
+	if args.Retries != nil {
+		retries = int32(*args.Retries)
+	}
+
 	return r.Queries.CreateJob(ctx, sqlc.CreateJobParams{
 		Expr:     args.Expr,
 		Name:     args.Name,
@@ -42,6 +48,7 @@ func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args 
 		StartAt:  pgtype.Timestamptz{Time: startAt, Valid: true},
 		Meta:     meta,
 		Owner:    sqlc.FromCtx(ctx),
+		Retries:  retries,
 	})
 }
 
@@ -136,12 +143,11 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, executor string, comm
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID:        commit.ID,
-			LastRunAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
-			State:     state,
-			Expr:      expr,
-			Status:    sqlc.TinyStatusSUCCESS,
-			Executor:  executor,
+			ID:       commit.ID,
+			State:    state,
+			Expr:     expr,
+			Status:   sqlc.TinyStatusSUCCESS,
+			Executor: executor,
 		})
 	}
 
@@ -158,7 +164,7 @@ func (r *mutationResolver) CommitJobs(ctx context.Context, executor string, comm
 
 // FailJobs is the resolver for the failJobs field.
 func (r *mutationResolver) FailJobs(ctx context.Context, executor string, commits []model.CommitArgs) ([]int64, error) {
-	var batch []sqlc.BatchUpdateJobsParams
+	var batch []sqlc.BatchUpdateFailedJobsParams
 	for _, commit := range commits {
 		var state string
 		if commit.State != nil {
@@ -170,20 +176,19 @@ func (r *mutationResolver) FailJobs(ctx context.Context, executor string, commit
 			expr = *commit.Expr
 		}
 
-		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID:        commit.ID,
-			LastRunAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
-			State:     state,
-			Expr:      expr,
-			Status:    sqlc.TinyStatusFAILURE,
-			Executor:  executor,
+		batch = append(batch, sqlc.BatchUpdateFailedJobsParams{
+			ID:       commit.ID,
+			State:    state,
+			Expr:     expr,
+			Executor: executor,
 		})
 	}
 
 	// TODO: this does not ensure a job exists
 	var failed []int64
-	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+	r.Queries.BatchUpdateFailedJobs(context.Background(), batch).Exec(func(i int, err error) {
 		if err != nil {
+			log.Println("error while updating failed jobs:", err)
 			failed = append(failed, batch[i].ID)
 		}
 	})
@@ -206,12 +211,11 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, executor string, commi
 		}
 
 		batch = append(batch, sqlc.BatchUpdateJobsParams{
-			ID:        commit.ID,
-			LastRunAt: pgtype.Timestamptz{Valid: true, Time: time.Now()},
-			State:     state,
-			Expr:      expr,
-			Status:    sqlc.TinyStatusREADY,
-			Executor:  executor,
+			ID:       commit.ID,
+			State:    state,
+			Expr:     expr,
+			Status:   sqlc.TinyStatusREADY,
+			Executor: executor,
 		})
 	}
 

@@ -10,20 +10,96 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const batchUpdateFailedJobs = `-- name: BatchUpdateFailedJobs :batchexec
+update tiny.job
+set last_run_at = now(),
+  state = coalesce(nullif($1::text, ''), state),
+  expr = coalesce(nullif($2::text, ''), expr),
+  -- RIPARTIRE QUI!<---
+  -- - Test with @after and @at jobs
+  -- - implement retry with queue (line :117)
+  -- - implement start/stop job
+  status = case 
+    when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
+    else 'READY'::tiny.status
+  end,
+  retries = retries - 1,
+  execution_amount = execution_amount + 1,
+  run_at = tiny.next(
+    now(),
+    -- TODO: Update with @asap in case it is a one shot job
+    -- e.g tiny.is_one_shot then @asap
+    coalesce(nullif($2::text, ''), expr)
+  )
+where id = $3
+and executor = $4
+`
+
+type BatchUpdateFailedJobsBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type BatchUpdateFailedJobsParams struct {
+	State    string `json:"state"`
+	Expr     string `json:"expr"`
+	ID       int64  `json:"id"`
+	Executor string `json:"executor"`
+}
+
+func (q *Queries) BatchUpdateFailedJobs(ctx context.Context, arg []BatchUpdateFailedJobsParams) *BatchUpdateFailedJobsBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.State,
+			a.Expr,
+			a.ID,
+			a.Executor,
+		}
+		batch.Queue(batchUpdateFailedJobs, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &BatchUpdateFailedJobsBatchResults{br, len(arg), false}
+}
+
+func (b *BatchUpdateFailedJobsBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, errors.New("batch already closed"))
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *BatchUpdateFailedJobsBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
 
 const batchUpdateJobs = `-- name: BatchUpdateJobs :batchexec
 update tiny.job
-set last_run_at = $1,
+set last_run_at = now(),
   -- TODO: update
-  state = coalesce(nullif($2::text, ''), state),
-  expr = coalesce(nullif($3::text, ''), expr),
-  status = $4,
+  state = coalesce(nullif($1::text, ''), state),
+  expr = coalesce(nullif($2::text, ''), expr),
+  status = $3,
   execution_amount = execution_amount + 1,
+  -- RIPARTIRE QUI!<---
+  -- - Non va bene. non funzica
+  retries = $4,
   run_at = tiny.next(
-    $1, -- 👈 
-    coalesce(nullif($3::text, ''), expr)
+    now(),
+    coalesce(nullif($2::text, ''), expr)
   )
 where id = $5
 and executor = $6
@@ -36,22 +112,22 @@ type BatchUpdateJobsBatchResults struct {
 }
 
 type BatchUpdateJobsParams struct {
-	LastRunAt pgtype.Timestamptz `json:"last_run_at"`
-	State     string             `json:"state"`
-	Expr      string             `json:"expr"`
-	Status    TinyStatus         `json:"status"`
-	ID        int64              `json:"id"`
-	Executor  string             `json:"executor"`
+	State    string     `json:"state"`
+	Expr     string     `json:"expr"`
+	Status   TinyStatus `json:"status"`
+	Retries  int32      `json:"retries"`
+	ID       int64      `json:"id"`
+	Executor string     `json:"executor"`
 }
 
 func (q *Queries) BatchUpdateJobs(ctx context.Context, arg []BatchUpdateJobsParams) *BatchUpdateJobsBatchResults {
 	batch := &pgx.Batch{}
 	for _, a := range arg {
 		vals := []interface{}{
-			a.LastRunAt,
 			a.State,
 			a.Expr,
 			a.Status,
+			a.Retries,
 			a.ID,
 			a.Executor,
 		}

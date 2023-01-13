@@ -63,6 +63,7 @@ type TinyJob struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	StartAt         pgtype.Timestamptz `json:"start_at"`
 	ExecutionAmount int32              `json:"execution_amount"`
+	Retries         int32              `json:"retries"`
 	Name            string             `json:"name"`
 	Meta            []byte             `json:"meta"`
 	Timeout         int32              `json:"timeout"`

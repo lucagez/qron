@@ -55,7 +55,7 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
 values (
   $1,
   coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
@@ -66,7 +66,8 @@ values (
   coalesce(nullif(sqlc.arg('timeout'), 0), 120),
   $4,
   $5,
-  coalesce(nullif(sqlc.arg('owner'), ''), 'default')
+  coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
+  coalesce(nullif(sqlc.arg('retries'), 0), 5)
 )
 returning *;
 
@@ -81,16 +82,47 @@ limit $2;
 
 -- name: BatchUpdateJobs :batchexec
 update tiny.job
-set last_run_at = sqlc.arg('last_run_at'),
+set last_run_at = now(),
   -- TODO: update
   state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = sqlc.arg('status'),
   execution_amount = execution_amount + 1,
+  -- RIPARTIRE QUI!<---
+  -- - Non va bene. non funzica
+  retries = sqlc.arg('retries'),
   run_at = tiny.next(
-    sqlc.arg('last_run_at'), -- 👈 
+    now(),
     coalesce(nullif(sqlc.arg('expr')::text, ''), expr)
   )
+where id = sqlc.arg('id')
+and executor = sqlc.arg('executor'); 
+
+-- name: BatchUpdateFailedJobs :batchexec
+update tiny.job
+set last_run_at = now(),
+  state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
+  expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
+  -- RIPARTIRE QUI!<---
+  -- - ✅ Test with @after and @at jobs
+  -- - create test for terminal states
+  -- - ✅ exponential backoff as -> (last_retry + CAST(CONCAT(CAST(POWER(2, error_count) AS text), 's') AS INTERVAL))
+  -- - create test case of exponential backoff
+  -- - ✅ implement retry with queue (line :117)
+  -- - implement start/stop job
+  status = case 
+    when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
+    else 'READY'::tiny.status
+  end,
+  retries = retries - 1,
+  execution_amount = execution_amount + 1,
+  run_at = case
+    when tiny.is_one_shot(expr) then tiny.next(
+      now(),
+      coalesce(nullif(sqlc.arg('expr')::text, ''), expr)
+    )
+    else now() + concat(power(2, execution_amount)::text, 's')::interval
+  end
 where id = sqlc.arg('id')
 and executor = sqlc.arg('executor'); 
 

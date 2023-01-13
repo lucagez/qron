@@ -26,40 +26,24 @@ import (
 // var processedCh = make(chan Job)
 
 type Client struct {
-	resolver       graph.Resolver
-	dsn            string
-	MaxInFlight    uint64
-	FlushInterval  time.Duration
-	PollInterval   time.Duration
-	ResetInterval  time.Duration
-	ExecutorSetter func(http.Handler) http.Handler
-	processedCh    chan Job
+	resolver      graph.Resolver
+	MaxInFlight   uint64
+	FlushInterval time.Duration
+	PollInterval  time.Duration
+	ResetInterval time.Duration
+	OwnerSetter   func(http.Handler) http.Handler
+	processedCh   chan Job
 }
 
 type Config struct {
-	MaxInFlight    uint64
-	FlushInterval  time.Duration
-	PollInterval   time.Duration
-	ResetInterval  time.Duration
-	ExecutorSetter func(http.Handler) http.Handler
+	MaxInFlight   uint64
+	FlushInterval time.Duration
+	PollInterval  time.Duration
+	ResetInterval time.Duration
+	OwnerSetter   func(http.Handler) http.Handler
 }
 
-// TODO: There should be alway a global job that make sure
-// that tasks that exceed timeouts get cleared and set back to READY.
-// -> this behavior should be configurable?
 func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
-	// if cfg.Dsn != "" {
-	// 	var err error
-	// 	db, err = pgxpool.New(context.Background(), cfg.Dsn)
-	// 	if err != nil {
-	// 		return Client{}, err
-	// 	}
-	// }
-
-	// if cfg.Conn != nil {
-	// 	db = cfg.Conn
-	// }
-
 	queries := sqlc.New(db)
 	resolver := graph.Resolver{Queries: queries, DB: db}
 
@@ -72,21 +56,21 @@ func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
 	if cfg.PollInterval == 0 {
 		cfg.PollInterval = 1 * time.Second
 	}
-	if cfg.ExecutorSetter == nil {
-		cfg.ExecutorSetter = tinyctx.ExecutorSetterMiddleware
+	if cfg.OwnerSetter == nil {
+		cfg.OwnerSetter = tinyctx.ExecutorSetterMiddleware
 	}
 	if cfg.ResetInterval == 0 {
 		cfg.ResetInterval = 60 * time.Second
 	}
 
 	return Client{
-		resolver:       resolver,
-		MaxInFlight:    cfg.MaxInFlight,
-		FlushInterval:  cfg.FlushInterval,
-		PollInterval:   cfg.PollInterval,
-		ExecutorSetter: cfg.ExecutorSetter,
-		ResetInterval:  cfg.ResetInterval,
-		processedCh:    make(chan Job),
+		resolver:      resolver,
+		MaxInFlight:   cfg.MaxInFlight,
+		FlushInterval: cfg.FlushInterval,
+		PollInterval:  cfg.PollInterval,
+		OwnerSetter:   cfg.OwnerSetter,
+		ResetInterval: cfg.ResetInterval,
+		processedCh:   make(chan Job),
 	}, nil
 }
 
@@ -237,7 +221,7 @@ func (c *Client) Handler() http.Handler {
 		Resolvers: &c.resolver,
 	}))
 
-	router.Use(c.ExecutorSetter)
+	router.Use(c.OwnerSetter)
 	router.Handle("/graphql", api)
 	router.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))
 
@@ -314,7 +298,8 @@ func (c *Client) Migrate() error {
 	goose.SetDialect("postgres")
 	goose.SetBaseFS(migrations.MigrationsFS)
 
-	migrationClient, err := sql.Open("pgx", c.dsn)
+	dsn := c.resolver.DB.Config().ConnConfig.ConnString()
+	migrationClient, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return err
 	}
@@ -327,8 +312,12 @@ type Job struct {
 	ch chan<- Job
 }
 
+func (j Job) isOneShot() bool {
+	return strings.HasPrefix(j.Expr, "@at") || strings.HasPrefix(j.Expr, "@after")
+}
+
 func (j Job) Commit() {
-	if strings.HasPrefix(j.Expr, "@at") || strings.HasPrefix(j.Expr, "@after") {
+	if j.isOneShot() {
 		j.Status = sqlc.TinyStatusSUCCESS
 	} else {
 		// Else is cron. Should be ready to be picked up again
@@ -338,6 +327,14 @@ func (j Job) Commit() {
 }
 
 func (j Job) Fail() {
+	// j.Retries--
+
+	// if j.isOneShot() && j.Retries <= 0 {
+	// 	j.Status = sqlc.TinyStatusFAILURE
+	// } else {
+	// 	j.Status = sqlc.TinyStatusREADY
+	// }
+
 	j.Status = sqlc.TinyStatusFAILURE
 	j.ch <- j
 }

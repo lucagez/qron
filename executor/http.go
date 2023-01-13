@@ -50,6 +50,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	payload, _ := json.Marshal(job)
 	req, err := http.NewRequest(config.Method, config.Url, bytes.NewReader(payload))
 	if err != nil {
+		log.Println("request creation error:", err)
 		job.Fail()
 		return
 	}

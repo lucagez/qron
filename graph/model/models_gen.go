@@ -19,6 +19,7 @@ type CreateJobArgs struct {
 	Timeout *int       `json:"timeout"`
 	StartAt *time.Time `json:"start_at"`
 	Meta    *string    `json:"meta"`
+	Retries *int       `json:"retries"`
 }
 
 type QueryJobsArgs struct {

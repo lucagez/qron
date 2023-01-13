@@ -20,6 +20,18 @@ begin
 end
 $$ language 'plpgsql' immutable;
 
+create or replace function tiny.is_one_shot(expr text)
+  returns bool as
+$$
+begin
+  return case
+    when substr(expr, 1, 6) in ('@after') then true
+    when substr(expr, 1, 3) in ('@at') then true
+    else false
+  end;
+end
+$$ language 'plpgsql' immutable;
+
 create or replace function tiny.cron_next_run(
 	from_ts timestamptz,
   expr text,
@@ -172,6 +184,7 @@ create table tiny.job
     start_at         timestamptz not null default now(),
 
     execution_amount integer     not null default 0,
+    retries          integer     not null default 5,
 
     -- TODO: Should `name` ever be null??
     name             text unique not null default substr(md5(random()::text), 0, 25),

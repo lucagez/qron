@@ -1,36 +1,19 @@
 package ctx
 
 import (
-	"context"
-	"log"
 	"net/http"
+
+	"github.com/lucagez/tinyq/sqlc"
 )
-
-type ctxKey struct{}
-
-var key = ctxKey{}
 
 func ExecutorSetterMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: naming? should be `subscriber`?
-		executor := r.Header.Get("x-executor")
-		if executor == "" {
-			executor = "default"
+		owner := r.Header.Get("x-owner")
+		if owner == "" {
+			owner = "default"
 		}
 
-		ctx := NewCtx(r.Context(), executor)
+		ctx := sqlc.NewCtx(r.Context(), owner)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func FromCtx(ctx context.Context) string {
-	executor, ok := ctx.Value(key).(string)
-	if !ok {
-		log.Fatal("executor not found in context")
-	}
-	return executor
-}
-
-func NewCtx(ctx context.Context, executor string) context.Context {
-	return context.WithValue(ctx, key, executor)
 }

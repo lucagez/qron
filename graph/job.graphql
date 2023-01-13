@@ -28,6 +28,8 @@ type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
   state: String
   status: String!
   meta: String!
+  retries: Int!
+  execution_amount: Int!
 }
 
 input CreateJobArgs {
@@ -37,6 +39,7 @@ input CreateJobArgs {
   timeout: Int
   start_at: Time
   meta: String
+  retries: Int
 }
 
 input UpdateJobArgs {
