@@ -124,7 +124,7 @@ set last_run_at = now(),
   -- - create test case of exponential backoff
   -- - ✅ implement retry with queue (line :117)
   -- - ✅ implement start/stop job
-  -- - create test case for start/stop job
+  -- - ✅ create test case for start/stop job
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
     else 'READY'::tiny.status
