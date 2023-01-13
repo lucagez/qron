@@ -26,7 +26,23 @@ where name = $1
 and executor = $2 
 returning *;
 
--- TODO: Should refactor usage of `name`
+-- name: StopJob :one
+update tiny.job
+set status = 'PAUSED'
+where id = $1
+and executor = $2
+-- Cannot stop a currently running task as it is outside of control for now
+-- Possible to add a notification system to listen on those kind of events
+and status not in ('FAILURE', 'SUCCESS', 'PENDING')
+returning *;
+
+-- name: RestartJob :one
+update tiny.job
+set status = 'READY'
+where id = $1
+and executor = $2
+and status = 'PAUSED'
+returning *;
 
 -- name: UpdateJobByID :one
 update tiny.job
@@ -88,8 +104,6 @@ set last_run_at = now(),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = sqlc.arg('status'),
   execution_amount = execution_amount + 1,
-  -- RIPARTIRE QUI!<---
-  -- - Non va bene. non funzica
   retries = sqlc.arg('retries'),
   run_at = tiny.next(
     now(),
@@ -109,7 +123,8 @@ set last_run_at = now(),
   -- - ✅ exponential backoff as -> (last_retry + CAST(CONCAT(CAST(POWER(2, error_count) AS text), 's') AS INTERVAL))
   -- - create test case of exponential backoff
   -- - ✅ implement retry with queue (line :117)
-  -- - implement start/stop job
+  -- - ✅ implement start/stop job
+  -- - create test case for start/stop job
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
     else 'READY'::tiny.status

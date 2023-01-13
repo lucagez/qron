@@ -362,6 +362,43 @@ func (q *Queries) ResetTimeoutJobs(ctx context.Context, executor string) ([]int6
 	return items, nil
 }
 
+const restartJob = `-- name: RestartJob :one
+update tiny.job
+set status = 'READY'
+where id = $1
+and executor = $2
+and status = 'PAUSED'
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+`
+
+type RestartJobParams struct {
+	ID       int64  `json:"id"`
+	Executor string `json:"executor"`
+}
+
+func (q *Queries) RestartJob(ctx context.Context, arg RestartJobParams) (TinyJob, error) {
+	row := q.db.QueryRow(ctx, restartJob, arg.ID, arg.Executor)
+	var i TinyJob
+	err := row.Scan(
+		&i.ID,
+		&i.Expr,
+		&i.RunAt,
+		&i.LastRunAt,
+		&i.CreatedAt,
+		&i.StartAt,
+		&i.ExecutionAmount,
+		&i.Retries,
+		&i.Name,
+		&i.Meta,
+		&i.Timeout,
+		&i.Status,
+		&i.State,
+		&i.Executor,
+		&i.Owner,
+	)
+	return i, err
+}
+
 const searchJobs = `-- name: SearchJobs :many
 select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
 where (name like concat($4::text, '%')
@@ -420,8 +457,46 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 	return items, nil
 }
 
-const updateJobByID = `-- name: UpdateJobByID :one
+const stopJob = `-- name: StopJob :one
+update tiny.job
+set status = 'PAUSED'
+where id = $1
+and executor = $2
+and status not in ('FAILURE', 'SUCCESS', 'PENDING')
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+`
 
+type StopJobParams struct {
+	ID       int64  `json:"id"`
+	Executor string `json:"executor"`
+}
+
+// Cannot stop a currently running task as it is outside of control for now
+// Possible to add a notification system to listen on those kind of events
+func (q *Queries) StopJob(ctx context.Context, arg StopJobParams) (TinyJob, error) {
+	row := q.db.QueryRow(ctx, stopJob, arg.ID, arg.Executor)
+	var i TinyJob
+	err := row.Scan(
+		&i.ID,
+		&i.Expr,
+		&i.RunAt,
+		&i.LastRunAt,
+		&i.CreatedAt,
+		&i.StartAt,
+		&i.ExecutionAmount,
+		&i.Retries,
+		&i.Name,
+		&i.Meta,
+		&i.Timeout,
+		&i.Status,
+		&i.State,
+		&i.Executor,
+		&i.Owner,
+	)
+	return i, err
+}
+
+const updateJobByID = `-- name: UpdateJobByID :one
 update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
@@ -444,7 +519,6 @@ type UpdateJobByIDParams struct {
 	Timeout  interface{} `json:"timeout"`
 }
 
-// TODO: Should refactor usage of `name`
 func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, updateJobByID,
 		arg.ID,

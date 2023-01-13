@@ -60,6 +60,8 @@ type Mutation {
   updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
   deleteJobByName(executor: String!, name: String!): TinyJob!
   deleteJobByID(executor: String!, id: ID!): TinyJob!
+  stopJob(executor: String!, id: ID!): TinyJob!
+  restartJob(executor: String!, id: ID!): TinyJob!
   fetchForProcessing(executor: String!, limit: Int! = 50): [TinyJob!]!
 
   # returns jobs that the server failed to commit

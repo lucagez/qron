@@ -18,6 +18,7 @@ const (
 	TinyStatusPENDING TinyStatus = "PENDING"
 	TinyStatusFAILURE TinyStatus = "FAILURE"
 	TinyStatusSUCCESS TinyStatus = "SUCCESS"
+	TinyStatusPAUSED  TinyStatus = "PAUSED"
 )
 
 func (e *TinyStatus) Scan(src interface{}) error {

@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 create schema tiny;
 
-create type tiny.status as enum ('READY', 'PENDING', 'FAILURE', 'SUCCESS');
+create type tiny.status as enum ('READY', 'PENDING', 'FAILURE', 'SUCCESS', 'PAUSED');
 
 create or replace function tiny.crontab(expr text)
   returns bool as

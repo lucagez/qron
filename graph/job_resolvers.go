@@ -104,6 +104,22 @@ func (r *mutationResolver) DeleteJobByID(ctx context.Context, executor string, i
 	})
 }
 
+// StopJob is the resolver for the stopJob field.
+func (r *mutationResolver) StopJob(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error) {
+	return r.Queries.StopJob(ctx, sqlc.StopJobParams{
+		ID:       id,
+		Executor: executor,
+	})
+}
+
+// RestartJob is the resolver for the restartJob field.
+func (r *mutationResolver) RestartJob(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error) {
+	return r.Queries.RestartJob(ctx, sqlc.RestartJobParams{
+		ID:       id,
+		Executor: executor,
+	})
+}
+
 // FetchForProcessing is the resolver for the fetchForProcessing field.
 func (r *mutationResolver) FetchForProcessing(ctx context.Context, executor string, limit int) ([]sqlc.TinyJob, error) {
 	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
