@@ -294,6 +294,22 @@ func (c *Client) QueryJobByID(ctx context.Context, executorName string, id int64
 	)
 }
 
+func (c *Client) StopJob(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().StopJob(
+		ctx,
+		executorName,
+		id,
+	)
+}
+
+func (c *Client) RestartJob(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
+	return c.resolver.Mutation().RestartJob(
+		ctx,
+		executorName,
+		id,
+	)
+}
+
 func (c *Client) Migrate() error {
 	goose.SetDialect("postgres")
 	goose.SetBaseFS(migrations.MigrationsFS)
@@ -307,6 +323,9 @@ func (c *Client) Migrate() error {
 	return goose.Up(migrationClient, ".")
 }
 
+// TODO: This should be `InflightJob` as it has
+// additional methods for committing/failing job.
+// TODO: Client should not expose sqlc.TinyJob as type.
 type Job struct {
 	sqlc.TinyJob
 	ch chan<- Job
