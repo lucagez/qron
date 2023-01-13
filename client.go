@@ -327,14 +327,6 @@ func (j Job) Commit() {
 }
 
 func (j Job) Fail() {
-	// j.Retries--
-
-	// if j.isOneShot() && j.Retries <= 0 {
-	// 	j.Status = sqlc.TinyStatusFAILURE
-	// } else {
-	// 	j.Status = sqlc.TinyStatusREADY
-	// }
-
 	j.Status = sqlc.TinyStatusFAILURE
 	j.ch <- j
 }

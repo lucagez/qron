@@ -92,6 +92,28 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
+	t.Run("Should stop/restart job", func(t *testing.T) {
+		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+			Expr:  "@weekly",
+			Name:  "stop&start",
+			State: "{}",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, sqlc.TinyStatusREADY, job.Status)
+
+		// STOP
+		updated, err := resolver.Mutation().StopJob(ctx, executor, job.ID)
+
+		assert.Nil(t, err)
+		assert.Equal(t, sqlc.TinyStatusPAUSED, updated.Status)
+
+		// RESTART
+		restarted, err := resolver.Mutation().RestartJob(ctx, executor, job.ID)
+
+		assert.Nil(t, err)
+		assert.Equal(t, sqlc.TinyStatusREADY, restarted.Status)
+	})
+
 	t.Run("Should update job by name", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
 			Expr:  "@weekly",
