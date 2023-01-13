@@ -478,3 +478,71 @@ func TestOwner(t *testing.T) {
 		wg.Wait()
 	})
 }
+
+func TestPauseJobs(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("start_and_stop")
+	defer cleanup()
+
+	port := pool.Config().ConnConfig.Port
+	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/start_and_stop", port)
+	clientPool, _ := pgxpool.New(context.Background(), dsn)
+	client, err := NewClient(clientPool, Config{
+		PollInterval:  10 * time.Millisecond,
+		FlushInterval: 10 * time.Millisecond,
+		ResetInterval: 10 * time.Millisecond,
+		MaxInFlight:   5,
+	})
+	assert.Nil(t, err)
+	defer client.Close()
+
+	t.Run("Should stop & restart execution", func(t *testing.T) {
+		// Stopped/Started job
+		job, err := client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
+			Expr: "@every 100ms",
+		})
+		assert.Nil(t, err)
+
+		// Normal job
+		normalJob, err := client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
+			Expr: "@every 100ms",
+		})
+		assert.Nil(t, err)
+
+		ctx, stop := context.WithCancel(context.Background())
+		jobs := client.Fetch(ctx, "backup")
+
+		go func() {
+			cleanupTimer := time.After(600 * time.Millisecond)
+			// After first execution
+			stopTimer := time.After(110 * time.Millisecond)
+			// Skip an execution
+			restartTimer := time.After(510 * time.Millisecond)
+
+			for {
+				select {
+				case <-cleanupTimer:
+					stop()
+				case <-stopTimer:
+					client.StopJob(context.Background(), "backup", job.ID)
+				case <-restartTimer:
+					client.RestartJob(context.Background(), "backup", job.ID)
+				}
+			}
+
+		}()
+
+		// Just commit everything
+		for job := range jobs {
+			job.Commit()
+		}
+
+		jobAfterExec, err := client.QueryJobByID(context.Background(), "backup", job.ID)
+		assert.Nil(t, err)
+
+		normalJobAfterExec, err := client.QueryJobByID(context.Background(), "backup", normalJob.ID)
+		assert.Nil(t, err)
+
+		assert.Equal(t, int32(2), jobAfterExec.ExecutionAmount)
+		assert.Equal(t, int32(5), normalJobAfterExec.ExecutionAmount)
+	})
+}
