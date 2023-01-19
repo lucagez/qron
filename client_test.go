@@ -38,9 +38,11 @@ func TestClient(t *testing.T) {
 
 	t.Run("Should fetch", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
+			retries := 1
 			client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-				Expr: "@after 100ms",
-				Name: fmt.Sprintf("test-%d", i),
+				Expr:    "@after 100ms",
+				Name:    fmt.Sprintf("test-%d", i),
+				Retries: &retries,
 			})
 		}
 

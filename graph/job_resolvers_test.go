@@ -300,7 +300,6 @@ func TestJobResolvers(t *testing.T) {
 					assert.Equal(t, sqlc.TinyStatusREADY, afterFailure.Status, i)
 				} else {
 					// The fifth time job is left forever in terminal state
-					log.Fatal("FAILING JOB 🎉")
 					assert.Equal(t, sqlc.TinyStatusFAILURE, afterFailure.Status, i)
 				}
 			}
@@ -617,10 +616,12 @@ func TestFailure(t *testing.T) {
 
 	t.Run("Should fail commit after processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
+			retries := 1
 			_, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
-				Expr:  "@after 1 second",
-				Name:  fmt.Sprintf("search-%d", i),
-				State: "{}",
+				Expr:    "@after 1 second",
+				Name:    fmt.Sprintf("search-%d", i),
+				State:   "{}",
+				Retries: &retries,
 			})
 			assert.Nil(t, err)
 		}
