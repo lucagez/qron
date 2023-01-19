@@ -333,6 +333,29 @@ func TestJobResolvers(t *testing.T) {
 		}
 	})
 
+	t.Run("Should not backoff cron jobs", func(t *testing.T) {
+		retries := 20
+		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+			Expr:    "@every 1 minute",
+			State:   `{"count": 1}`,
+			Retries: &retries,
+		})
+		assert.Nil(t, err)
+
+		for i := 0; i < 20; i++ {
+			_, err := resolver.Mutation().FailJobs(context.Background(), executor, []model.CommitArgs{
+				{ID: job.ID},
+			})
+			assert.Nil(t, err)
+
+			afterFailure, err := resolver.Query().QueryJobByID(context.Background(), executor, job.ID)
+			assert.Nil(t, err)
+
+			backoff := afterFailure.RunAt.Time.Sub(afterFailure.LastRunAt.Time)
+			assert.Equal(t, 1*time.Minute, backoff)
+		}
+	})
+
 	t.Run("Should prevent create jobs with too many retries", func(t *testing.T) {
 		retries := 30
 		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
