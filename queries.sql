@@ -117,14 +117,6 @@ update tiny.job
 set last_run_at = now(),
   state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
-  -- RIPARTIRE QUI!<---
-  -- - ✅ Test with @after and @at jobs
-  -- - ✅ create test for terminal states
-  -- - ✅ exponential backoff as -> (last_retry + CAST(CONCAT(CAST(POWER(2, error_count) AS text), 's') AS INTERVAL))
-  -- - ✅ create test case of exponential backoff
-  -- - ✅ implement retry with queue (line :117)
-  -- - ✅ implement start/stop job
-  -- - ✅ create test case for start/stop job
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
     else 'READY'::tiny.status
