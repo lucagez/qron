@@ -119,7 +119,7 @@ set last_run_at = now(),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   -- RIPARTIRE QUI!<---
   -- - ✅ Test with @after and @at jobs
-  -- - create test for terminal states
+  -- - ✅ create test for terminal states
   -- - ✅ exponential backoff as -> (last_retry + CAST(CONCAT(CAST(POWER(2, error_count) AS text), 's') AS INTERVAL))
   -- - create test case of exponential backoff
   -- - ✅ implement retry with queue (line :117)
