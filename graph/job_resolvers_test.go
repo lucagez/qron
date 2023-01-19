@@ -300,10 +300,48 @@ func TestJobResolvers(t *testing.T) {
 					assert.Equal(t, sqlc.TinyStatusREADY, afterFailure.Status, i)
 				} else {
 					// The fifth time job is left forever in terminal state
+					log.Fatal("FAILING JOB 🎉")
 					assert.Equal(t, sqlc.TinyStatusFAILURE, afterFailure.Status, i)
 				}
 			}
 		}
+	})
+
+	t.Run("Should reschedule failing job with exponential backoff", func(t *testing.T) {
+		retries := 20
+		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+			Expr:    "@after 1h",
+			State:   `{"count": 1}`,
+			Retries: &retries,
+		})
+		assert.Nil(t, err)
+
+		var lastDelay time.Duration
+		for i := 0; i < 20; i++ {
+			_, err := resolver.Mutation().FailJobs(context.Background(), executor, []model.CommitArgs{
+				{ID: job.ID},
+			})
+			assert.Nil(t, err)
+
+			afterFailure, err := resolver.Query().QueryJobByID(context.Background(), executor, job.ID)
+			assert.Nil(t, err)
+
+			backoff := afterFailure.RunAt.Time.Sub(afterFailure.LastRunAt.Time)
+			assert.Greater(t, backoff, lastDelay)
+
+			lastDelay = backoff
+		}
+	})
+
+	t.Run("Should prevent create jobs with too many retries", func(t *testing.T) {
+		retries := 30
+		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+			Expr:    "@after 1h",
+			State:   `{"count": 1}`,
+			Retries: &retries,
+		})
+		assert.NotNil(t, err)
+		assert.Empty(t, job)
 	})
 
 	t.Run("Should NOT fail job to terminal state in case of cron", func(t *testing.T) {

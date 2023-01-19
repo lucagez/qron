@@ -19,12 +19,12 @@ set last_run_at = now(),
   expr = coalesce(nullif($2::text, ''), expr),
   -- RIPARTIRE QUI!<---
   -- - ✅ Test with @after and @at jobs
-  -- - create test for terminal states
+  -- - ✅ create test for terminal states
   -- - ✅ exponential backoff as -> (last_retry + CAST(CONCAT(CAST(POWER(2, error_count) AS text), 's') AS INTERVAL))
   -- - create test case of exponential backoff
   -- - ✅ implement retry with queue (line :117)
   -- - ✅ implement start/stop job
-  -- - create test case for start/stop job
+  -- - ✅ create test case for start/stop job
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
     else 'READY'::tiny.status
@@ -32,11 +32,11 @@ set last_run_at = now(),
   retries = retries - 1,
   execution_amount = execution_amount + 1,
   run_at = case
-    when tiny.is_one_shot(expr) then tiny.next(
+    when tiny.is_one_shot(expr) then now() + concat(power(2, execution_amount)::text, 's')::interval
+    else tiny.next(
       now(),
       coalesce(nullif($2::text, ''), expr)
     )
-    else now() + concat(power(2, execution_amount)::text, 's')::interval
   end
 where id = $3
 and executor = $4

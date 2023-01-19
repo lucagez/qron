@@ -212,6 +212,10 @@ alter table tiny.job add constraint run_format check (
   or tiny.crontab(expr)
 );
 
+-- TODO: update to support higher number of retries. 
+-- Should increase backoff delay up to `max_delay` that should be configurable as well
+alter table tiny.job add constraint max_retries check (retries <= 20);
+
 create index idx_job_name
     on tiny.job (name);
 
