@@ -301,6 +301,9 @@ func TestJobResolvers(t *testing.T) {
 				} else {
 					// The fifth time job is left forever in terminal state
 					assert.Equal(t, sqlc.TinyStatusFAILURE, afterFailure.Status, i)
+
+					// Executions are updated
+					assert.Equal(t, 5, afterFailure.ExecutionAmount, i)
 				}
 			}
 		}
