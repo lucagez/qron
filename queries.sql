@@ -85,6 +85,8 @@ values (
   coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
   coalesce(nullif(sqlc.arg('retries'), 0), 5)
 )
+-- on conflict on constraint job_name_owner_key
+-- do ...
 returning *;
 
 -- TODO: This query is not working with dynamic params 🤔

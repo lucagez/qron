@@ -520,12 +520,14 @@ func TestNameScope(t *testing.T) {
 			Name: "overlapped-job-name",
 		})
 		assert.Contains(t, adminErr.Error(), "duplicate key value violates unique constraint")
+		assert.Contains(t, adminErr.Error(), "job_name_owner_key")
 
 		_, scopedErr := scopedClient.CreateJob(sqlc.NewCtx(ctx, "bobby"), "overlap", model.CreateJobArgs{
 			Expr: "@after 1 hour",
 			Name: "overlapped-job-name",
 		})
 		assert.Contains(t, scopedErr.Error(), "duplicate key value violates unique constraint")
+		assert.Contains(t, scopedErr.Error(), "job_name_owner_key")
 	})
 }
 
