@@ -303,7 +303,7 @@ func TestJobResolvers(t *testing.T) {
 					assert.Equal(t, sqlc.TinyStatusFAILURE, afterFailure.Status, i)
 
 					// Executions are updated
-					assert.Equal(t, 5, afterFailure.ExecutionAmount, i)
+					assert.Equal(t, int32(5), afterFailure.ExecutionAmount, i)
 				}
 			}
 		}

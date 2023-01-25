@@ -187,7 +187,7 @@ create table tiny.job
     retries          integer     not null default 5,
 
     -- TODO: Should `name` ever be null??
-    name             text unique not null default substr(md5(random()::text), 0, 25),
+    name             text not null default substr(md5(random()::text), 0, 25),
 
     -- meta is used by the executor to
     -- understand how to invoke the job
@@ -215,6 +215,8 @@ alter table tiny.job add constraint run_format check (
 -- TODO: update to support higher number of retries. 
 -- Should increase backoff delay up to `max_delay` that should be configurable as well
 alter table tiny.job add constraint max_retries check (retries <= 20);
+
+alter table tiny.job add unique (name, owner);
 
 create index idx_job_name
     on tiny.job (name);

@@ -20,7 +20,8 @@ import (
 // [] better handling for `state` field. Should it be optional?
 // [] implement idempotency for client
 // [✅] implement `@asap` operator
-// [] implement UNIQUE (col1, col2) so to have scoped <name>, <owner>
+// [✅] implement UNIQUE (col1, col2) so to have scoped <name>, <owner>
+// [] implement UPSERT if <name>, <owner> collides
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
