@@ -1,0 +1,3 @@
+[submodule "tinyq-cloud"]
+	path = tinyq-cloud
+	url = https://github.com/lucagez/tinyq-cloud
