@@ -21,7 +21,7 @@ import (
 // [] implement idempotency for client
 // [✅] implement `@asap` operator
 // [✅] implement UNIQUE (col1, col2) so to have scoped <name>, <owner>
-// [] implement UPSERT if <name>, <owner> collides -> implement idempotency in client? read + update
+// [✅] implement UPSERT if <name>, <owner> collides -> implement idempotency in client? read + update
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool

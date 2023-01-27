@@ -14,7 +14,10 @@ import (
 type HttpExecutor struct {
 	client  *http.Client
 	limiter chan int
+	Signer  func(job tinyq.Job, r *http.Request) error
 }
+
+type Signer func(job tinyq.Job, r *http.Request) error
 
 func NewHttpExecutor(maxConcurrency int) HttpExecutor {
 	transport := &http.Transport{
@@ -28,9 +31,13 @@ func NewHttpExecutor(maxConcurrency int) HttpExecutor {
 		Transport: transport,
 		Timeout:   60 * time.Second,
 	}
+
 	return HttpExecutor{
 		client:  client,
 		limiter: make(chan int, maxConcurrency),
+		Signer: func(job tinyq.Job, r *http.Request) error {
+			return nil
+		},
 	}
 }
 
@@ -56,6 +63,13 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 	}
 
 	req.Header.Add("content-type", "application/json")
+
+	err = h.Signer(job, req)
+	if err != nil {
+		log.Println("signer error:", err)
+		job.Fail()
+		return
+	}
 
 	h.limiter <- 0
 
