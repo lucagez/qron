@@ -325,8 +325,7 @@ func (c *Client) Migrate() error {
 // TODO: Client should not expose sqlc.TinyJob as type.
 type Job struct {
 	sqlc.TinyJob
-	Sig string `json:"sig,omitempty"`
-	ch  chan<- Job
+	ch chan<- Job
 }
 
 func (j Job) isOneShot() bool {
