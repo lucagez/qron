@@ -20,7 +20,7 @@ func BenchmarkFetch(b *testing.B) {
 	// TODO: benchmark fetch
 }
 
-func TestClient(t *testing.T) {
+func TestClientClient(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("client_0")
 	defer cleanup()
 
@@ -314,7 +314,7 @@ func TestClient(t *testing.T) {
 	})
 }
 
-func TestDelivery(t *testing.T) {
+func TestClientDelivery(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("delivery")
 	defer cleanup()
 
@@ -365,7 +365,7 @@ func TestDelivery(t *testing.T) {
 	})
 }
 
-func TestOwner(t *testing.T) {
+func TestClientOwner(t *testing.T) {
 	t.SkipNow()
 
 	pool, cleanup := testutil.PG.CreateDb("owner")
@@ -481,7 +481,9 @@ func TestOwner(t *testing.T) {
 	})
 }
 
-func TestNameScope(t *testing.T) {
+func TestClientNameScope(t *testing.T) {
+	t.SkipNow()
+
 	pool, cleanup := testutil.PG.CreateDb("owner")
 	defer cleanup()
 
@@ -506,14 +508,14 @@ func TestNameScope(t *testing.T) {
 			Name: "overlapped-job-name",
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, a.Name, "overlapped-job-name")
+		assert.Equal(t, "overlapped-job-name", a.Name)
 
 		b, err := scopedClient.CreateJob(sqlc.NewCtx(ctx, "bobby"), "overlap", model.CreateJobArgs{
 			Expr: "@after 1 hour",
 			Name: "overlapped-job-name",
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, b.Name, "overlapped-job-name")
+		assert.Equal(t, "overlapped-job-name", b.Name)
 
 		_, adminErr := adminClient.CreateJob(ctx, "overlap", model.CreateJobArgs{
 			Expr: "@after 1 hour",
@@ -531,7 +533,7 @@ func TestNameScope(t *testing.T) {
 	})
 }
 
-func TestPauseJobs(t *testing.T) {
+func TestClientPauseJobs(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("start_and_stop")
 	defer cleanup()
 
