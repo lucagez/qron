@@ -203,10 +203,7 @@ func (c *Client) Fetch(ctx context.Context, executorName string) chan Job {
 					log.Println(err)
 				}
 				for _, job := range jobs {
-					ch <- Job{
-						job,
-						c.processedCh,
-					}
+					ch <- Job{TinyJob: job, ch: c.processedCh}
 				}
 			}
 		}
@@ -328,7 +325,8 @@ func (c *Client) Migrate() error {
 // TODO: Client should not expose sqlc.TinyJob as type.
 type Job struct {
 	sqlc.TinyJob
-	ch chan<- Job
+	Sig string `json:"sig,omitempty"`
+	ch  chan<- Job
 }
 
 func (j Job) isOneShot() bool {
