@@ -1,4 +1,4 @@
-.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration
 
 test: 
 	@echo "Running TinyQ tests..."
@@ -18,6 +18,10 @@ migrate_up:
 	@echo "Migrate local db..."
 	@goose -dir ./migrations postgres "postgresql://postgres:password@localhost:5435/postgres?sslmode=disable" up
 
+generate_migration:
+	@echo "Generating migration..."
+	@goose -dir ./migrations postgres create $(name) sql
+
 recreate_local_env:
 	@echo "Recreating local environment..."
 	@docker compose down -v
@@ -27,5 +31,5 @@ recreate_local_env:
 	@echo "Done 🎉"
 
 connect_local:
-	@echo "COnnecting to local db..."
+	@echo "Connecting to local db..."
 	@psql -d postgres://postgres:password@localhost:5435/postgres
