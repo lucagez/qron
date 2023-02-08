@@ -98,6 +98,21 @@ and executor = $3
 offset $1
 limit $2;
 
+-- name: SearchJobsByMeta :many
+select * from tiny.job
+where meta::jsonb @> (sqlc.arg('query')::text)::jsonb
+and status::text = any(string_to_array(sqlc.arg('statuses')::text, ','))
+and created_at > sqlc.arg('from')::timestamptz
+and created_at < sqlc.arg('to')::timestamptz
+and (name like concat(sqlc.arg('name')::text, '%')
+  or name like concat('%', sqlc.arg('name')::text))
+-- Filter recurring tasks
+and tiny.is_one_shot(expr) = sqlc.arg('is_one_shot')::boolean
+and executor = sqlc.arg('executor')::text
+order by created_at desc
+limit sqlc.arg('limit')::int
+offset sqlc.arg('offset')::int;
+
 -- name: BatchUpdateJobs :batchexec
 update tiny.job
 set last_run_at = now(),

@@ -59,6 +59,8 @@ type CreateJobParams struct {
 	Retries  interface{}        `json:"retries"`
 }
 
+// on conflict on constraint job_name_owner_key
+// do ...
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, createJob,
 		arg.Expr,
@@ -422,6 +424,80 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 		arg.Limit,
 		arg.Executor,
 		arg.Query,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TinyJob
+	for rows.Next() {
+		var i TinyJob
+		if err := rows.Scan(
+			&i.ID,
+			&i.Expr,
+			&i.RunAt,
+			&i.LastRunAt,
+			&i.CreatedAt,
+			&i.StartAt,
+			&i.ExecutionAmount,
+			&i.Retries,
+			&i.Name,
+			&i.Meta,
+			&i.Timeout,
+			&i.Status,
+			&i.State,
+			&i.Executor,
+			&i.Owner,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchJobsByMeta = `-- name: SearchJobsByMeta :many
+select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+where meta::jsonb @> ($1::text)::jsonb
+and status::text = any(string_to_array($2::text, ','))
+and created_at > $3::timestamptz
+and created_at < $4::timestamptz
+and (name like concat($5::text, '%')
+  or name like concat('%', $5::text))
+and tiny.is_one_shot(expr) = $6::boolean
+and executor = $7::text
+order by created_at desc
+limit $9::int
+offset $8::int
+`
+
+type SearchJobsByMetaParams struct {
+	Query     string             `json:"query"`
+	Statuses  string             `json:"statuses"`
+	From      pgtype.Timestamptz `json:"from"`
+	To        pgtype.Timestamptz `json:"to"`
+	Name      string             `json:"name"`
+	IsOneShot bool               `json:"is_one_shot"`
+	Executor  string             `json:"executor"`
+	Offset    int32              `json:"offset"`
+	Limit     int32              `json:"limit"`
+}
+
+// Filter recurring tasks
+func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaParams) ([]TinyJob, error) {
+	rows, err := q.db.Query(ctx, searchJobsByMeta,
+		arg.Query,
+		arg.Statuses,
+		arg.From,
+		arg.To,
+		arg.Name,
+		arg.IsOneShot,
+		arg.Executor,
+		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err

@@ -62,9 +62,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		QueryJobByID   func(childComplexity int, executor string, id int64) int
-		QueryJobByName func(childComplexity int, executor string, name string) int
-		SearchJobs     func(childComplexity int, executor string, args model.QueryJobsArgs) int
+		QueryJobByID     func(childComplexity int, executor string, id int64) int
+		QueryJobByName   func(childComplexity int, executor string, name string) int
+		SearchJobs       func(childComplexity int, executor string, args model.QueryJobsArgs) int
+		SearchJobsByMeta func(childComplexity int, executor string, args model.QueryJobsMetaArgs) int
 	}
 
 	TinyJob struct {
@@ -100,6 +101,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	SearchJobs(ctx context.Context, executor string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error)
+	SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) ([]sqlc.TinyJob, error)
 	QueryJobByName(ctx context.Context, executor string, name string) (sqlc.TinyJob, error)
 	QueryJobByID(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error)
 }
@@ -110,7 +112,6 @@ type TinyJobResolver interface {
 
 	CreatedAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error)
 
-	Status(ctx context.Context, obj *sqlc.TinyJob) (string, error)
 	Meta(ctx context.Context, obj *sqlc.TinyJob) (string, error)
 }
 
@@ -297,6 +298,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.SearchJobs(childComplexity, args["executor"].(string), args["args"].(model.QueryJobsArgs)), true
 
+	case "Query.searchJobsByMeta":
+		if e.complexity.Query.SearchJobsByMeta == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchJobsByMeta_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchJobsByMeta(childComplexity, args["executor"].(string), args["args"].(model.QueryJobsMetaArgs)), true
+
 	case "TinyJob.created_at":
 		if e.complexity.TinyJob.CreatedAt == nil {
 			break
@@ -406,6 +419,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCommitArgs,
 		ec.unmarshalInputCreateJobArgs,
 		ec.unmarshalInputQueryJobsArgs,
+		ec.unmarshalInputQueryJobsMetaArgs,
 		ec.unmarshalInputUpdateJobArgs,
 	)
 	first := true
@@ -549,8 +563,20 @@ input QueryJobsArgs {
   filter: String!
 }
 
+input QueryJobsMetaArgs {
+  limit: Int! = 50
+  skip: Int! = 0
+  isOneShot: Boolean!
+  name: String
+  from: Time!
+  to: Time!
+  statuses: [String!]!
+  query: String
+}
+
 type Query {
   searchJobs(executor: String!, args: QueryJobsArgs!): [TinyJob!]!
+  searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): [TinyJob!]!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
 }
@@ -907,6 +933,30 @@ func (ec *executionContext) field_Query_queryJobByName_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_searchJobsByMeta_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["executor"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executor"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["executor"] = arg0
+	var arg1 model.QueryJobsMetaArgs
+	if tmp, ok := rawArgs["args"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
+		arg1, err = ec.unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["args"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_searchJobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -987,7 +1037,6 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1072,7 +1121,6 @@ func (ec *executionContext) _Mutation_updateJobByName(ctx context.Context, field
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1157,7 +1205,6 @@ func (ec *executionContext) _Mutation_updateJobById(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1242,7 +1289,6 @@ func (ec *executionContext) _Mutation_deleteJobByName(ctx context.Context, field
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1327,7 +1373,6 @@ func (ec *executionContext) _Mutation_deleteJobByID(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1412,7 +1457,6 @@ func (ec *executionContext) _Mutation_stopJob(ctx context.Context, field graphql
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1497,7 +1541,6 @@ func (ec *executionContext) _Mutation_restartJob(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1582,7 +1625,6 @@ func (ec *executionContext) _Mutation_fetchForProcessing(ctx context.Context, fi
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1667,7 +1709,6 @@ func (ec *executionContext) _Mutation_commitJobs(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1722,7 +1763,6 @@ func (ec *executionContext) _Mutation_failJobs(ctx context.Context, field graphq
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1777,7 +1817,6 @@ func (ec *executionContext) _Mutation_retryJobs(ctx context.Context, field graph
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1832,7 +1871,6 @@ func (ec *executionContext) _Query_searchJobs(ctx context.Context, field graphql
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1899,6 +1937,90 @@ func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_searchJobsByMeta(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_searchJobsByMeta(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SearchJobsByMeta(rctx, fc.Args["executor"].(string), fc.Args["args"].(model.QueryJobsMetaArgs))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]sqlc.TinyJob)
+	fc.Result = res
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_searchJobsByMeta(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TinyJob_id(ctx, field)
+			case "name":
+				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
+			case "run_at":
+				return ec.fieldContext_TinyJob_run_at(ctx, field)
+			case "last_run_at":
+				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "start_at":
+				return ec.fieldContext_TinyJob_start_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
+			case "created_at":
+				return ec.fieldContext_TinyJob_created_at(ctx, field)
+			case "executor":
+				return ec.fieldContext_TinyJob_executor(ctx, field)
+			case "state":
+				return ec.fieldContext_TinyJob_state(ctx, field)
+			case "status":
+				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchJobsByMeta_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_queryJobByName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_queryJobByName(ctx, field)
 	if err != nil {
@@ -1917,7 +2039,6 @@ func (ec *executionContext) _Query_queryJobByName(ctx context.Context, field gra
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -2002,7 +2123,6 @@ func (ec *executionContext) _Query_queryJobByID(ctx context.Context, field graph
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -2087,7 +2207,6 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -2161,7 +2280,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -2637,7 +2755,7 @@ func (ec *executionContext) _TinyJob_status(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.TinyJob().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2649,17 +2767,17 @@ func (ec *executionContext) _TinyJob_status(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(sqlc.TinyStatus)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TinyJob_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TinyJob",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -4743,6 +4861,97 @@ func (ec *executionContext) unmarshalInputQueryJobsArgs(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputQueryJobsMetaArgs(ctx context.Context, obj interface{}) (model.QueryJobsMetaArgs, error) {
+	var it model.QueryJobsMetaArgs
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["limit"]; !present {
+		asMap["limit"] = 50
+	}
+	if _, present := asMap["skip"]; !present {
+		asMap["skip"] = 0
+	}
+
+	fieldsInOrder := [...]string{"limit", "skip", "isOneShot", "name", "from", "to", "statuses", "query"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "limit":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "skip":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+			it.Skip, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isOneShot":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isOneShot"))
+			it.IsOneShot, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "from":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			it.From, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "to":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			it.To, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "statuses":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statuses"))
+			it.Statuses, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "query":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+			it.Query, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateJobArgs(ctx context.Context, obj interface{}) (model.UpdateJobArgs, error) {
 	var it model.UpdateJobArgs
 	asMap := map[string]interface{}{}
@@ -4804,7 +5013,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	})
 
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -4820,107 +5028,71 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createJob(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "updateJobByName":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateJobByName(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "updateJobById":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateJobById(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "deleteJobByName":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteJobByName(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "deleteJobByID":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteJobByID(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "stopJob":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_stopJob(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "restartJob":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_restartJob(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "fetchForProcessing":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_fetchForProcessing(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "commitJobs":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_commitJobs(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "failJobs":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_failJobs(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "retryJobs":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_retryJobs(ctx, field)
 			})
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
 	}
 	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
 	return out
 }
 
@@ -4933,7 +5105,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	})
 
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -4953,9 +5124,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchJobs(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "searchJobsByMeta":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchJobsByMeta(ctx, field)
 				return res
 			}
 
@@ -4976,9 +5164,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_queryJobByName(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -4999,9 +5184,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_queryJobByID(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -5029,9 +5211,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		}
 	}
 	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
 	return out
 }
 
@@ -5153,25 +5332,12 @@ func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._TinyJob_state(ctx, field, obj)
 
 		case "status":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._TinyJob_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._TinyJob_status(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "meta":
 			field := field
 
@@ -5659,6 +5825,26 @@ func (ec *executionContext) unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋtin
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx context.Context, v interface{}) (model.QueryJobsMetaArgs, error) {
+	res, err := ec.unmarshalInputQueryJobsMetaArgs(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx context.Context, v interface{}) (sqlc.TinyStatus, error) {
+	res, err := graphql.UnmarshalString(v)
+	return sqlc.TinyStatus(res), graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx context.Context, sel ast.SelectionSet, v sqlc.TinyStatus) graphql.Marshaler {
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5672,6 +5858,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {

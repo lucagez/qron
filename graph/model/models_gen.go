@@ -28,6 +28,17 @@ type QueryJobsArgs struct {
 	Filter string `json:"filter"`
 }
 
+type QueryJobsMetaArgs struct {
+	Limit     int       `json:"limit"`
+	Skip      int       `json:"skip"`
+	IsOneShot bool      `json:"isOneShot"`
+	Name      *string   `json:"name"`
+	From      time.Time `json:"from"`
+	To        time.Time `json:"to"`
+	Statuses  []string  `json:"statuses"`
+	Query     *string   `json:"query"`
+}
+
 type UpdateJobArgs struct {
 	Expr    *string `json:"expr"`
 	State   *string `json:"state"`

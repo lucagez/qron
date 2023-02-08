@@ -80,8 +80,20 @@ input QueryJobsArgs {
   filter: String!
 }
 
+input QueryJobsMetaArgs {
+  limit: Int! = 50
+  skip: Int! = 0
+  isOneShot: Boolean!
+  name: String
+  from: Time!
+  to: Time!
+  statuses: [String!]!
+  query: String
+}
+
 type Query {
   searchJobs(executor: String!, args: QueryJobsArgs!): [TinyJob!]!
+  searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): [TinyJob!]!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
 }

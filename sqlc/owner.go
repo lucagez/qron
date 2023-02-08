@@ -46,6 +46,8 @@ func NewScopedPgx(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 			return false
 		}
 
+		log.Println("setting owner in borrowed connection to:", owner)
+
 		// TODO: use positional arguments. Currently it throws a syntax error
 		// TODO: After reset, tiny.owner is still set but empty
 		_, err := c.Exec(_ctx, fmt.Sprintf(`set tiny.owner = '%s'`, owner))
