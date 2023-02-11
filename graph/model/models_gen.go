@@ -4,6 +4,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/lucagez/tinyq/sqlc"
 )
 
 type CommitArgs struct {
@@ -37,6 +39,11 @@ type QueryJobsMetaArgs struct {
 	To        time.Time `json:"to"`
 	Statuses  []string  `json:"statuses"`
 	Query     *string   `json:"query"`
+}
+
+type SearchJobsByMetaResult struct {
+	Jobs  []sqlc.TinyJob `json:"jobs"`
+	Total int            `json:"total"`
 }
 
 type UpdateJobArgs struct {

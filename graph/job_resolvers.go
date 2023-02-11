@@ -238,7 +238,7 @@ func (r *mutationResolver) RetryJobs(ctx context.Context, executor string, commi
 
 	// TODO: this does not ensure a job exists
 	var failed []int64
-	r.Queries.BatchUpdateJobs(context.Background(), batch).Exec(func(i int, err error) {
+	r.Queries.BatchUpdateJobs(ctx, batch).Exec(func(i int, err error) {
 		if err != nil {
 			failed = append(failed, batch[i].ID)
 		}
@@ -262,7 +262,7 @@ func (r *queryResolver) SearchJobs(ctx context.Context, executor string, args mo
 }
 
 // SearchJobsByMeta is the resolver for the searchJobsByMeta field.
-func (r *queryResolver) SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) ([]sqlc.TinyJob, error) {
+func (r *queryResolver) SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) (model.SearchJobsByMetaResult, error) {
 	statuses := strings.Join(args.Statuses, ",")
 
 	var name string
@@ -275,7 +275,7 @@ func (r *queryResolver) SearchJobsByMeta(ctx context.Context, executor string, a
 		rawquery = *args.Query
 	}
 
-	return r.Queries.SearchJobsByMeta(ctx, sqlc.SearchJobsByMetaParams{
+	rows, err := r.Queries.SearchJobsByMeta(ctx, sqlc.SearchJobsByMetaParams{
 		Query:     rawquery,
 		Executor:  executor,
 		Statuses:  statuses,
@@ -286,6 +286,40 @@ func (r *queryResolver) SearchJobsByMeta(ctx context.Context, executor string, a
 		Limit:     int32(args.Limit),
 		IsOneShot: args.IsOneShot,
 	})
+	if err != nil {
+		return model.SearchJobsByMetaResult{}, err
+	}
+
+	var jobs []sqlc.TinyJob
+	for _, row := range rows {
+		jobs = append(jobs, sqlc.TinyJob{
+			ID:              row.ID,
+			Name:            row.Name,
+			Expr:            row.Expr,
+			State:           row.State,
+			Status:          row.Status,
+			CreatedAt:       row.CreatedAt,
+			LastRunAt:       row.LastRunAt,
+			StartAt:         row.StartAt,
+			RunAt:           row.RunAt,
+			ExecutionAmount: row.ExecutionAmount,
+			Retries:         row.Retries,
+			Meta:            row.Meta,
+			Timeout:         row.Timeout,
+			Executor:        row.Executor,
+			Owner:           row.Owner,
+		})
+	}
+
+	total := 0
+	if len(rows) > 0 {
+		total = int(rows[0].TotalCount)
+	}
+
+	return model.SearchJobsByMetaResult{
+		Jobs:  jobs,
+		Total: total,
+	}, nil
 }
 
 // QueryJobByName is the resolver for the queryJobByName field.

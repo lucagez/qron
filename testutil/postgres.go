@@ -73,6 +73,7 @@ func NewPgFactory() PgFactory {
 		if err == nil && rows.Next() {
 			break
 		}
+		defer rows.Close()
 
 		counter++
 	}

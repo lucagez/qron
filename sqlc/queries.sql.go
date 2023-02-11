@@ -460,21 +460,30 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 }
 
 const searchJobsByMeta = `-- name: SearchJobsByMeta :many
-select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
-where meta::jsonb @> ($1::text)::jsonb
-and status::text = any(string_to_array($2::text, ','))
-and created_at > $3::timestamptz
-and created_at < $4::timestamptz
-and (name like concat($5::text, '%')
-  or name like concat('%', $5::text))
-and tiny.is_one_shot(expr) = $6::boolean
-and executor = $7::text
+with jobs as (
+  select id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+  where meta::jsonb @> ($3::text)::jsonb
+  and status::text = any(string_to_array($4::text, ','))
+  and created_at > $5::timestamptz
+  and created_at < $6::timestamptz
+  and (name like concat($7::text, '%')
+    or name like concat('%', $7::text))
+  -- Filter recurring tasks
+  and tiny.is_one_shot(expr) = $8::boolean
+  and executor = $9::text
+),
+total as (
+  select count(*) as total_count from jobs
+)
+select jobs.id, jobs.expr, jobs.run_at, jobs.last_run_at, jobs.created_at, jobs.start_at, jobs.execution_amount, jobs.retries, jobs.name, jobs.meta, jobs.timeout, jobs.status, jobs.state, jobs.executor, jobs.owner, total_count from jobs, total
 order by created_at desc
-limit $9::int
-offset $8::int
+limit $2::int
+offset $1::int
 `
 
 type SearchJobsByMetaParams struct {
+	Offset    int32              `json:"offset"`
+	Limit     int32              `json:"limit"`
 	Query     string             `json:"query"`
 	Statuses  string             `json:"statuses"`
 	From      pgtype.Timestamptz `json:"from"`
@@ -482,13 +491,31 @@ type SearchJobsByMetaParams struct {
 	Name      string             `json:"name"`
 	IsOneShot bool               `json:"is_one_shot"`
 	Executor  string             `json:"executor"`
-	Offset    int32              `json:"offset"`
-	Limit     int32              `json:"limit"`
 }
 
-// Filter recurring tasks
-func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaParams) ([]TinyJob, error) {
+type SearchJobsByMetaRow struct {
+	ID              int64              `json:"id"`
+	Expr            string             `json:"expr"`
+	RunAt           pgtype.Timestamptz `json:"run_at"`
+	LastRunAt       pgtype.Timestamptz `json:"last_run_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	StartAt         pgtype.Timestamptz `json:"start_at"`
+	ExecutionAmount int32              `json:"execution_amount"`
+	Retries         int32              `json:"retries"`
+	Name            string             `json:"name"`
+	Meta            []byte             `json:"meta"`
+	Timeout         int32              `json:"timeout"`
+	Status          TinyStatus         `json:"status"`
+	State           string             `json:"state"`
+	Executor        string             `json:"executor"`
+	Owner           string             `json:"owner"`
+	TotalCount      int64              `json:"total_count"`
+}
+
+func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaParams) ([]SearchJobsByMetaRow, error) {
 	rows, err := q.db.Query(ctx, searchJobsByMeta,
+		arg.Offset,
+		arg.Limit,
 		arg.Query,
 		arg.Statuses,
 		arg.From,
@@ -496,16 +523,14 @@ func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaPara
 		arg.Name,
 		arg.IsOneShot,
 		arg.Executor,
-		arg.Offset,
-		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TinyJob
+	var items []SearchJobsByMetaRow
 	for rows.Next() {
-		var i TinyJob
+		var i SearchJobsByMetaRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Expr,
@@ -522,6 +547,7 @@ func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaPara
 			&i.State,
 			&i.Executor,
 			&i.Owner,
+			&i.TotalCount,
 		); err != nil {
 			return nil, err
 		}
@@ -577,9 +603,8 @@ update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
   timeout = coalesce(nullif($5, 0), timeout),
-  -- ` + "`" + `run_at` + "`" + ` should always be consistent
   run_at = tiny.next(
-    coalesce(last_run_at, created_at), 
+    now(), 
     coalesce(nullif($3, ''), expr)
   )
 where id = $1

@@ -68,6 +68,11 @@ type ComplexityRoot struct {
 		SearchJobsByMeta func(childComplexity int, executor string, args model.QueryJobsMetaArgs) int
 	}
 
+	SearchJobsByMetaResult struct {
+		Jobs  func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
 	TinyJob struct {
 		CreatedAt       func(childComplexity int) int
 		ExecutionAmount func(childComplexity int) int
@@ -101,7 +106,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	SearchJobs(ctx context.Context, executor string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error)
-	SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) ([]sqlc.TinyJob, error)
+	SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) (model.SearchJobsByMetaResult, error)
 	QueryJobByName(ctx context.Context, executor string, name string) (sqlc.TinyJob, error)
 	QueryJobByID(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error)
 }
@@ -309,6 +314,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.SearchJobsByMeta(childComplexity, args["executor"].(string), args["args"].(model.QueryJobsMetaArgs)), true
+
+	case "SearchJobsByMetaResult.jobs":
+		if e.complexity.SearchJobsByMetaResult.Jobs == nil {
+			break
+		}
+
+		return e.complexity.SearchJobsByMetaResult.Jobs(childComplexity), true
+
+	case "SearchJobsByMetaResult.total":
+		if e.complexity.SearchJobsByMetaResult.Total == nil {
+			break
+		}
+
+		return e.complexity.SearchJobsByMetaResult.Total(childComplexity), true
 
 	case "TinyJob.created_at":
 		if e.complexity.TinyJob.CreatedAt == nil {
@@ -574,9 +593,14 @@ input QueryJobsMetaArgs {
   query: String
 }
 
+type SearchJobsByMetaResult {
+  jobs: [TinyJob!]!
+  total: Int!
+}
+
 type Query {
   searchJobs(executor: String!, args: QueryJobsArgs!): [TinyJob!]!
-  searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): [TinyJob!]!
+  searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): SearchJobsByMetaResult!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
 }
@@ -1962,9 +1986,9 @@ func (ec *executionContext) _Query_searchJobsByMeta(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]sqlc.TinyJob)
+	res := resTmp.(model.SearchJobsByMetaResult)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_searchJobsByMeta(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1975,36 +1999,12 @@ func (ec *executionContext) fieldContext_Query_searchJobsByMeta(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_TinyJob_id(ctx, field)
-			case "name":
-				return ec.fieldContext_TinyJob_name(ctx, field)
-			case "expr":
-				return ec.fieldContext_TinyJob_expr(ctx, field)
-			case "run_at":
-				return ec.fieldContext_TinyJob_run_at(ctx, field)
-			case "last_run_at":
-				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
-			case "start_at":
-				return ec.fieldContext_TinyJob_start_at(ctx, field)
-			case "timeout":
-				return ec.fieldContext_TinyJob_timeout(ctx, field)
-			case "created_at":
-				return ec.fieldContext_TinyJob_created_at(ctx, field)
-			case "executor":
-				return ec.fieldContext_TinyJob_executor(ctx, field)
-			case "state":
-				return ec.fieldContext_TinyJob_state(ctx, field)
-			case "status":
-				return ec.fieldContext_TinyJob_status(ctx, field)
-			case "meta":
-				return ec.fieldContext_TinyJob_meta(ctx, field)
-			case "retries":
-				return ec.fieldContext_TinyJob_retries(ctx, field)
-			case "execution_amount":
-				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
+			case "jobs":
+				return ec.fieldContext_SearchJobsByMetaResult_jobs(ctx, field)
+			case "total":
+				return ec.fieldContext_SearchJobsByMetaResult_total(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SearchJobsByMetaResult", field.Name)
 		},
 	}
 	defer func() {
@@ -2311,6 +2311,124 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchJobsByMetaResult_jobs(ctx context.Context, field graphql.CollectedField, obj *model.SearchJobsByMetaResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchJobsByMetaResult_jobs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Jobs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]sqlc.TinyJob)
+	fc.Result = res
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchJobsByMetaResult_jobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchJobsByMetaResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_TinyJob_id(ctx, field)
+			case "name":
+				return ec.fieldContext_TinyJob_name(ctx, field)
+			case "expr":
+				return ec.fieldContext_TinyJob_expr(ctx, field)
+			case "run_at":
+				return ec.fieldContext_TinyJob_run_at(ctx, field)
+			case "last_run_at":
+				return ec.fieldContext_TinyJob_last_run_at(ctx, field)
+			case "start_at":
+				return ec.fieldContext_TinyJob_start_at(ctx, field)
+			case "timeout":
+				return ec.fieldContext_TinyJob_timeout(ctx, field)
+			case "created_at":
+				return ec.fieldContext_TinyJob_created_at(ctx, field)
+			case "executor":
+				return ec.fieldContext_TinyJob_executor(ctx, field)
+			case "state":
+				return ec.fieldContext_TinyJob_state(ctx, field)
+			case "status":
+				return ec.fieldContext_TinyJob_status(ctx, field)
+			case "meta":
+				return ec.fieldContext_TinyJob_meta(ctx, field)
+			case "retries":
+				return ec.fieldContext_TinyJob_retries(ctx, field)
+			case "execution_amount":
+				return ec.fieldContext_TinyJob_execution_amount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TinyJob", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchJobsByMetaResult_total(ctx context.Context, field graphql.CollectedField, obj *model.SearchJobsByMetaResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SearchJobsByMetaResult_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SearchJobsByMetaResult_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchJobsByMetaResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5214,6 +5332,41 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var searchJobsByMetaResultImplementors = []string{"SearchJobsByMetaResult"}
+
+func (ec *executionContext) _SearchJobsByMetaResult(ctx context.Context, sel ast.SelectionSet, obj *model.SearchJobsByMetaResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, searchJobsByMetaResultImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchJobsByMetaResult")
+		case "jobs":
+
+			out.Values[i] = ec._SearchJobsByMetaResult_jobs(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total":
+
+			out.Values[i] = ec._SearchJobsByMetaResult_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var tinyJobImplementors = []string{"TinyJob"}
 
 func (ec *executionContext) _TinyJob(ctx context.Context, sel ast.SelectionSet, obj *sqlc.TinyJob) graphql.Marshaler {
@@ -5828,6 +5981,10 @@ func (ec *executionContext) unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋtin
 func (ec *executionContext) unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx context.Context, v interface{}) (model.QueryJobsMetaArgs, error) {
 	res, err := ec.unmarshalInputQueryJobsMetaArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx context.Context, sel ast.SelectionSet, v model.SearchJobsByMetaResult) graphql.Marshaler {
+	return ec._SearchJobsByMetaResult(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx context.Context, v interface{}) (sqlc.TinyStatus, error) {

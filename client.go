@@ -26,7 +26,7 @@ import (
 // var processedCh = make(chan Job)
 
 type Client struct {
-	resolver      graph.Resolver
+	Resolver      graph.Resolver
 	MaxInFlight   uint64
 	FlushInterval time.Duration
 	PollInterval  time.Duration
@@ -64,7 +64,7 @@ func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
 	}
 
 	return Client{
-		resolver:      resolver,
+		Resolver:      resolver,
 		MaxInFlight:   cfg.MaxInFlight,
 		FlushInterval: cfg.FlushInterval,
 		PollInterval:  cfg.PollInterval,
@@ -90,7 +90,7 @@ func (t *Client) reset(ctx context.Context, executorName string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			ids, err := t.resolver.Queries.ResetTimeoutJobs(context.Background(), executorName)
+			ids, err := t.Resolver.Queries.ResetTimeoutJobs(context.Background(), executorName)
 			if len(ids) > 0 {
 				log.Println("[RESETTING]", ids)
 			}
@@ -150,21 +150,21 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 
 		// TODO: Handle failed commits + flush errors
 		if len(commitBatch) > 0 {
-			_, err := t.resolver.Mutation().CommitJobs(ctx, executorName, commitBatch)
+			_, err := t.Resolver.Mutation().CommitJobs(ctx, executorName, commitBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			commitBatch = []model.CommitArgs{}
 		}
 		if len(failBatch) > 0 {
-			_, err := t.resolver.Mutation().FailJobs(ctx, executorName, failBatch)
+			_, err := t.Resolver.Mutation().FailJobs(ctx, executorName, failBatch)
 			if err != nil {
 				log.Println(err)
 			}
 			failBatch = []model.CommitArgs{}
 		}
 		if len(retryBatch) > 0 {
-			_, err := t.resolver.Mutation().RetryJobs(ctx, executorName, retryBatch)
+			_, err := t.Resolver.Mutation().RetryJobs(ctx, executorName, retryBatch)
 			if err != nil {
 				log.Println(err)
 			}
@@ -174,7 +174,7 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 }
 
 func (c *Client) Close() {
-	c.resolver.DB.Close()
+	c.Resolver.DB.Close()
 }
 
 func (c *Client) Fetch(ctx context.Context, executorName string) chan Job {
@@ -192,7 +192,7 @@ func (c *Client) Fetch(ctx context.Context, executorName string) chan Job {
 				return
 			// TODO: replace with ticker!
 			case <-time.After(c.PollInterval):
-				jobs, err := c.resolver.
+				jobs, err := c.Resolver.
 					Mutation().
 					FetchForProcessing(ctx, executorName, int(c.MaxInFlight))
 				if len(jobs) > 0 {
@@ -215,7 +215,7 @@ func (c *Client) Fetch(ctx context.Context, executorName string) chan Job {
 func (c *Client) Handler() http.Handler {
 	router := chi.NewRouter()
 	api := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
-		Resolvers: &c.resolver,
+		Resolvers: &c.Resolver,
 	}))
 
 	router.Use(c.OwnerSetter)
@@ -226,7 +226,7 @@ func (c *Client) Handler() http.Handler {
 }
 
 func (c *Client) CreateJob(ctx context.Context, executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().CreateJob(
+	return c.Resolver.Mutation().CreateJob(
 		ctx,
 		executorName,
 		args,
@@ -234,7 +234,7 @@ func (c *Client) CreateJob(ctx context.Context, executorName string, args model.
 }
 
 func (c *Client) UpdateJobByName(ctx context.Context, executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().UpdateJobByName(
+	return c.Resolver.Mutation().UpdateJobByName(
 		ctx,
 		executorName,
 		name,
@@ -243,7 +243,7 @@ func (c *Client) UpdateJobByName(ctx context.Context, executorName, name string,
 }
 
 func (c *Client) UpdateJobByID(ctx context.Context, executorName string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().UpdateJobByID(
+	return c.Resolver.Mutation().UpdateJobByID(
 		ctx,
 		executorName,
 		id,
@@ -252,7 +252,7 @@ func (c *Client) UpdateJobByID(ctx context.Context, executorName string, id int6
 }
 
 func (c *Client) DeleteJobByName(ctx context.Context, executorName, name string) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().DeleteJobByName(
+	return c.Resolver.Mutation().DeleteJobByName(
 		ctx,
 		executorName,
 		name,
@@ -260,7 +260,7 @@ func (c *Client) DeleteJobByName(ctx context.Context, executorName, name string)
 }
 
 func (c *Client) DeleteJobByID(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().DeleteJobByID(
+	return c.Resolver.Mutation().DeleteJobByID(
 		ctx,
 		executorName,
 		id,
@@ -268,7 +268,7 @@ func (c *Client) DeleteJobByID(ctx context.Context, executorName string, id int6
 }
 
 func (c *Client) SearchJobs(ctx context.Context, executorName string, args model.QueryJobsArgs) ([]sqlc.TinyJob, error) {
-	return c.resolver.Query().SearchJobs(
+	return c.Resolver.Query().SearchJobs(
 		ctx,
 		executorName,
 		args,
@@ -276,7 +276,7 @@ func (c *Client) SearchJobs(ctx context.Context, executorName string, args model
 }
 
 func (c *Client) QueryJobByName(ctx context.Context, executorName, name string) (sqlc.TinyJob, error) {
-	return c.resolver.Query().QueryJobByName(
+	return c.Resolver.Query().QueryJobByName(
 		ctx,
 		executorName,
 		name,
@@ -284,7 +284,7 @@ func (c *Client) QueryJobByName(ctx context.Context, executorName, name string) 
 }
 
 func (c *Client) QueryJobByID(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
-	return c.resolver.Query().QueryJobByID(
+	return c.Resolver.Query().QueryJobByID(
 		ctx,
 		executorName,
 		id,
@@ -292,7 +292,7 @@ func (c *Client) QueryJobByID(ctx context.Context, executorName string, id int64
 }
 
 func (c *Client) StopJob(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().StopJob(
+	return c.Resolver.Mutation().StopJob(
 		ctx,
 		executorName,
 		id,
@@ -300,7 +300,7 @@ func (c *Client) StopJob(ctx context.Context, executorName string, id int64) (sq
 }
 
 func (c *Client) RestartJob(ctx context.Context, executorName string, id int64) (sqlc.TinyJob, error) {
-	return c.resolver.Mutation().RestartJob(
+	return c.Resolver.Mutation().RestartJob(
 		ctx,
 		executorName,
 		id,
@@ -311,7 +311,7 @@ func (c *Client) Migrate() error {
 	goose.SetDialect("postgres")
 	goose.SetBaseFS(migrations.MigrationsFS)
 
-	dsn := c.resolver.DB.Config().ConnConfig.ConnString()
+	dsn := c.Resolver.DB.Config().ConnConfig.ConnString()
 	migrationClient, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return err
