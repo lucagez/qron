@@ -603,8 +603,9 @@ update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
   timeout = coalesce(nullif($5, 0), timeout),
+  -- ` + "`" + `run_at` + "`" + ` should always be consistent
   run_at = tiny.next(
-    now(), 
+    coalesce(last_run_at, created_at), 
     coalesce(nullif($3, ''), expr)
   )
 where id = $1
@@ -682,6 +683,43 @@ func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams
 		arg.State,
 		arg.Timeout,
 	)
+	var i TinyJob
+	err := row.Scan(
+		&i.ID,
+		&i.Expr,
+		&i.RunAt,
+		&i.LastRunAt,
+		&i.CreatedAt,
+		&i.StartAt,
+		&i.ExecutionAmount,
+		&i.Retries,
+		&i.Name,
+		&i.Meta,
+		&i.Timeout,
+		&i.Status,
+		&i.State,
+		&i.Executor,
+		&i.Owner,
+	)
+	return i, err
+}
+
+const updateStateByID = `-- name: UpdateStateByID :one
+update tiny.job
+set state = coalesce(nullif($3, ''), state)
+where id = $1
+and executor = $2 
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+`
+
+type UpdateStateByIDParams struct {
+	ID       int64       `json:"id"`
+	Executor string      `json:"executor"`
+	State    interface{} `json:"state"`
+}
+
+func (q *Queries) UpdateStateByID(ctx context.Context, arg UpdateStateByIDParams) (TinyJob, error) {
+	row := q.db.QueryRow(ctx, updateStateByID, arg.ID, arg.Executor, arg.State)
 	var i TinyJob
 	err := row.Scan(
 		&i.ID,
