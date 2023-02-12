@@ -18,6 +18,11 @@ import (
 	"github.com/lucagez/tinyq/sqlc"
 )
 
+// ValidateExprFormat is the resolver for the validateExprFormat field.
+func (r *mutationResolver) ValidateExprFormat(ctx context.Context, expr string) (bool, error) {
+	return r.Queries.ValidateExprFormat(ctx, expr)
+}
+
 // CreateJob is the resolver for the createJob field.
 func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	var timeout int32

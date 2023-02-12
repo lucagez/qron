@@ -61,6 +61,7 @@ type ComplexityRoot struct {
 		UpdateJobByID      func(childComplexity int, executor string, id int64, args model.UpdateJobArgs) int
 		UpdateJobByName    func(childComplexity int, executor string, name string, args model.UpdateJobArgs) int
 		UpdateStateByID    func(childComplexity int, executor string, id int64, state string) int
+		ValidateExprFormat func(childComplexity int, expr string) int
 	}
 
 	Query struct {
@@ -94,6 +95,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
+	ValidateExprFormat(ctx context.Context, expr string) (bool, error)
 	CreateJob(ctx context.Context, executor string, args model.CreateJobArgs) (sqlc.TinyJob, error)
 	UpdateJobByName(ctx context.Context, executor string, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error)
 	UpdateJobByID(ctx context.Context, executor string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error)
@@ -294,6 +296,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateStateByID(childComplexity, args["executor"].(string), args["id"].(int64), args["state"].(string)), true
+
+	case "Mutation.validateExprFormat":
+		if e.complexity.Mutation.ValidateExprFormat == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_validateExprFormat_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ValidateExprFormat(childComplexity, args["expr"].(string)), true
 
 	case "Query.queryJobByID":
 		if e.complexity.Query.QueryJobByID == nil {
@@ -585,6 +599,7 @@ input CommitArgs {
 }
 
 type Mutation {
+  validateExprFormat(expr: String!): Boolean!
   createJob(executor: String!, args: CreateJobArgs!): TinyJob!
   updateJobByName(executor: String!, name: String!, args: UpdateJobArgs!): TinyJob!
   updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
@@ -990,6 +1005,21 @@ func (ec *executionContext) field_Mutation_updateStateByID_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_validateExprFormat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["expr"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expr"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["expr"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1138,6 +1168,60 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Mutation_validateExprFormat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_validateExprFormat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ValidateExprFormat(rctx, fc.Args["expr"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_validateExprFormat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_validateExprFormat_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createJob(ctx, field)
@@ -5404,6 +5488,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "validateExprFormat":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_validateExprFormat(ctx, field)
+			})
+
 		case "createJob":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {

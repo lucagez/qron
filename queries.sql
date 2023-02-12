@@ -72,6 +72,12 @@ where id = $1
 and executor = $2 
 returning *;
 
+-- name: ValidateExprFormat :one
+select (substr($1::text, 1, 6) in ('@every', '@after') and (substr($1::text, 7)::interval) is not null
+    or $1::text ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+    or substr($1::text, 1, 3) = '@at' and (substr($1::text, 4)::timestamptz) is not null
+    or tiny.crontab($1::text))::bool as valid;
+
 -- name: DeleteJobByName :one
 delete from tiny.job
 where name = $1

@@ -777,3 +777,17 @@ func (q *Queries) UpdateStateByID(ctx context.Context, arg UpdateStateByIDParams
 	)
 	return i, err
 }
+
+const validateExprFormat = `-- name: ValidateExprFormat :one
+select (substr($1::text, 1, 6) in ('@every', '@after') and (substr($1::text, 7)::interval) is not null
+    or $1::text ~ '^@(annually|yearly|monthly|weekly|daily|hourly|minutely)$'
+    or substr($1::text, 1, 3) = '@at' and (substr($1::text, 4)::timestamptz) is not null
+    or tiny.crontab($1::text))::bool as valid
+`
+
+func (q *Queries) ValidateExprFormat(ctx context.Context, dollar_1 string) (bool, error) {
+	row := q.db.QueryRow(ctx, validateExprFormat, dollar_1)
+	var valid bool
+	err := row.Scan(&valid)
+	return valid, err
+}
