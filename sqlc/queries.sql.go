@@ -476,7 +476,7 @@ total as (
   select count(*) as total_count from jobs
 )
 select jobs.id, jobs.expr, jobs.run_at, jobs.last_run_at, jobs.created_at, jobs.start_at, jobs.execution_amount, jobs.retries, jobs.name, jobs.meta, jobs.timeout, jobs.status, jobs.state, jobs.executor, jobs.owner, total_count from jobs, total
-order by created_at desc
+order by last_run_at desc
 limit $2::int
 offset $1::int
 `
