@@ -59,6 +59,7 @@ type Mutation {
   updateJobByName(executor: String!, name: String!, args: UpdateJobArgs!): TinyJob!
   updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
   updateStateByID(executor: String!, id: ID!, state: String!): TinyJob!
+  updateExprByID(executor: String!, id: ID!, expr: String!): TinyJob!
   deleteJobByName(executor: String!, name: String!): TinyJob!
   deleteJobByID(executor: String!, id: ID!): TinyJob!
   stopJob(executor: String!, id: ID!): TinyJob!

@@ -89,20 +89,21 @@ func (r *mutationResolver) UpdateJobByID(ctx context.Context, executor string, i
 	return r.Queries.UpdateJobByID(ctx, params)
 }
 
-// RIPARTIRE QUI!<---
-// [] Add test for updatestatebyid
-// [] Add test for searchJobsByMeta
-// [] Include updateStateById to client
-// [] Include searchJobsByMeta to client
-// [] make it clear that updateJobs actually retrigger the job.
-//    Should remove in favor of specialized queries
-
 // UpdateStateByID is the resolver for the updateStateByID field.
 func (r *mutationResolver) UpdateStateByID(ctx context.Context, executor string, id int64, state string) (sqlc.TinyJob, error) {
 	return r.Queries.UpdateStateByID(ctx, sqlc.UpdateStateByIDParams{
 		ID:       id,
 		Executor: executor,
 		State:    state,
+	})
+}
+
+// UpdateExprByID is the resolver for the updateExprByID field.
+func (r *mutationResolver) UpdateExprByID(ctx context.Context, executor string, id int64, expr string) (sqlc.TinyJob, error) {
+	return r.Queries.UpdateExprByID(ctx, sqlc.UpdateExprByIDParams{
+		ID:       id,
+		Executor: executor,
+		Expr:     expr,
 	})
 }
 

@@ -598,6 +598,43 @@ func (q *Queries) StopJob(ctx context.Context, arg StopJobParams) (TinyJob, erro
 	return i, err
 }
 
+const updateExprByID = `-- name: UpdateExprByID :one
+update tiny.job
+set expr = coalesce(nullif($3, ''), expr)
+where id = $1
+and executor = $2 
+returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+`
+
+type UpdateExprByIDParams struct {
+	ID       int64       `json:"id"`
+	Executor string      `json:"executor"`
+	Expr     interface{} `json:"expr"`
+}
+
+func (q *Queries) UpdateExprByID(ctx context.Context, arg UpdateExprByIDParams) (TinyJob, error) {
+	row := q.db.QueryRow(ctx, updateExprByID, arg.ID, arg.Executor, arg.Expr)
+	var i TinyJob
+	err := row.Scan(
+		&i.ID,
+		&i.Expr,
+		&i.RunAt,
+		&i.LastRunAt,
+		&i.CreatedAt,
+		&i.StartAt,
+		&i.ExecutionAmount,
+		&i.Retries,
+		&i.Name,
+		&i.Meta,
+		&i.Timeout,
+		&i.Status,
+		&i.State,
+		&i.Executor,
+		&i.Owner,
+	)
+	return i, err
+}
+
 const updateJobByID = `-- name: UpdateJobByID :one
 update tiny.job
 set expr = coalesce(nullif($3, ''), expr),

@@ -65,6 +65,13 @@ where id = $1
 and executor = $2 
 returning *;
 
+-- name: UpdateExprByID :one
+update tiny.job
+set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr)
+where id = $1
+and executor = $2 
+returning *;
+
 -- name: DeleteJobByName :one
 delete from tiny.job
 where name = $1
