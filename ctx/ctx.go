@@ -3,7 +3,7 @@ package ctx
 import (
 	"net/http"
 
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron/sqlc"
 )
 
 func ExecutorSetterMiddleware(next http.Handler) http.Handler {

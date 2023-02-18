@@ -13,9 +13,9 @@ import (
 
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lucagez/tinyq/graph/generated"
-	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron/graph/generated"
+	"github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/sqlc"
 )
 
 // ValidateExprFormat is the resolver for the validateExprFormat field.

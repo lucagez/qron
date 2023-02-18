@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/sqlc"
-	"github.com/lucagez/tinyq/testutil"
+	"github.com/lucagez/qron"
+	"github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/sqlc"
+	"github.com/lucagez/qron/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +49,7 @@ func TestHttpExecutor(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("http_test")
 	defer cleanup()
 
-	client, err := tinyq.NewClient(pool, tinyq.Config{
+	client, err := qron.NewClient(pool, qron.Config{
 		PollInterval:  10 * time.Millisecond,
 		FlushInterval: 10 * time.Millisecond,
 		ResetInterval: 10 * time.Millisecond,

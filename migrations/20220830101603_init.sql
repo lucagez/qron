@@ -197,7 +197,7 @@ create table tiny.job
     timeout          integer not null default 120,
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
-    -- visible from tinyq. this can hold sensitive data
+    -- visible from qron. this can hold sensitive data
     state            text not null,
     executor         text not null,
     owner            text not null default 'default'

@@ -7,17 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron"
+	"github.com/lucagez/qron/sqlc"
 )
 
 type HttpExecutor struct {
 	client  *http.Client
 	limiter chan int
-	Signer  func(job tinyq.Job, r *http.Request) error
+	Signer  func(job qron.Job, r *http.Request) error
 }
 
-type Signer func(job tinyq.Job, r *http.Request) error
+type Signer func(job qron.Job, r *http.Request) error
 
 func NewHttpExecutor(maxConcurrency int) HttpExecutor {
 	transport := &http.Transport{
@@ -35,7 +35,7 @@ func NewHttpExecutor(maxConcurrency int) HttpExecutor {
 	return HttpExecutor{
 		client:  client,
 		limiter: make(chan int, maxConcurrency),
-		Signer: func(job tinyq.Job, r *http.Request) error {
+		Signer: func(job qron.Job, r *http.Request) error {
 			return nil
 		},
 	}
@@ -46,7 +46,7 @@ type HttpConfig struct {
 	Method string `json:"method,omitempty"`
 }
 
-func (h HttpExecutor) Run(job tinyq.Job) {
+func (h HttpExecutor) Run(job qron.Job) {
 	var config HttpConfig
 	err := json.Unmarshal(job.Meta, &config)
 	if err != nil {
@@ -83,7 +83,7 @@ func (h HttpExecutor) Run(job tinyq.Job) {
 
 	<-h.limiter
 
-	var execRes tinyq.Job
+	var execRes qron.Job
 	err = json.NewDecoder(res.Body).Decode(&execRes)
 	if err != nil {
 		// TODO: In case body arrives but it's null

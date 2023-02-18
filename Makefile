@@ -1,7 +1,7 @@
 .PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev
 
 test: 
-	@echo "Running TinyQ tests..."
+	@echo "Running qron tests..."
 	@TZ=UTC go test ./... -race -count=1 -timeout=30s
 
 httpdev: 

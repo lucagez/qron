@@ -1,4 +1,4 @@
-package tinyq
+package qron
 
 import (
 	"context"
@@ -14,12 +14,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	tinyctx "github.com/lucagez/tinyq/ctx"
-	"github.com/lucagez/tinyq/graph"
-	"github.com/lucagez/tinyq/graph/generated"
-	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/migrations"
-	"github.com/lucagez/tinyq/sqlc"
+	tinyctx "github.com/lucagez/qron/ctx"
+	"github.com/lucagez/qron/graph"
+	"github.com/lucagez/qron/graph/generated"
+	"github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/migrations"
+	"github.com/lucagez/qron/sqlc"
 	"github.com/pressly/goose/v3"
 )
 

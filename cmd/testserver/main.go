@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/graph/model"
+	"github.com/lucagez/qron"
+	"github.com/lucagez/qron/graph/model"
 	"github.com/pyroscope-io/client/pyroscope"
 )
 
@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tiny, err := tinyq.NewClient(pool, tinyq.Config{
+	tiny, err := qron.NewClient(pool, qron.Config{
 		FlushInterval: 1 * time.Second,
 		PollInterval:  1 * time.Second,
 		MaxInFlight:   100,
@@ -77,7 +77,7 @@ func main() {
 			for job := range tiny.Fetch(c, "admin") {
 				fmt.Println("fetching job:", job.ID)
 				// profiler
-				go func(j tinyq.Job) {
+				go func(j qron.Job) {
 					pprof.Do(c, pprof.Labels("process", "http"), func(ctx context.Context) {
 						_, err := httpClient.Get(j.State)
 						if err != nil {

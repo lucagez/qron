@@ -16,8 +16,8 @@ import (
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/lucagez/tinyq"
-	"github.com/lucagez/tinyq/executor"
+	"github.com/lucagez/qron"
+	"github.com/lucagez/qron/executor"
 )
 
 func freePort() int {
@@ -85,13 +85,13 @@ func main() {
 
 	s.Stop()
 
-	client, err := tinyq.NewClient(db, tinyq.Config{
+	client, err := qron.NewClient(db, qron.Config{
 		PollInterval:  1 * time.Second,
 		FlushInterval: 1 * time.Second,
 		ResetInterval: 10 * time.Second,
 	})
 	if err != nil {
-		log.Fatal("failed to create tinyq client:", err)
+		log.Fatal("failed to create qron client:", err)
 	}
 
 	err = client.Migrate()
@@ -118,7 +118,7 @@ func main() {
 	go func() {
 		err := http.ListenAndServe(":9876", client.Handler())
 		if err != nil {
-			log.Fatal("failed to start tinyq deamon:", err)
+			log.Fatal("failed to start qron deamon:", err)
 		}
 	}()
 

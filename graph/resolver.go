@@ -4,7 +4,7 @@ package graph
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron/sqlc"
 )
 
 // RIPARTIRE QUI!<--

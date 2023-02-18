@@ -15,7 +15,7 @@ directive @goTag(
   value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
-type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
+type TinyJob @goModel(model: "github.com/lucagez/qron/sqlc.TinyJob") {
   id: ID!
   name: String
   expr: String!

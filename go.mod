@@ -1,4 +1,4 @@
-module github.com/lucagez/tinyq
+module github.com/lucagez/qron
 
 go 1.19
 

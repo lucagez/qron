@@ -5,7 +5,7 @@ package model
 import (
 	"time"
 
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron/sqlc"
 )
 
 type CommitArgs struct {

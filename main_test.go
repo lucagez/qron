@@ -1,11 +1,11 @@
-package tinyq
+package qron
 
 import (
 	"log"
 	"testing"
 
-	"github.com/lucagez/tinyq/migrations"
-	"github.com/lucagez/tinyq/testutil"
+	"github.com/lucagez/qron/migrations"
+	"github.com/lucagez/qron/testutil"
 	"github.com/pressly/goose/v3"
 )
 

@@ -1,4 +1,4 @@
-package tinyq
+package qron
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/sqlc"
-	"github.com/lucagez/tinyq/testutil"
+	"github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/sqlc"
+	"github.com/lucagez/qron/testutil"
 	"github.com/stretchr/testify/assert"
 )
 

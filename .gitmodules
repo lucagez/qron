@@ -1,3 +1,3 @@
-[submodule "tinyq-cloud"]
-	path = tinyq-cloud
-	url = https://github.com/lucagez/tinyq-cloud
+[submodule "qron-cloud"]
+	path = qron-cloud
+	url = https://github.com/lucagez/qron-cloud

@@ -14,8 +14,8 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/lucagez/tinyq/graph/model"
-	"github.com/lucagez/tinyq/sqlc"
+	"github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/sqlc"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -559,7 +559,7 @@ directive @goTag(
   value: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
-type TinyJob @goModel(model: "github.com/lucagez/tinyq/sqlc.TinyJob") {
+type TinyJob @goModel(model: "github.com/lucagez/qron/sqlc.TinyJob") {
   id: ID!
   name: String
   expr: String!
@@ -672,7 +672,7 @@ func (ec *executionContext) field_Mutation_commitJobs_args(ctx context.Context, 
 	var arg1 []model.CommitArgs
 	if tmp, ok := rawArgs["commits"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commits"))
-		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
+		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -696,7 +696,7 @@ func (ec *executionContext) field_Mutation_createJob_args(ctx context.Context, r
 	var arg1 model.CreateJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg1, err = ec.unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCreateJobArgs(ctx, tmp)
+		arg1, err = ec.unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -768,7 +768,7 @@ func (ec *executionContext) field_Mutation_failJobs_args(ctx context.Context, ra
 	var arg1 []model.CommitArgs
 	if tmp, ok := rawArgs["commits"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commits"))
-		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
+		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -840,7 +840,7 @@ func (ec *executionContext) field_Mutation_retryJobs_args(ctx context.Context, r
 	var arg1 []model.CommitArgs
 	if tmp, ok := rawArgs["commits"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commits"))
-		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
+		arg1, err = ec.unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgsᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -930,7 +930,7 @@ func (ec *executionContext) field_Mutation_updateJobById_args(ctx context.Contex
 	var arg2 model.UpdateJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg2, err = ec.unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateJobArgs(ctx, tmp)
+		arg2, err = ec.unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐUpdateJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -963,7 +963,7 @@ func (ec *executionContext) field_Mutation_updateJobByName_args(ctx context.Cont
 	var arg2 model.UpdateJobArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg2, err = ec.unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateJobArgs(ctx, tmp)
+		arg2, err = ec.unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐUpdateJobArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1098,7 +1098,7 @@ func (ec *executionContext) field_Query_searchJobsByMeta_args(ctx context.Contex
 	var arg1 model.QueryJobsMetaArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg1, err = ec.unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx, tmp)
+		arg1, err = ec.unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1122,7 +1122,7 @@ func (ec *executionContext) field_Query_searchJobs_args(ctx context.Context, raw
 	var arg1 model.QueryJobsArgs
 	if tmp, ok := rawArgs["args"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
-		arg1, err = ec.unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsArgs(ctx, tmp)
+		arg1, err = ec.unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐQueryJobsArgs(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1250,7 +1250,7 @@ func (ec *executionContext) _Mutation_createJob(ctx context.Context, field graph
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1334,7 +1334,7 @@ func (ec *executionContext) _Mutation_updateJobByName(ctx context.Context, field
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1418,7 +1418,7 @@ func (ec *executionContext) _Mutation_updateJobById(ctx context.Context, field g
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateJobById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1502,7 +1502,7 @@ func (ec *executionContext) _Mutation_updateStateByID(ctx context.Context, field
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateStateByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1586,7 +1586,7 @@ func (ec *executionContext) _Mutation_updateExprByID(ctx context.Context, field 
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateExprByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1670,7 +1670,7 @@ func (ec *executionContext) _Mutation_deleteJobByName(ctx context.Context, field
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1754,7 +1754,7 @@ func (ec *executionContext) _Mutation_deleteJobByID(ctx context.Context, field g
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteJobByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1838,7 +1838,7 @@ func (ec *executionContext) _Mutation_stopJob(ctx context.Context, field graphql
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_stopJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1922,7 +1922,7 @@ func (ec *executionContext) _Mutation_restartJob(ctx context.Context, field grap
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_restartJob(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2006,7 +2006,7 @@ func (ec *executionContext) _Mutation_fetchForProcessing(ctx context.Context, fi
 	}
 	res := resTmp.([]sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_fetchForProcessing(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2252,7 +2252,7 @@ func (ec *executionContext) _Query_searchJobs(ctx context.Context, field graphql
 	}
 	res := resTmp.([]sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_searchJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2336,7 +2336,7 @@ func (ec *executionContext) _Query_searchJobsByMeta(ctx context.Context, field g
 	}
 	res := resTmp.(model.SearchJobsByMetaResult)
 	fc.Result = res
-	return ec.marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx, field.Selections, res)
+	return ec.marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_searchJobsByMeta(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2396,7 +2396,7 @@ func (ec *executionContext) _Query_queryJobByName(ctx context.Context, field gra
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_queryJobByName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2480,7 +2480,7 @@ func (ec *executionContext) _Query_queryJobByID(ctx context.Context, field graph
 	}
 	res := resTmp.(sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_queryJobByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2692,7 +2692,7 @@ func (ec *executionContext) _SearchJobsByMetaResult_jobs(ctx context.Context, fi
 	}
 	res := resTmp.([]sqlc.TinyJob)
 	fc.Result = res
-	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
+	return ec.marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJobᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_SearchJobsByMetaResult_jobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3235,7 +3235,7 @@ func (ec *executionContext) _TinyJob_status(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(sqlc.TinyStatus)
 	fc.Result = res
-	return ec.marshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx, field.Selections, res)
+	return ec.marshalNString2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TinyJob_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6235,12 +6235,12 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCommitArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgs(ctx context.Context, v interface{}) (model.CommitArgs, error) {
+func (ec *executionContext) unmarshalNCommitArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgs(ctx context.Context, v interface{}) (model.CommitArgs, error) {
 	res, err := ec.unmarshalInputCommitArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgsᚄ(ctx context.Context, v interface{}) ([]model.CommitArgs, error) {
+func (ec *executionContext) unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgsᚄ(ctx context.Context, v interface{}) ([]model.CommitArgs, error) {
 	var vSlice []interface{}
 	if v != nil {
 		vSlice = graphql.CoerceList(v)
@@ -6249,7 +6249,7 @@ func (ec *executionContext) unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtin
 	res := make([]model.CommitArgs, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNCommitArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCommitArgs(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNCommitArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCommitArgs(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -6257,7 +6257,7 @@ func (ec *executionContext) unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋtin
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐCreateJobArgs(ctx context.Context, v interface{}) (model.CreateJobArgs, error) {
+func (ec *executionContext) unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgs(ctx context.Context, v interface{}) (model.CreateJobArgs, error) {
 	res, err := ec.unmarshalInputCreateJobArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -6339,26 +6339,26 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsArgs(ctx context.Context, v interface{}) (model.QueryJobsArgs, error) {
+func (ec *executionContext) unmarshalNQueryJobsArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐQueryJobsArgs(ctx context.Context, v interface{}) (model.QueryJobsArgs, error) {
 	res, err := ec.unmarshalInputQueryJobsArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx context.Context, v interface{}) (model.QueryJobsMetaArgs, error) {
+func (ec *executionContext) unmarshalNQueryJobsMetaArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐQueryJobsMetaArgs(ctx context.Context, v interface{}) (model.QueryJobsMetaArgs, error) {
 	res, err := ec.unmarshalInputQueryJobsMetaArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx context.Context, sel ast.SelectionSet, v model.SearchJobsByMetaResult) graphql.Marshaler {
+func (ec *executionContext) marshalNSearchJobsByMetaResult2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐSearchJobsByMetaResult(ctx context.Context, sel ast.SelectionSet, v model.SearchJobsByMetaResult) graphql.Marshaler {
 	return ec._SearchJobsByMetaResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx context.Context, v interface{}) (sqlc.TinyStatus, error) {
+func (ec *executionContext) unmarshalNString2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyStatus(ctx context.Context, v interface{}) (sqlc.TinyStatus, error) {
 	res, err := graphql.UnmarshalString(v)
 	return sqlc.TinyStatus(res), graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNString2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyStatus(ctx context.Context, sel ast.SelectionSet, v sqlc.TinyStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNString2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyStatus(ctx context.Context, sel ast.SelectionSet, v sqlc.TinyStatus) graphql.Marshaler {
 	res := graphql.MarshalString(string(v))
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6430,11 +6430,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx context.Context, sel ast.SelectionSet, v sqlc.TinyJob) graphql.Marshaler {
+func (ec *executionContext) marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx context.Context, sel ast.SelectionSet, v sqlc.TinyJob) graphql.Marshaler {
 	return ec._TinyJob(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJobᚄ(ctx context.Context, sel ast.SelectionSet, v []sqlc.TinyJob) graphql.Marshaler {
+func (ec *executionContext) marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJobᚄ(ctx context.Context, sel ast.SelectionSet, v []sqlc.TinyJob) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6458,7 +6458,7 @@ func (ec *executionContext) marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋtinyqᚋsqlcᚐTinyJob(ctx, sel, v[i])
+			ret[i] = ec.marshalNTinyJob2githubᚗcomᚋlucagezᚋqronᚋsqlcᚐTinyJob(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6478,7 +6478,7 @@ func (ec *executionContext) marshalNTinyJob2ᚕgithubᚗcomᚋlucagezᚋtinyqᚋ
 	return ret
 }
 
-func (ec *executionContext) unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋtinyqᚋgraphᚋmodelᚐUpdateJobArgs(ctx context.Context, v interface{}) (model.UpdateJobArgs, error) {
+func (ec *executionContext) unmarshalNUpdateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐUpdateJobArgs(ctx context.Context, v interface{}) (model.UpdateJobArgs, error) {
 	res, err := ec.unmarshalInputUpdateJobArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
