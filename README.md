@@ -193,7 +193,7 @@ Alias for `@every 1 minute`
 
 ## What is an interval?
 
-The `<interval>` is any valid postgres `interval` data type. An interval can contain `years`, `months`, `weeks`, `days`, `hours`, `seconds`, and `microseconds`. Each part can be either positive or negative. However not all of these units play nicely together.
+A `<interval>` is any valid postgres `interval` data type. An interval can contain `years`, `months`, `weeks`, `days`, `hours`, `seconds`, and `microseconds`. Each part can be either positive or negative. However not all of these units play nicely together.
 You can refer to [the relevant Postgres documentation](https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-INTERVAL-INPUT).
 If in doubt of what is a valid interval, try various combinations in your Postgres repl
 ```sql
@@ -208,7 +208,3 @@ Copyright (c) 2022-present [Luca Gesmundo](https://github.com/lucagez)
 Licensed under [MIT License](./LICENSE)
 
 <!-- TODO: Add links -->
-<!-- [GoDoc]: https://pkg.go.dev/github.com/go-chi/chi?tab=versions
-[GoDoc Widget]: https://godoc.org/github.com/go-chi/chi?status.svg
-[Travis]: https://travis-ci.org/go-chi/chi
-[Travis Widget]: https://travis-ci.org/go-chi/chi.svg?branch=master -->
