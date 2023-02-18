@@ -23,6 +23,13 @@ import (
 // [✅] implement UNIQUE (col1, col2) so to have scoped <name>, <owner>
 // [✅] implement UPSERT if <name>, <owner> collides -> implement idempotency in client? read + update
 // [] add test cases for new mutations
+// [] use test packages to make binary smaller
+
+// 👇
+// [✅] cached postgres so it does not takes ages on restart
+// [] package http-dev for local development
+// [] goinstall
+// [] godownloader
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool

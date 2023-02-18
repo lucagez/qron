@@ -1,8 +1,12 @@
-.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev
 
 test: 
 	@echo "Running TinyQ tests..."
 	@TZ=UTC go test ./... -race -count=1 -timeout=30s
+
+httpdev: 
+	@echo "Starting httpdev..."
+	@TZ=UTC go run cmd/httpdev/main.go
 
 gqlgen:
 	@echo "Generating gqlgen graph..."

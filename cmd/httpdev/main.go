@@ -7,9 +7,15 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"path"
+	"syscall"
+	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/briandowns/spinner"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/lucagez/tinyq"
 	"github.com/lucagez/tinyq/executor"
 )
@@ -28,82 +34,100 @@ func freePort() int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-type Tracer struct{}
-
-func (tracer *Tracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
-	// log.Println("[POSTGRES]", data.SQL, data.Args)
-	return ctx
-}
-
-func (tracer *Tracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+func init() {
+	// Load .env file. Do not fail if it does not exist.
+	godotenv.Load()
 }
 
 func main() {
-	log.Println("Initializing postgres 🐘")
+	t0 := time.Now()
 
-	// port := freePort()
-	// log.Println("free port:", port)
+	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
+	s.Suffix = " Initializing postgres 🐘\n"
+	s.Start()
 
-	// databaseUrl := fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
-	// postgres := embeddedpostgres.NewDatabase(
-	// 	embeddedpostgres.DefaultConfig().
-	// 		Username("tiny").
-	// 		Password("tiny").
-	// 		Database("tiny").
-	// 		Port(uint32(port)).
-	// 		Logger(os.Stdout).
-	// 		Locale("en_US").
-	// 		BinariesPath("/tmp/.pg").
-	// 		DataPath("/tmp/.pg/data").
-	// 		RuntimePath("/tmp/.pg"),
-	// )
-	// err := postgres.Start()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer postgres.Stop()
+	port := freePort()
+	databaseUrl := os.Getenv("DATABASE_URL")
+	var postgres *embeddedpostgres.EmbeddedPostgres
 
-	config, err := pgxpool.ParseConfig("postgres://postgres:password@localhost:5435/postgres")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err)
-		os.Exit(1)
+	if databaseUrl == "" {
+		binariesPath := path.Join(os.TempDir(), ".pg-binaries")
+		dataPath := path.Join(os.TempDir(), ".pg/data")
+		runtimePath := path.Join(os.TempDir(), ".pg")
+		databaseUrl = fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
+		postgres = embeddedpostgres.NewDatabase(
+			embeddedpostgres.DefaultConfig().
+				Username("tiny").
+				Password("tiny").
+				Database("tiny").
+				Port(uint32(port)).
+				Logger(os.Stdout).
+				Locale("en_US").
+				BinariesPath(binariesPath).
+				DataPath(dataPath).
+				RuntimePath(runtimePath),
+		)
+		err := postgres.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	config.ConnConfig.Tracer = &Tracer{}
+
+	config, err := pgxpool.ParseConfig(databaseUrl)
+	if err != nil {
+		log.Fatal("unable to parse config:", err)
+	}
 
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		log.Fatal("FAILED TO CONNECT:", err)
+		log.Fatal("failed to connect to postgres:", err)
 	}
 
+	s.Stop()
+
 	client, err := tinyq.NewClient(db, tinyq.Config{
-		// PollInterval:  5 * time.Second,
-		// FlushInterval: 5 * time.Second,
+		PollInterval:  1 * time.Second,
+		FlushInterval: 1 * time.Second,
+		ResetInterval: 10 * time.Second,
 	})
 	if err != nil {
-		log.Fatal("FAILED TO CREATE CLIENT:", err)
+		log.Fatal("failed to create tinyq client:", err)
 	}
 
 	err = client.Migrate()
 	if err != nil {
-		log.Fatal("FAILED MIGRATE:", err)
+		log.Fatal("failed to migrate db:", err)
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	defer stop()
-
 	httpJobs := client.Fetch(ctx, "http")
 
 	httpExecutor := executor.NewHttpExecutor(100)
 
 	go func() {
-		for {
-			select {
-			case job := <-httpJobs:
-				go httpExecutor.Run(job)
-			}
+		for job := range httpJobs {
+			go httpExecutor.Run(job)
 		}
 	}()
 
-	log.Println("listening on: 9876")
-	log.Fatal(http.ListenAndServe(":9876", client.Handler()))
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP)
+
+	log.Println("listening on: 9876", "started in:", time.Since(t0))
+
+	go func() {
+		err := http.ListenAndServe(":9876", client.Handler())
+		if err != nil {
+			log.Fatal("failed to start tinyq deamon:", err)
+		}
+	}()
+
+	<-sigs
+	stop()
+	client.Close()
+	if postgres != nil {
+		postgres.Stop()
+	}
+
+	log.Println("exiting 👋")
 }
