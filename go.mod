@@ -10,6 +10,7 @@ require (
 	github.com/georgysavva/scany/v2 v2.0.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/jackc/pgx/v5 v5.3.0
+	github.com/joho/godotenv v1.5.1
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pressly/goose/v3 v3.9.0
 	github.com/pyroscope-io/client v0.6.0
