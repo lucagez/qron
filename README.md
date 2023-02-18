@@ -140,11 +140,13 @@ The expression language supports both `cron` and `one-off` semantics.
 ### One off semantics
 
 `@at <timestamp>`
+
 **e.g.** `@at 2023-02-18T17:53:00.000Z`
 The job will be picked up for execution exactly at `2023-02-18T17:53:00.000Z`.
 The job will be executed only once unless the handler does reschedule it multiple times
 
 `@after <interval>`
+
 **e.g.** `@after 1 hour`, `@after 1s`, `@after 1 year`, `@after 1 week 6 days`, `@after 1 hour 20 minutes`
 The job will be picked up for execution after the specified interval is elapsed.
 The `<interval>` is any valid postgres `interval` data type. [What is an interval?](#what-is-an-interval)
@@ -152,11 +154,13 @@ The `<interval>` is any valid postgres `interval` data type. [What is an interva
 ### Cron semantics
 
 `@every <interval>`
+
 **e.g.** `@every 1 hour`, `@every 1s`, `@every 1 year`, `@every 1 week 6 days`, `@every 1 hour 20 minutes`
 The job will be picked up for execution every time `<interval>` is elapsed.
 The `<interval>` is any valid postgres `interval` data type. [What is an interval?](#what-is-an-interval)
 
 `crontab`
+
 **e.g.** `* * * * *`, `0 9 * * MON`
 The job will be picked up for execution on an interval derived from the `crontab` expression.
 `crontab` support scheduling at minute level. It does support ranges (**e.g.** `0 9 * * MON-FRI`).
@@ -164,21 +168,27 @@ And just about anything you might need. If in doubt on what is a valid `crontab`
 you can visit [crontab.guru](https://crontab.guru/)
 
 `@annually`, `@yearly`
+
 Alias for `@every 1 year`
 
 `@monthly`
+
 Alias for `@every 1 month`
 
 `@weekly`
+
 Alias for `@every 1 week`
 
 `@daily`
+
 Alias for `@every 1 day`
 
 `@hourly`
+
 Alias for `@every 1 hour`
 
 `@minutely`
+
 Alias for `@every 1 minute`
 
 ## What is an interval?
