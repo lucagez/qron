@@ -1,6 +1,12 @@
-# <img alt="qron" src="https://github.com/lucagez/qron/blob/main/assets/qron.png?raw=true" width="220" />
+
+<p align="center">
+  <img alt="qron" src="https://github.com/lucagez/qron/blob/main/assets/qron.png?raw=true" width="220" />
+  <br>
+</p>
 
 <!-- TODO: add widgets -->
+
+# Qron
 
 `qron` is a lightweight, idiomatic and composable job scheduler for building Go applications.
 `qron` use Postgres as persistence backend. 
