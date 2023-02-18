@@ -1,4 +1,4 @@
-.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev build_httpdev release
 
 test: 
 	@echo "Running qron tests..."
@@ -41,3 +41,7 @@ recreate_local_env:
 connect_local:
 	@echo "Connecting to local db..."
 	@psql -d postgres://postgres:password@localhost:5435/postgres
+
+release:
+	@echo "Releasing..."
+	@goreleaser build --snapshot --rm-dist
