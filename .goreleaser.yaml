@@ -1,4 +1,11 @@
 project_name: qron
+archives:
+  - id: qron-dev
+    files:
+      - LICENSE.md
+    format: tar.gz
+    name_template: "{{.Binary}}_{{.Version}}_{{.Os}}-{{.Arch}}"
+    rlcp: true
 before:
   hooks:
     - go mod tidy
