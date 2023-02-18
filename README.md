@@ -1,4 +1,4 @@
-# <img alt="qron" src="https://cdn.rawgit.com/lucagez/qron/master/assets/qron.png" width="220" />
+# <img alt="qron" src="https://github.com/lucagez/qron/blob/main/assets/qron.png?raw=true" width="220" />
 
 <!-- TODO: add widgets -->
 
