@@ -1,4 +1,4 @@
-.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev build_httpdev release
+.PHONY: test gqlgen sqlc migrate_up recreate_local_env connect_local generate_migration httpdev build_httpdev release tag
 
 test: 
 	@echo "Running qron tests..."
@@ -45,3 +45,8 @@ connect_local:
 release:
 	@echo "Releasing..."
 	@goreleaser build --snapshot --rm-dist
+
+tag:
+	@echo "Tagging..."
+	@git tag -a v$(version) -m "Release v$(version)"
+	@git push origin v$(version)
