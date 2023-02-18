@@ -5,7 +5,6 @@ archives:
       - LICENSE.md
     format: tar.gz
     name_template: "{{.Binary}}_{{.Version}}_{{.Os}}-{{.Arch}}"
-    rlcp: true
 before:
   hooks:
     - go mod tidy
