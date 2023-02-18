@@ -118,18 +118,18 @@ func main() {
 package handler
 
 func executeDailyBackup(job qron.Job) {
-  err := performBackup()
-  if err != nil && job.ExecutionAmount > 3 {
-    job.Fail()
-    return
-  }
+	err := performBackup()
+	if err != nil && job.ExecutionAmount > 3 {
+		job.Fail()
+		return
+	}
 
-  if err != nil {
-    job.Retry()
-    return
-  }
+	if err != nil {
+		job.Retry()
+		return
+	}
 
-  job.Commit()
+	job.Commit()
 }
 ```
 
