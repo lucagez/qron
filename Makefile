@@ -44,7 +44,8 @@ connect_local:
 
 release:
 	@echo "Releasing..."
-	@goreleaser build --snapshot --rm-dist
+	@make tag version=$(version)
+	@goreleaser release --rm-dist
 
 tag:
 	@echo "Tagging..."
