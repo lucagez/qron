@@ -3,7 +3,8 @@
 <!-- TODO: add widgets -->
 
 `qron` is a lightweight, idiomatic and composable job scheduler for building Go applications.
-Using Postgres as a persistence storage, can scale horizontally and process thousands of jobs per second on each service with minimal footprint.
+`qron` use Postgres as persistence backend. 
+Can scale horizontally and process thousands of jobs per second on each service with minimal footprint.
 It's built upon the high performance `pgx` driver to queeze every ounce of performance from Postgres.
 It provides `at-least-once` delivery guarantees.
 
@@ -19,10 +20,6 @@ When you'll need to handle petabytes per day, it will gently step aside (:
 
 Bring your Go binary, Postgres and you are ready to go ⏰
 
-## Install
-
-`go get -u github.com/lucagez/qron`
-
 ## Features
 
 * ⏰ **Polyglot** - speaking both `cron` spec and `one-off` execution semantics
@@ -33,9 +30,11 @@ Bring your Go binary, Postgres and you are ready to go ⏰
 * 🪨 **Reliable** - thanks to Postgres every job is delivered `at-least-once`
 * 🗣 **Fluent** - using a friendly and intuitive language for scheduling jobs
 
-## Examples
+## Install
 
-See [examples/](https://github.com/lucagez/qron/blob/master/examples/) for a variety of examples.
+`go get -u github.com/lucagez/qron`
+
+## Examples
 
 **Subscriber:**
 
@@ -43,12 +42,15 @@ See [examples/](https://github.com/lucagez/qron/blob/master/examples/) for a var
 package main
 
 import (
+	"context"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucagez/qron"
 )
 
 func main() {
-  db, _ := pgxpool.NewWithConfig(context.Background(), config)
+	db, _ := pgxpool.NewWithConfig(context.Background(), config)
 	client, _ := qron.NewClient(db, qron.Config{
 		PollInterval:  1 * time.Second,
 		FlushInterval: 1 * time.Second,
@@ -56,25 +58,26 @@ func main() {
 	})
 
 	ctx, stop := context.WithCancel(context.Background())
-  defer stop()
+	defer stop()
 
 	backupJob := client.Fetch(ctx, "backup")
 	counterJob := client.Fetch(ctx, "counter")
 	emailJob := client.Fetch(ctx, "email")
 
-  for {
-    select {
-    case <-ctx.Done():
-      return
-    case job := <-backupJob:
-      go executeDailyBackup(job)
-    case job := <-counterJob:
-      go increaseCounter(job)
-    case job := <-emailJob:
-      go sendEmail(job)
-    }
-  }
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case job := <-backupJob:
+			go executeDailyBackup(job)
+		case job := <-counterJob:
+			go increaseCounter(job)
+		case job := <-emailJob:
+			go sendEmail(job)
+		}
+	}
 }
+
 ```
 
 **Publisher:**
@@ -82,29 +85,31 @@ func main() {
 package main
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lucagez/qron"
-  "github.com/lucagez/qron/graph/model"
+	"github.com/lucagez/qron/graph/model"
 )
 
 func main() {
-  db, _ := pgxpool.NewWithConfig(context.Background(), config)
+	db, _ := pgxpool.NewWithConfig(context.Background(), config)
 	client, _ := qron.NewClient(db, qron.Config{})
 
-  // Every day at midnight
-  client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-    Expr: "0 0 * * *",
-  })
+	// Every day at midnight
+	client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
+		Expr: "0 0 * * *",
+	})
 
-  // Every 10 seconds
-  client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-    Expr: "@every 10 seconds",
-  })
+	// Every 10 seconds
+	client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
+		Expr: "@every 10 seconds",
+	})
 
-  // One off
-  client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-    Expr: "@after 1 month",
-  })
+	// One off
+	client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
+		Expr: "@after 1 month",
+	})
 }
 ```
 

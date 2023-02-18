@@ -26,6 +26,7 @@ import (
 // [] use test packages to make binary smaller
 // [] benchmarks
 // [] add batch create jobs. e.g. create 1000 jobs in one go
+// [] create examples
 
 // 👇
 // [✅] cached postgres so it does not takes ages on restart
