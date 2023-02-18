@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/briandowns/spinner"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/lucagez/qron"
@@ -34,19 +37,21 @@ func freePort() int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-func init() {
-	// Load .env file. Do not fail if it does not exist.
-	godotenv.Load()
-}
-
 func main() {
+	godotenv.Load()
+
+	httpPort := flag.Int("port", 9876, "port to listen on")
+	flag.Parse()
+
 	t0 := time.Now()
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Initializing postgres 🐘\n"
 	s.Start()
 
-	port := freePort()
+	log.Println("starting qron local server 🦄")
+
+	postgresPort := freePort()
 	databaseUrl := os.Getenv("DATABASE_URL")
 	var postgres *embeddedpostgres.EmbeddedPostgres
 
@@ -54,13 +59,13 @@ func main() {
 		binariesPath := path.Join(os.TempDir(), ".pg-binaries")
 		dataPath := path.Join(os.TempDir(), ".pg/data")
 		runtimePath := path.Join(os.TempDir(), ".pg")
-		databaseUrl = fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", port)
+		databaseUrl = fmt.Sprintf("postgres://tiny:tiny@localhost:%d/tiny", postgresPort)
 		postgres = embeddedpostgres.NewDatabase(
 			embeddedpostgres.DefaultConfig().
 				Username("tiny").
 				Password("tiny").
 				Database("tiny").
-				Port(uint32(port)).
+				Port(uint32(postgresPort)).
 				Logger(os.Stdout).
 				Locale("en_US").
 				BinariesPath(binariesPath).
@@ -113,10 +118,18 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP)
 
-	log.Println("listening on: 9876", "started in:", time.Since(t0))
+	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Mount("/api", client.Handler())
+
+	log.Println("listening on:", fmt.Sprintf(":%d", *httpPort), "started in:", time.Since(t0))
 
 	go func() {
-		err := http.ListenAndServe(":9876", client.Handler())
+		err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), r)
 		if err != nil {
 			log.Fatal("failed to start qron deamon:", err)
 		}

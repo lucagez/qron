@@ -24,10 +24,12 @@ import (
 // [✅] implement UPSERT if <name>, <owner> collides -> implement idempotency in client? read + update
 // [] add test cases for new mutations
 // [] use test packages to make binary smaller
+// [] benchmarks
+// [] add batch create jobs. e.g. create 1000 jobs in one go
 
 // 👇
 // [✅] cached postgres so it does not takes ages on restart
-// [] package http-dev for local development
+// [✅] package http-dev for local development
 // [] goinstall
 // [] godownloader
 type Resolver struct {

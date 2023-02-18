@@ -6,7 +6,11 @@ test:
 
 httpdev: 
 	@echo "Starting httpdev..."
-	@TZ=UTC go run cmd/httpdev/main.go
+	@TZ=UTC go run cmd/httpdev/main.go 
+
+build_httpdev: 
+	@echo "Building httpdev..."
+	@go build -o build/qron ./cmd/httpdev/...
 
 gqlgen:
 	@echo "Generating gqlgen graph..."

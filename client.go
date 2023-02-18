@@ -324,6 +324,7 @@ func (c *Client) Migrate() error {
 // additional methods for committing/failing job.
 // TODO: Client should not expose sqlc.TinyJob as type.
 type Job struct {
+	// TODO: RENAME TO QRON
 	sqlc.TinyJob
 	ch chan<- Job
 }

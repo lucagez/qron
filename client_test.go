@@ -16,10 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkFetch(b *testing.B) {
-	// TODO: benchmark fetch
-}
-
 func TestClientClient(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("client_0")
 	defer cleanup()
