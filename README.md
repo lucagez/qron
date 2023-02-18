@@ -103,12 +103,12 @@ func main() {
 
 	// Every 10 seconds
 	client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-		Expr: "@every 10 seconds",
+		Expr: "@every 1 minute 10 seconds",
 	})
 
 	// One off
 	client.CreateJob(context.Background(), "backup", model.CreateJobArgs{
-		Expr: "@after 1 month",
+		Expr: "@after 1 month 1 week 3 days",
 	})
 }
 ```
