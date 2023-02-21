@@ -25,4 +25,4 @@ changelog:
 release:
   github:
     owner: lucagez
-    name: qron-dev
+    name: qron
