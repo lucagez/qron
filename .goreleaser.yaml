@@ -12,7 +12,6 @@ builds:
       - linux
       - windows
       - darwin
-    name_template: "{{.Binary}}_{{.Version}}_{{.Os}}-{{.Arch}}"
 
 checksum:
   name_template: 'checksums.txt'
@@ -22,3 +21,8 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+release:
+  github:
+    owner: lucagez
+    name: qron-dev
