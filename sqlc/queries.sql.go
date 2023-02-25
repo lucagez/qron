@@ -185,19 +185,20 @@ func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams
 }
 
 const fetchDueJobs = `-- name: FetchDueJobs :many
-update tiny.job as updated_jobs
-set status = 'PENDING',
-  last_run_at = now()
-from (
+with due_jobs as (
   select id
   from tiny.job j
   where j.run_at < now()
-  and j.status = 'READY'
-  and j.executor = $2 
-  -- worker limit
-  limit $1 for update
-  skip locked
-) as due_jobs
+    and j.status = 'READY'
+    and j.executor = $2
+  order by j.created_at
+  limit $1
+  for no key update skip locked
+)
+update tiny.job as updated_jobs
+set status = 'PENDING',
+    last_run_at = now()
+from due_jobs
 where due_jobs.id = updated_jobs.id
 returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.start_at, updated_jobs.execution_amount, updated_jobs.retries, updated_jobs.name, updated_jobs.meta, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor, updated_jobs.owner
 `
@@ -334,6 +335,8 @@ func (q *Queries) Next(ctx context.Context, arg NextParams) (pgtype.Timestamptz,
 }
 
 const resetTimeoutJobs = `-- name: ResetTimeoutJobs :many
+
+
 update tiny.job
 set status = 'READY'
 where timeout is not null
@@ -344,6 +347,25 @@ and status = 'PENDING'
 returning id
 `
 
+// update tiny.job as updated_jobs
+// set status = 'PENDING',
+//
+//	last_run_at = now()
+//
+// from (
+//
+//	select id
+//	from tiny.job j
+//	where j.run_at < now()
+//	and j.status = 'READY'
+//	and j.executor = sqlc.arg('executor')
+//	-- worker limit
+//	limit $1 for update
+//	skip locked
+//
+// ) as due_jobs
+// where due_jobs.id = updated_jobs.id
+// returning updated_jobs.*;
 func (q *Queries) ResetTimeoutJobs(ctx context.Context, executor string) ([]int64, error) {
 	rows, err := q.db.Query(ctx, resetTimeoutJobs, executor)
 	if err != nil {
@@ -417,7 +439,6 @@ type SearchJobsParams struct {
 	Query    string `json:"query"`
 }
 
-// TODO: This query is not working with dynamic params 🤔
 func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJob, error) {
 	rows, err := q.db.Query(ctx, searchJobs,
 		arg.Offset,
@@ -688,7 +709,6 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 }
 
 const updateJobByName = `-- name: UpdateJobByName :one
-
 update tiny.job
 set expr = coalesce(nullif($3, ''), expr),
   state = coalesce(nullif($4, ''), state),
@@ -711,7 +731,6 @@ type UpdateJobByNameParams struct {
 	Timeout  interface{} `json:"timeout"`
 }
 
-// TODO: Implement search
 func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, updateJobByName,
 		arg.Name,

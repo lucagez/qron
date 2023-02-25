@@ -173,19 +173,20 @@ where id = sqlc.arg('id')
 and executor = sqlc.arg('executor'); 
 
 -- name: FetchDueJobs :many
-update tiny.job as updated_jobs
-set status = 'PENDING',
-  last_run_at = now()
-from (
+with due_jobs as (
   select id
   from tiny.job j
   where j.run_at < now()
-  and j.status = 'READY'
-  and j.executor = sqlc.arg('executor') 
-  -- worker limit
-  limit $1 for update
-  skip locked
-) as due_jobs
+    and j.status = 'READY'
+    and j.executor = sqlc.arg('executor')
+  order by j.created_at
+  limit $1
+  for no key update skip locked
+)
+update tiny.job as updated_jobs
+set status = 'PENDING',
+    last_run_at = now()
+from due_jobs
 where due_jobs.id = updated_jobs.id
 returning updated_jobs.*;
 
