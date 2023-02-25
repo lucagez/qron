@@ -31,8 +31,8 @@ import (
 // 👇
 // [✅] cached postgres so it does not takes ages on restart
 // [✅] package http-dev for local development
-// [] goinstall
-// [] godownloader
+// [✅] goinstall
+// [✅] godownloader
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
