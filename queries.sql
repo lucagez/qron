@@ -10,8 +10,6 @@ where id = $1
 and executor = $2 
 limit 1;
 
--- TODO: Implement search
-
 -- name: UpdateJobByName :one
 update tiny.job
 set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
@@ -109,7 +107,6 @@ values (
 -- do ...
 returning *;
 
--- TODO: This query is not working with dynamic params 🤔
 -- name: SearchJobs :many
 select * from tiny.job
 where (name like concat(sqlc.arg('query')::text, '%')
@@ -142,7 +139,6 @@ offset sqlc.arg('offset')::int;
 -- name: BatchUpdateJobs :batchexec
 update tiny.job
 set last_run_at = now(),
-  -- TODO: update
   state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = sqlc.arg('status'),

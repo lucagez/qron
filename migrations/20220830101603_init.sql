@@ -221,8 +221,7 @@ alter table tiny.job add unique (name, owner);
 create index idx_job_name
     on tiny.job (name);
 
-create index idx_job_run_at 
-  on tiny.job (run_at);
+create index job_polling_idx ON tiny.job (executor, status, run_at);
 
 -- +goose StatementEnd
 
