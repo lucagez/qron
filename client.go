@@ -233,6 +233,14 @@ func (c *Client) CreateJob(ctx context.Context, executorName string, args model.
 	)
 }
 
+func (c *Client) BatchCreateJobs(ctx context.Context, executorName string, args []model.CreateJobArgs) ([]int64, error) {
+	return c.Resolver.Mutation().BatchCreateJobs(
+		ctx,
+		executorName,
+		args,
+	)
+}
+
 func (c *Client) UpdateJobByName(ctx context.Context, executorName, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	return c.Resolver.Mutation().UpdateJobByName(
 		ctx,
