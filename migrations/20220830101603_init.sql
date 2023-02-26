@@ -198,7 +198,7 @@ create table tiny.job
     status           tiny.status not null default 'READY',
     -- state is e2e encrypted so this is never
     -- visible from qron. this can hold sensitive data
-    state            text not null,
+    state            text not null check (octet_length(my_text_column) <= 102400),
     executor         text not null,
     owner            text not null default 'default'
 );

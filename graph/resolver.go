@@ -27,12 +27,8 @@ import (
 // [] benchmarks
 // [] add batch create jobs. e.g. create 1000 jobs in one go
 // [] create examples
+// [] add partitioning to jobs table
 
-// 👇
-// [✅] cached postgres so it does not takes ages on restart
-// [✅] package http-dev for local development
-// [✅] goinstall
-// [✅] godownloader
 type Resolver struct {
 	Queries *sqlc.Queries
 	DB      *pgxpool.Pool
