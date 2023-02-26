@@ -160,6 +160,10 @@ func TestJobResolvers(t *testing.T) {
 			assert.Equal(t, "@weekly", job.Expr)
 			assert.Equal(t, "{}", job.State)
 			assert.Equal(t, fmt.Sprintf("batch-%d", i), job.Name)
+
+			// RunAt should be 1 week from now
+			assert.Greater(t, time.Until(job.RunAt.Time), time.Duration(1*time.Hour*167))
+			assert.LessOrEqual(t, time.Until(job.RunAt.Time), time.Duration(1*time.Hour*169))
 		}
 	})
 
