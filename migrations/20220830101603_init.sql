@@ -201,7 +201,17 @@ create table tiny.job
     state            text not null check (octet_length(my_text_column) <= 102400),
     executor         text not null,
     owner            text not null default 'default'
-);
+) partition by range (run_at);
+
+create or replace function create_today_partition()
+    returns void as
+$code$
+begin
+    execute format('create table if not exists tiny.job_%s partition of tiny.job for values from (%L) to (%L)',
+                   date_trunc('day', now())::date,
+                   date_trunc('day', now())::date,
+                   date_trunc('day', now())::date + '1 day'::interval);
+end;
 
 alter table tiny.job add constraint positive_timeout check (timeout > 0);
 
