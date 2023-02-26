@@ -120,7 +120,7 @@ func (p PgFactory) CreateDb(name string) (*pgxpool.Pool, func()) {
 	return client, func() {
 		client.Close()
 		_, err = p.MaintainanceClient.Exec(
-			context.Background(), fmt.Sprintf("drop database %s", name))
+			context.Background(), fmt.Sprintf("drop database %s with (force)", name))
 		if err != nil {
 			log.Fatalln("failed to drop db", name, ":", err)
 		}

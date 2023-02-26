@@ -28,6 +28,7 @@ import (
 type Client struct {
 	Resolver      graph.Resolver
 	MaxInFlight   uint64
+	MaxFlushSize  int
 	FlushInterval time.Duration
 	PollInterval  time.Duration
 	ResetInterval time.Duration
@@ -37,6 +38,7 @@ type Client struct {
 
 type Config struct {
 	MaxInFlight   uint64
+	MaxFlushSize  int
 	FlushInterval time.Duration
 	PollInterval  time.Duration
 	ResetInterval time.Duration
@@ -62,6 +64,9 @@ func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
 	if cfg.ResetInterval == 0 {
 		cfg.ResetInterval = 60 * time.Second
 	}
+	if cfg.MaxFlushSize == 0 {
+		cfg.MaxFlushSize = 100
+	}
 
 	return Client{
 		Resolver:      resolver,
@@ -70,6 +75,7 @@ func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
 		PollInterval:  cfg.PollInterval,
 		OwnerSetter:   cfg.OwnerSetter,
 		ResetInterval: cfg.ResetInterval,
+		MaxFlushSize:  cfg.MaxFlushSize,
 		processedCh:   make(chan Job),
 	}, nil
 }
@@ -105,7 +111,6 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 	var commitBatch []model.CommitArgs
 	var failBatch []model.CommitArgs
 	var retryBatch []model.CommitArgs
-	ticker := time.NewTicker(t.FlushInterval)
 
 	for {
 		shouldFlush := false
@@ -114,7 +119,7 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 		case <-ctx.Done():
 			// Force flush after stop fetching
 			shouldFlush = true
-		case <-ticker.C:
+		case <-time.After(t.FlushInterval):
 			shouldFlush = true
 		case job := <-t.processedCh:
 			commit := model.CommitArgs{
@@ -135,7 +140,7 @@ func (t *Client) flush(ctx context.Context, executorName string) {
 			case sqlc.TinyStatusREADY:
 				retryBatch = append(retryBatch, commit)
 			}
-			if len(commitBatch)+len(failBatch)+len(retryBatch) > 100 {
+			if len(commitBatch)+len(failBatch)+len(retryBatch) >= t.MaxFlushSize {
 				shouldFlush = true
 			}
 		}
