@@ -57,6 +57,7 @@ input CommitArgs {
 type Mutation {
   validateExprFormat(expr: String!): Boolean!
   createJob(executor: String!, args: CreateJobArgs!): TinyJob!
+  batchCreateJobs(executor: String!, args: [CreateJobArgs!]!): [ID!]!
   updateJobByName(executor: String!, name: String!, args: UpdateJobArgs!): TinyJob!
   updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
   updateStateByID(executor: String!, id: ID!, state: String!): TinyJob!

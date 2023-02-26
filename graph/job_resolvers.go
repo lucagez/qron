@@ -58,6 +58,65 @@ func (r *mutationResolver) CreateJob(ctx context.Context, executor string, args 
 	})
 }
 
+// BatchCreateJobs is the resolver for the batchCreateJobs field.
+func (r *mutationResolver) BatchCreateJobs(ctx context.Context, executor string, args []model.CreateJobArgs) ([]int64, error) {
+	tx, err := r.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	queries := r.Queries.WithTx(tx)
+
+	var batch []sqlc.BatchCreateJobsParams
+	var batchErr error
+	var ids []int64
+
+	for _, arg := range args {
+		var timeout int32
+		if arg.Timeout != nil {
+			timeout = int32(*arg.Timeout)
+		}
+		startAt := time.Now()
+		if arg.StartAt != nil {
+			startAt = *arg.StartAt
+		}
+		meta := []byte("{}")
+		if arg.Meta != nil {
+			meta = []byte(*arg.Meta)
+		}
+		var retries int32
+		if arg.Retries != nil {
+			retries = int32(*arg.Retries)
+		}
+
+		batch = append(batch, sqlc.BatchCreateJobsParams{
+			Expr:     arg.Expr,
+			Name:     arg.Name,
+			State:    arg.State,
+			Executor: executor,
+			Timeout:  timeout,
+			Owner:    sqlc.FromCtx(ctx),
+			Meta:     meta,
+			StartAt:  pgtype.Timestamptz{Time: startAt, Valid: true},
+			Retries:  retries,
+		})
+	}
+
+	queries.BatchCreateJobs(ctx, batch).Exec(func(i int, err error) {
+		if err != nil {
+			batchErr = err
+		}
+		ids = append(ids, int64(i))
+	})
+
+	if batchErr != nil {
+		tx.Rollback(ctx)
+		return nil, batchErr
+	}
+
+	return ids, tx.Commit(ctx)
+}
+
 // UpdateJobByName is the resolver for the updateJobByName field.
 func (r *mutationResolver) UpdateJobByName(ctx context.Context, executor string, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error) {
 	params := sqlc.UpdateJobByNameParams{

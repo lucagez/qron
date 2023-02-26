@@ -134,6 +134,35 @@ func TestJobResolvers(t *testing.T) {
 		assert.Equal(t, `{"hello":"world"}`, updated.State)
 	})
 
+	t.Run("Should create a batch of jobs", func(t *testing.T) {
+		var jobs []model.CreateJobArgs
+		for i := 0; i < 10; i++ {
+			jobs = append(jobs, model.CreateJobArgs{
+				Expr:  "@weekly",
+				Name:  fmt.Sprintf("batch-%d", i),
+				State: "{}",
+			})
+		}
+
+		ids, err := resolver.Mutation().BatchCreateJobs(ctx, "batch-test", jobs)
+		assert.Nil(t, err)
+		assert.Len(t, ids, 10)
+
+		createdJobs, err := resolver.Query().SearchJobs(ctx, "batch-test", model.QueryJobsArgs{
+			Limit:  100,
+			Skip:   0,
+			Filter: "batch",
+		})
+		assert.Nil(t, err)
+		assert.Len(t, createdJobs, 10)
+
+		for i, job := range createdJobs {
+			assert.Equal(t, "@weekly", job.Expr)
+			assert.Equal(t, "{}", job.State)
+			assert.Equal(t, fmt.Sprintf("batch-%d", i), job.Name)
+		}
+	})
+
 	t.Run("Should conditionally update job config by name", func(t *testing.T) {
 		job, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
 			Expr:  "@weekly",

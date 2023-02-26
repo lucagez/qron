@@ -10,7 +10,84 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const batchCreateJobs = `-- name: BatchCreateJobs :batchexec
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+values (
+  $1,
+  coalesce(nullif($2, ''), substr(md5(random()::text), 0, 25)),
+  $3,
+  'READY',
+  $4,
+  tiny.next(greatest($5, now()), $1),
+  coalesce(nullif($6, 0), 120),
+  $5,
+  $7,
+  coalesce(nullif($8, ''), 'default'),
+  coalesce(nullif($9, 0), 5)
+)
+`
+
+type BatchCreateJobsBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type BatchCreateJobsParams struct {
+	Expr     string             `json:"expr"`
+	Name     interface{}        `json:"name"`
+	State    string             `json:"state"`
+	Executor string             `json:"executor"`
+	StartAt  pgtype.Timestamptz `json:"start_at"`
+	Timeout  interface{}        `json:"timeout"`
+	Meta     []byte             `json:"meta"`
+	Owner    interface{}        `json:"owner"`
+	Retries  interface{}        `json:"retries"`
+}
+
+func (q *Queries) BatchCreateJobs(ctx context.Context, arg []BatchCreateJobsParams) *BatchCreateJobsBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.Expr,
+			a.Name,
+			a.State,
+			a.Executor,
+			a.StartAt,
+			a.Timeout,
+			a.Meta,
+			a.Owner,
+			a.Retries,
+		}
+		batch.Queue(batchCreateJobs, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &BatchCreateJobsBatchResults{br, len(arg), false}
+}
+
+func (b *BatchCreateJobsBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, errors.New("batch already closed"))
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *BatchCreateJobsBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
 
 const batchUpdateFailedJobs = `-- name: BatchUpdateFailedJobs :batchexec
 update tiny.job

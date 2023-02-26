@@ -48,6 +48,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
+		BatchCreateJobs    func(childComplexity int, executor string, args []model.CreateJobArgs) int
 		CommitJobs         func(childComplexity int, executor string, commits []model.CommitArgs) int
 		CreateJob          func(childComplexity int, executor string, args model.CreateJobArgs) int
 		DeleteJobByID      func(childComplexity int, executor string, id int64) int
@@ -97,6 +98,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	ValidateExprFormat(ctx context.Context, expr string) (bool, error)
 	CreateJob(ctx context.Context, executor string, args model.CreateJobArgs) (sqlc.TinyJob, error)
+	BatchCreateJobs(ctx context.Context, executor string, args []model.CreateJobArgs) ([]int64, error)
 	UpdateJobByName(ctx context.Context, executor string, name string, args model.UpdateJobArgs) (sqlc.TinyJob, error)
 	UpdateJobByID(ctx context.Context, executor string, id int64, args model.UpdateJobArgs) (sqlc.TinyJob, error)
 	UpdateStateByID(ctx context.Context, executor string, id int64, state string) (sqlc.TinyJob, error)
@@ -140,6 +142,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Mutation.batchCreateJobs":
+		if e.complexity.Mutation.BatchCreateJobs == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_batchCreateJobs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.BatchCreateJobs(childComplexity, args["executor"].(string), args["args"].([]model.CreateJobArgs)), true
 
 	case "Mutation.commitJobs":
 		if e.complexity.Mutation.CommitJobs == nil {
@@ -601,6 +615,7 @@ input CommitArgs {
 type Mutation {
   validateExprFormat(expr: String!): Boolean!
   createJob(executor: String!, args: CreateJobArgs!): TinyJob!
+  batchCreateJobs(executor: String!, args: [CreateJobArgs!]!): [ID!]!
   updateJobByName(executor: String!, name: String!, args: UpdateJobArgs!): TinyJob!
   updateJobById(executor: String!, id: ID!, args: UpdateJobArgs!): TinyJob!
   updateStateByID(executor: String!, id: ID!, state: String!): TinyJob!
@@ -656,6 +671,30 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_batchCreateJobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["executor"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executor"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["executor"] = arg0
+	var arg1 []model.CreateJobArgs
+	if tmp, ok := rawArgs["args"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("args"))
+		arg1, err = ec.unmarshalNCreateJobArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgsᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["args"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_commitJobs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1301,6 +1340,60 @@ func (ec *executionContext) fieldContext_Mutation_createJob(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createJob_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_batchCreateJobs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_batchCreateJobs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().BatchCreateJobs(rctx, fc.Args["executor"].(string), fc.Args["args"].([]model.CreateJobArgs))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int64)
+	fc.Result = res
+	return ec.marshalNID2ᚕint64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_batchCreateJobs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_batchCreateJobs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -5500,6 +5593,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createJob(ctx, field)
 			})
 
+		case "batchCreateJobs":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_batchCreateJobs(ctx, field)
+			})
+
 		case "updateJobByName":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -6260,6 +6359,23 @@ func (ec *executionContext) unmarshalNCommitArgs2ᚕgithubᚗcomᚋlucagezᚋqro
 func (ec *executionContext) unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgs(ctx context.Context, v interface{}) (model.CreateJobArgs, error) {
 	res, err := ec.unmarshalInputCreateJobArgs(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateJobArgs2ᚕgithubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgsᚄ(ctx context.Context, v interface{}) ([]model.CreateJobArgs, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.CreateJobArgs, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCreateJobArgs2githubᚗcomᚋlucagezᚋqronᚋgraphᚋmodelᚐCreateJobArgs(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {

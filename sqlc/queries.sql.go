@@ -33,14 +33,14 @@ const createJob = `-- name: CreateJob :one
 insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
 values (
   $1,
-  coalesce(nullif($6, ''), substr(md5(random()::text), 0, 25)),
-  $2,
-  'READY',
+  coalesce(nullif($2, ''), substr(md5(random()::text), 0, 25)),
   $3,
-  tiny.next(greatest($4, now()), $1),
-  coalesce(nullif($7, 0), 120),
+  'READY',
   $4,
+  tiny.next(greatest($5, now()), $1),
+  coalesce(nullif($6, 0), 120),
   $5,
+  $7,
   coalesce(nullif($8, ''), 'default'),
   coalesce(nullif($9, 0), 5)
 )
@@ -49,12 +49,12 @@ returning id, expr, run_at, last_run_at, created_at, start_at, execution_amount,
 
 type CreateJobParams struct {
 	Expr     string             `json:"expr"`
+	Name     interface{}        `json:"name"`
 	State    string             `json:"state"`
 	Executor string             `json:"executor"`
 	StartAt  pgtype.Timestamptz `json:"start_at"`
-	Meta     []byte             `json:"meta"`
-	Name     interface{}        `json:"name"`
 	Timeout  interface{}        `json:"timeout"`
+	Meta     []byte             `json:"meta"`
 	Owner    interface{}        `json:"owner"`
 	Retries  interface{}        `json:"retries"`
 }
@@ -64,12 +64,12 @@ type CreateJobParams struct {
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, error) {
 	row := q.db.QueryRow(ctx, createJob,
 		arg.Expr,
+		arg.Name,
 		arg.State,
 		arg.Executor,
 		arg.StartAt,
-		arg.Meta,
-		arg.Name,
 		arg.Timeout,
+		arg.Meta,
 		arg.Owner,
 		arg.Retries,
 	)
@@ -335,8 +335,6 @@ func (q *Queries) Next(ctx context.Context, arg NextParams) (pgtype.Timestamptz,
 }
 
 const resetTimeoutJobs = `-- name: ResetTimeoutJobs :many
-
-
 update tiny.job
 set status = 'READY'
 where timeout is not null
@@ -347,25 +345,6 @@ and status = 'PENDING'
 returning id
 `
 
-// update tiny.job as updated_jobs
-// set status = 'PENDING',
-//
-//	last_run_at = now()
-//
-// from (
-//
-//	select id
-//	from tiny.job j
-//	where j.run_at < now()
-//	and j.status = 'READY'
-//	and j.executor = sqlc.arg('executor')
-//	-- worker limit
-//	limit $1 for update
-//	skip locked
-//
-// ) as due_jobs
-// where due_jobs.id = updated_jobs.id
-// returning updated_jobs.*;
 func (q *Queries) ResetTimeoutJobs(ctx context.Context, executor string) ([]int64, error) {
 	rows, err := q.db.Query(ctx, resetTimeoutJobs, executor)
 	if err != nil {

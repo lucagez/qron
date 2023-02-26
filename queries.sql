@@ -91,21 +91,37 @@ returning *;
 -- name: CreateJob :one
 insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
 values (
-  $1,
+  sqlc.arg('expr'),
   coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
-  $2,
+  sqlc.arg('state'),
   'READY',
-  $3,
-  tiny.next(greatest($4, now()), $1),
+  sqlc.arg('executor'),
+  tiny.next(greatest(sqlc.arg('start_at'), now()), sqlc.arg('expr')),
   coalesce(nullif(sqlc.arg('timeout'), 0), 120),
-  $4,
-  $5,
+  sqlc.arg('start_at'),
+  sqlc.arg('meta'),
   coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
   coalesce(nullif(sqlc.arg('retries'), 0), 5)
 )
 -- on conflict on constraint job_name_owner_key
 -- do ...
 returning *;
+
+-- name: BatchCreateJobs :batchexec
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+values (
+  sqlc.arg('expr'),
+  coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
+  sqlc.arg('state'),
+  'READY',
+  sqlc.arg('executor'),
+  tiny.next(greatest(sqlc.arg('start_at'), now()), sqlc.arg('expr')),
+  coalesce(nullif(sqlc.arg('timeout'), 0), 120),
+  sqlc.arg('start_at'),
+  sqlc.arg('meta'),
+  coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
+  coalesce(nullif(sqlc.arg('retries'), 0), 5)
+);
 
 -- name: SearchJobs :many
 select * from tiny.job
