@@ -31,7 +31,7 @@ Bring your Go binary, Postgres and you are ready to go ⏰
 * ⏰ **Polyglot** - speaking both `cron` spec and `one-off` execution semantics
 * ⏳ **Workflow capable** - Providing a state infrastructure for delayed and resumable workflows
 * 🪶 **Lightweight** - leveraging Postgres, which you probably are already running
-* 🏎 **Fast** - thanks to batching can handle thousands of jobs per second
+* 🏎 **Fast** - >10000 jobs/second on a single node
 * 🧱 **Extensible** - providing only the building blocks you need to create reliable systems
 * 🪨 **Reliable** - thanks to Postgres every job is delivered `at-least-once`
 * 🗣 **Fluent** - using a friendly and intuitive language for scheduling jobs
