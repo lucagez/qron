@@ -268,7 +268,7 @@ func TestClientClient(t *testing.T) {
 		jobs := client.Fetch(ctx, "reschedule")
 
 		go func() {
-			<-time.After(600 * time.Millisecond)
+			<-time.After(500 * time.Millisecond)
 			stop()
 		}()
 
@@ -276,7 +276,7 @@ func TestClientClient(t *testing.T) {
 		for job := range jobs {
 			if job.ID == created.ID {
 				counter++
-				job.Expr = "@after 200ms"
+				job.Expr = "@after 50ms"
 				job.Retry()
 			}
 		}
@@ -367,10 +367,7 @@ func TestClientOwner(t *testing.T) {
 	pool, cleanup := testutil.PG.CreateDb("owner")
 	defer cleanup()
 
-	port := pool.Config().ConnConfig.Port
-	dsn := fmt.Sprintf("postgres://postgres:postgres@localhost:%d/owner", port)
-
-	scopedConn, err := sqlc.NewScopedPgx(context.Background(), dsn)
+	scopedConn, err := sqlc.NewScopedPgx(context.Background(), pool.Config().ConnString())
 	assert.Nil(t, err)
 
 	scopedClient, err := NewClient(scopedConn, Config{})

@@ -6,6 +6,8 @@ create role tinyrole;
 grant all on schema public to tinyrole;
 grant usage on schema tiny to tinyrole;
 grant all on schema tiny to tinyrole;
+grant usage on schema cronexp to tinyrole;
+grant all on schema cronexp to tinyrole;
 grant usage, select on sequence tiny.job_id_seq to tinyrole;
 grant all on tiny.job to tinyrole;
 
