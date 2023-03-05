@@ -381,6 +381,7 @@ func (r *queryResolver) SearchJobsByMeta(ctx context.Context, executor string, a
 			State:           row.State,
 			Status:          row.Status,
 			CreatedAt:       row.CreatedAt,
+			UpdatedAt:       row.UpdatedAt,
 			LastRunAt:       row.LastRunAt,
 			StartAt:         row.StartAt,
 			RunAt:           row.RunAt,
