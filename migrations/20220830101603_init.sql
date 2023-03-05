@@ -181,6 +181,7 @@ create table tiny.job
     run_at           timestamptz not null,
     last_run_at      timestamptz not null default now(),
     created_at       timestamptz not null default now(),
+    updated_at       timestamptz not null default now(),
     start_at         timestamptz not null default now(),
 
     execution_amount integer     not null default 0,

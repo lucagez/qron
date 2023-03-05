@@ -93,6 +93,7 @@ const batchUpdateFailedJobs = `-- name: BatchUpdateFailedJobs :batchexec
 update tiny.job
 set last_run_at = now(),
   state = coalesce(nullif($1::text, ''), state),
+  updated_at = now(),
   expr = coalesce(nullif($2::text, ''), expr),
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
@@ -166,6 +167,7 @@ set last_run_at = now(),
   state = coalesce(nullif($1::text, ''), state),
   expr = coalesce(nullif($2::text, ''), expr),
   status = $3,
+  updated_at = now(),
   execution_amount = execution_amount + 1,
   retries = $4,
   run_at = tiny.next(

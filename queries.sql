@@ -10,11 +10,17 @@ where id = $1
 and executor = $2 
 limit 1;
 
+-- name: LastUpdate :one
+select max(updated_at)::timestamptz as last_update 
+from tiny.job
+where executor = $1;
+
 -- name: UpdateJobByName :one
 update tiny.job
 set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
   state = coalesce(nullif(sqlc.arg('state'), ''), state),
   timeout = coalesce(nullif(sqlc.arg('timeout'), 0), timeout),
+  updated_at = now(),
   -- `run_at` should always be consistent
   run_at = tiny.next(
     coalesce(last_run_at, created_at), 
@@ -26,7 +32,8 @@ returning *;
 
 -- name: StopJob :one
 update tiny.job
-set status = 'PAUSED'
+set status = 'PAUSED',
+  updated_at = now()
 where id = $1
 and executor = $2
 -- Cannot stop a currently running task as it is outside of control for now
@@ -36,7 +43,8 @@ returning *;
 
 -- name: RestartJob :one
 update tiny.job
-set status = 'READY'
+set status = 'READY',
+  updated_at = now() 
 where id = $1
 and executor = $2
 and status = 'PAUSED'
@@ -45,6 +53,7 @@ returning *;
 -- name: UpdateJobByID :one
 update tiny.job
 set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
+  updated_at = now(),
   state = coalesce(nullif(sqlc.arg('state'), ''), state),
   timeout = coalesce(nullif(sqlc.arg('timeout'), 0), timeout),
   -- `run_at` should always be consistent
@@ -58,14 +67,16 @@ returning *;
 
 -- name: UpdateStateByID :one
 update tiny.job
-set state = coalesce(nullif(sqlc.arg('state'), ''), state)
+set state = coalesce(nullif(sqlc.arg('state'), ''), state),
+  updated_at = now()
 where id = $1
 and executor = $2 
 returning *;
 
 -- name: UpdateExprByID :one
 update tiny.job
-set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr)
+set expr = coalesce(nullif(sqlc.arg('expr'), ''), expr),
+  updated_at = now()
 where id = $1
 and executor = $2 
 returning *;
@@ -158,6 +169,7 @@ set last_run_at = now(),
   state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = sqlc.arg('status'),
+  updated_at = now(),
   execution_amount = execution_amount + 1,
   retries = sqlc.arg('retries'),
   run_at = tiny.next(
@@ -171,6 +183,7 @@ and executor = sqlc.arg('executor');
 update tiny.job
 set last_run_at = now(),
   state = coalesce(nullif(sqlc.arg('state')::text, ''), state),
+  updated_at = now(),
   expr = coalesce(nullif(sqlc.arg('expr')::text, ''), expr),
   status = case 
     when tiny.is_one_shot(expr) and retries - 1 <= 0 then 'FAILURE'::tiny.status
@@ -201,14 +214,16 @@ with due_jobs as (
 )
 update tiny.job as updated_jobs
 set status = 'PENDING',
-    last_run_at = now()
+  updated_at = now(),
+  last_run_at = now()
 from due_jobs
 where due_jobs.id = updated_jobs.id
 returning updated_jobs.*;
 
 -- name: ResetTimeoutJobs :many
 update tiny.job
-set status = 'READY'
+set status = 'READY',
+  updated_at = now()
 where timeout is not null
 and timeout > 0
 and now() - last_run_at > make_interval(secs => timeout)

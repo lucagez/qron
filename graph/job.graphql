@@ -24,6 +24,7 @@ type TinyJob @goModel(model: "github.com/lucagez/qron/sqlc.TinyJob") {
   start_at: Time
   timeout: Int
   created_at: Time!
+  updated_at: Time!
   executor: String!
   state: String
   status: String!
@@ -105,4 +106,5 @@ type Query {
   searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): SearchJobsByMetaResult!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
+  lastUpdate(executor: String!): Time!
 }
