@@ -1,6 +1,5 @@
 services:
   postgres:
-#    image: supabase/postgres
     image: postgres
     environment:
       - POSTGRES_PASSWORD=password

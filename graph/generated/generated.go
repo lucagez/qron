@@ -119,7 +119,7 @@ type QueryResolver interface {
 	SearchJobsByMeta(ctx context.Context, executor string, args model.QueryJobsMetaArgs) (model.SearchJobsByMetaResult, error)
 	QueryJobByName(ctx context.Context, executor string, name string) (sqlc.TinyJob, error)
 	QueryJobByID(ctx context.Context, executor string, id int64) (sqlc.TinyJob, error)
-	LastUpdate(ctx context.Context, executor string) (time.Time, error)
+	LastUpdate(ctx context.Context, executor string) (*time.Time, error)
 }
 type TinyJobResolver interface {
 	RunAt(ctx context.Context, obj *sqlc.TinyJob) (time.Time, error)
@@ -687,7 +687,7 @@ type Query {
   searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): SearchJobsByMetaResult!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
-  lastUpdate(executor: String!): Time!
+  lastUpdate(executor: String!): Time
 }
 `, BuiltIn: false},
 }
@@ -2716,14 +2716,11 @@ func (ec *executionContext) _Query_lastUpdate(ctx context.Context, field graphql
 		ec.Error(ctx, err)
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_lastUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {

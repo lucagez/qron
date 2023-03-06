@@ -422,9 +422,9 @@ func (r *queryResolver) QueryJobByID(ctx context.Context, executor string, id in
 }
 
 // LastUpdate is the resolver for the lastUpdate field.
-func (r *queryResolver) LastUpdate(ctx context.Context, executor string) (time.Time, error) {
+func (r *queryResolver) LastUpdate(ctx context.Context, executor string) (*time.Time, error) {
 	t, err := r.Queries.LastUpdate(ctx, executor)
-	return t.Time, err
+	return &t.Time, err
 }
 
 // RunAt is the resolver for the run_at field.

@@ -106,5 +106,5 @@ type Query {
   searchJobsByMeta(executor: String!, args: QueryJobsMetaArgs!): SearchJobsByMetaResult!
   queryJobByName(executor: String!, name: String!): TinyJob!
   queryJobByID(executor: String!, id: ID!): TinyJob!
-  lastUpdate(executor: String!): Time!
+  lastUpdate(executor: String!): Time
 }
