@@ -17,17 +17,18 @@ import (
 // [] implement `tinyd` tiny daemon. that leverages remote client and replay messages through http (or docker container)
 // [✅] flush remaining jobs after cancel (use separate context for flush and fetch)
 // [✅] add test for flushing remaining in-flight job after canceling fetch
-// [] better handling for `state` field. Should it be optional?
 // [] implement idempotency for client
 // [✅] implement `@asap` operator
 // [✅] implement UNIQUE (col1, col2) so to have scoped <name>, <owner>
 // [✅] implement UPSERT if <name>, <owner> collides -> implement idempotency in client? read + update
 // [] add test cases for new mutations
 // [] use test packages to make binary smaller
-// [] benchmarks
-// [] add batch create jobs. e.g. create 1000 jobs in one go
+// [✅] benchmarks
+// [✅] add batch create jobs. e.g. create 1000 jobs in one go
 // [] create examples
 // [] add partitioning to jobs table
+// [] rename `FAILURE` to `FAILED`
+// [] rename `TinyJob` to `Job`
 
 type Resolver struct {
 	Queries *sqlc.Queries
