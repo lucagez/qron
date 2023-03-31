@@ -23,8 +23,6 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-// var processedCh = make(chan Job)
-
 type Client struct {
 	Resolver      graph.Resolver
 	MaxInFlight   uint64
