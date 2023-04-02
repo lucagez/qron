@@ -51,3 +51,7 @@ tag:
 	@echo "Tagging..."
 	@git tag -a v$(version) -m "Release v$(version)"
 	@git push origin v$(version)
+
+deploy:
+	@echo "Deploying..."
+	flyctl deploy -a qron-server -c ./qron-cloud/fly.toml
