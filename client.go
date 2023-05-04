@@ -321,9 +321,17 @@ func (c *Client) RestartJob(ctx context.Context, executorName string, id int64) 
 func (c *Client) Migrate() error {
 	goose.SetDialect("postgres")
 	goose.SetBaseFS(migrations.MigrationsFS)
+	// migrations are scoped so not to interfere with other
+	// schema diffing tools.
+	goose.SetTableName("qron.qron_migrations")
 
 	dsn := c.Resolver.DB.Config().ConnConfig.ConnString()
 	migrationClient, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return err
+	}
+
+	_, err = migrationClient.Exec("create schema if not exists qron")
 	if err != nil {
 		return err
 	}

@@ -268,7 +268,7 @@ func TestClientClient(t *testing.T) {
 		jobs := client.Fetch(ctx, "reschedule")
 
 		go func() {
-			<-time.After(500 * time.Millisecond)
+			<-time.After(400 * time.Millisecond)
 			stop()
 		}()
 
@@ -280,6 +280,8 @@ func TestClientClient(t *testing.T) {
 				job.Retry()
 			}
 		}
+
+		<-time.After(100 * time.Millisecond)
 
 		assert.Equal(t, 3, counter)
 	})

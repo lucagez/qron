@@ -126,6 +126,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Mount("/api", client.Handler())
 
+	log.Println("🐘 connected to:", config.ConnString())
 	log.Println("listening on:", fmt.Sprintf(":%d", *httpPort), "started in:", time.Since(t0))
 
 	go func() {
