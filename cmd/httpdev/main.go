@@ -104,16 +104,49 @@ func main() {
 		log.Fatal("failed to migrate db:", err)
 	}
 
+	// Sugared client
+	qron.Init(db, qron.Config{})
+
+	type SugaredJob struct {
+		Sugar bool `json:"sugar"`
+		Qty   int  `json:"qty"`
+	}
+	sugaredJob := qron.NewScheduled[SugaredJob]("sugared").
+		Expr("@after 1s")
+	sugaredQ := sugaredJob.Fetch(context.Background())
+
 	ctx, stop := context.WithCancel(context.Background())
 	httpJobs := client.Fetch(ctx, "http")
-
 	httpExecutor := executor.NewHttpExecutor(100)
 
 	go func() {
-		for job := range httpJobs {
-			go httpExecutor.Run(job)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case job := <-sugaredQ:
+				log.Println("🦄 sugared job:", job.State.Sugar, job.State.Qty)
+				job.Commit()
+			case job := <-httpJobs:
+				go httpExecutor.Run(job)
+			}
 		}
 	}()
+
+	// Using base config
+	sugaredJob.
+		Schedule(context.Background(), SugaredJob{
+			Sugar: true,
+			Qty:   42,
+		})
+
+	// With forked config
+	sugaredJob.
+		Expr("@after 10s").
+		Schedule(context.Background(), SugaredJob{
+			Sugar: false,
+			Qty:   10,
+		})
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGHUP)

@@ -3,6 +3,7 @@ package qron
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -41,6 +42,10 @@ type Config struct {
 	PollInterval  time.Duration
 	ResetInterval time.Duration
 	OwnerSetter   func(http.Handler) http.Handler
+}
+
+type JobEntity struct {
+	sqlc.TinyJob
 }
 
 func NewClient(db *pgxpool.Pool, cfg Config) (Client, error) {
@@ -228,6 +233,22 @@ func (c *Client) Handler() http.Handler {
 	return router
 }
 
+var globalClient Client
+
+func Init(db *pgxpool.Pool, cfg Config) error {
+	if globalClient.processedCh != nil {
+		return errors.New("client already initialized")
+	}
+
+	client, err := NewClient(db, cfg)
+	if err != nil {
+		return err
+	}
+
+	globalClient = client
+	return nil
+}
+
 func (c *Client) CreateJob(ctx context.Context, executorName string, args model.CreateJobArgs) (sqlc.TinyJob, error) {
 	return c.Resolver.Mutation().CreateJob(
 		ctx,
@@ -323,7 +344,7 @@ func (c *Client) Migrate() error {
 	goose.SetBaseFS(migrations.MigrationsFS)
 	// migrations are scoped so not to interfere with other
 	// schema diffing tools.
-	goose.SetTableName("qron.qron_migrations")
+	goose.SetTableName("tiny.migrations")
 
 	dsn := c.Resolver.DB.Config().ConnConfig.ConnString()
 	migrationClient, err := sql.Open("pgx", dsn)
@@ -331,7 +352,7 @@ func (c *Client) Migrate() error {
 		return err
 	}
 
-	_, err = migrationClient.Exec("create schema if not exists qron")
+	_, err = migrationClient.Exec("create schema if not exists tiny")
 	if err != nil {
 		return err
 	}
