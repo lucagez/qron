@@ -10,18 +10,18 @@ import (
 
 type CommitArgs struct {
 	ID    int64   `json:"id"`
-	Expr  *string `json:"expr"`
-	State *string `json:"state"`
+	Expr  *string `json:"expr,omitempty"`
+	State *string `json:"state,omitempty"`
 }
 
 type CreateJobArgs struct {
 	Expr    string     `json:"expr"`
 	Name    string     `json:"name"`
 	State   string     `json:"state"`
-	Timeout *int       `json:"timeout"`
-	StartAt *time.Time `json:"start_at"`
-	Meta    *string    `json:"meta"`
-	Retries *int       `json:"retries"`
+	Timeout *int       `json:"timeout,omitempty"`
+	StartAt *time.Time `json:"start_at,omitempty"`
+	Meta    *string    `json:"meta,omitempty"`
+	Retries *int       `json:"retries,omitempty"`
 }
 
 type QueryJobsArgs struct {
@@ -34,11 +34,11 @@ type QueryJobsMetaArgs struct {
 	Limit     int       `json:"limit"`
 	Skip      int       `json:"skip"`
 	IsOneShot bool      `json:"isOneShot"`
-	Name      *string   `json:"name"`
+	Name      *string   `json:"name,omitempty"`
 	From      time.Time `json:"from"`
 	To        time.Time `json:"to"`
 	Statuses  []string  `json:"statuses"`
-	Query     *string   `json:"query"`
+	Query     *string   `json:"query,omitempty"`
 }
 
 type SearchJobsByMetaResult struct {
@@ -47,7 +47,7 @@ type SearchJobsByMetaResult struct {
 }
 
 type UpdateJobArgs struct {
-	Expr    *string `json:"expr"`
-	State   *string `json:"state"`
-	Timeout *int    `json:"timeout"`
+	Expr    *string `json:"expr,omitempty"`
+	State   *string `json:"state,omitempty"`
+	Timeout *int    `json:"timeout,omitempty"`
 }
