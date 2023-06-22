@@ -13,12 +13,15 @@ type Scheduled[T any] struct {
 	ExecutorName string
 	State        T
 	args         model.CreateJobArgs
+	client       Client
 }
 
 func NewScheduled[T any](executorName string) Scheduled[T] {
+	client, _ := NewClient(sugarDb, sugarCfg)
 	return Scheduled[T]{
 		ExecutorName: executorName,
 		args:         model.CreateJobArgs{},
+		client:       client,
 	}
 }
 
@@ -28,6 +31,7 @@ func (j Scheduled[T]) fork() Scheduled[T] {
 	return Scheduled[T]{
 		ExecutorName: j.ExecutorName,
 		State:        j.State,
+		client:       j.client,
 		args: model.CreateJobArgs{
 			Name:    j.args.Name,
 			Expr:    j.args.Expr,
@@ -70,7 +74,7 @@ func (j Scheduled[T]) Schedule(ctx context.Context, state T) (sqlc.TinyJob, erro
 		return sqlc.TinyJob{}, err
 	}
 
-	return globalClient.CreateJob(ctx, j.ExecutorName, model.CreateJobArgs{
+	return j.client.CreateJob(ctx, j.ExecutorName, model.CreateJobArgs{
 		Name:    j.args.Name,
 		Expr:    j.args.Expr,
 		Timeout: j.args.Timeout,
@@ -87,7 +91,7 @@ type ScheduledJob[T any] struct {
 
 func (j Scheduled[T]) Fetch(ctx context.Context) chan ScheduledJob[T] {
 	ch := make(chan ScheduledJob[T])
-	jobs := globalClient.Fetch(ctx, j.ExecutorName)
+	jobs := j.client.Fetch(ctx, j.ExecutorName)
 
 	go func() {
 		for job := range jobs {

@@ -210,7 +210,7 @@ with due_jobs as (
     and j.executor = sqlc.arg('executor')
   order by j.created_at
   limit $1
-  for no key update skip locked
+  for update skip locked
 )
 update tiny.job as updated_jobs
 set status = 'PENDING',

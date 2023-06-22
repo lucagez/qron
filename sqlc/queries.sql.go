@@ -196,7 +196,7 @@ with due_jobs as (
     and j.executor = $2
   order by j.created_at
   limit $1
-  for no key update skip locked
+  for update skip locked
 )
 update tiny.job as updated_jobs
 set status = 'PENDING',
@@ -322,7 +322,6 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 }
 
 const lastUpdate = `-- name: LastUpdate :one
-
 select max(updated_at)::timestamptz as last_update 
 from tiny.job
 where executor = $1

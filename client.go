@@ -3,7 +3,6 @@ package qron
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -233,19 +232,12 @@ func (c *Client) Handler() http.Handler {
 	return router
 }
 
-var globalClient Client
+var sugarDb *pgxpool.Pool
+var sugarCfg Config
 
 func Init(db *pgxpool.Pool, cfg Config) error {
-	if globalClient.processedCh != nil {
-		return errors.New("client already initialized")
-	}
-
-	client, err := NewClient(db, cfg)
-	if err != nil {
-		return err
-	}
-
-	globalClient = client
+	sugarDb = db
+	sugarCfg = cfg
 	return nil
 }
 
