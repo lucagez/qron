@@ -30,7 +30,7 @@ func (q *Queries) CountJobsInStatus(ctx context.Context, arg CountJobsInStatusPa
 }
 
 const createJob = `-- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries, deduplication_key)
 values (
   $1,
   coalesce(nullif($2, ''), substr(md5(random()::text), 0, 25)),
@@ -42,21 +42,23 @@ values (
   $5,
   $7,
   coalesce(nullif($8, ''), 'default'),
-  coalesce(nullif($9, 0), 5)
+  coalesce(nullif($9, 0), 5),
+  $10
 )
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type CreateJobParams struct {
-	Expr     string             `json:"expr"`
-	Name     interface{}        `json:"name"`
-	State    string             `json:"state"`
-	Executor string             `json:"executor"`
-	StartAt  pgtype.Timestamptz `json:"start_at"`
-	Timeout  interface{}        `json:"timeout"`
-	Meta     []byte             `json:"meta"`
-	Owner    interface{}        `json:"owner"`
-	Retries  interface{}        `json:"retries"`
+	Expr             string             `json:"expr"`
+	Name             interface{}        `json:"name"`
+	State            string             `json:"state"`
+	Executor         string             `json:"executor"`
+	StartAt          pgtype.Timestamptz `json:"start_at"`
+	Timeout          interface{}        `json:"timeout"`
+	Meta             []byte             `json:"meta"`
+	Owner            interface{}        `json:"owner"`
+	Retries          interface{}        `json:"retries"`
+	DeduplicationKey pgtype.Text        `json:"deduplication_key"`
 }
 
 // on conflict on constraint job_name_owner_key
@@ -72,6 +74,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		arg.Meta,
 		arg.Owner,
 		arg.Retries,
+		arg.DeduplicationKey,
 	)
 	var i TinyJob
 	err := row.Scan(
@@ -91,6 +94,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (TinyJob, 
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -119,7 +123,7 @@ const deleteJobByID = `-- name: DeleteJobByID :one
 delete from tiny.job
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type DeleteJobByIDParams struct {
@@ -147,6 +151,7 @@ func (q *Queries) DeleteJobByID(ctx context.Context, arg DeleteJobByIDParams) (T
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -155,7 +160,7 @@ const deleteJobByName = `-- name: DeleteJobByName :one
 delete from tiny.job
 where name = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type DeleteJobByNameParams struct {
@@ -183,6 +188,7 @@ func (q *Queries) DeleteJobByName(ctx context.Context, arg DeleteJobByNameParams
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -204,7 +210,7 @@ set status = 'PENDING',
   last_run_at = now()
 from due_jobs
 where due_jobs.id = updated_jobs.id
-returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.updated_at, updated_jobs.start_at, updated_jobs.execution_amount, updated_jobs.retries, updated_jobs.name, updated_jobs.meta, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor, updated_jobs.owner
+returning updated_jobs.id, updated_jobs.expr, updated_jobs.run_at, updated_jobs.last_run_at, updated_jobs.created_at, updated_jobs.updated_at, updated_jobs.start_at, updated_jobs.execution_amount, updated_jobs.retries, updated_jobs.name, updated_jobs.meta, updated_jobs.timeout, updated_jobs.status, updated_jobs.state, updated_jobs.executor, updated_jobs.owner, updated_jobs.deduplication_key
 `
 
 type FetchDueJobsParams struct {
@@ -238,6 +244,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 			&i.State,
 			&i.Executor,
 			&i.Owner,
+			&i.DeduplicationKey,
 		); err != nil {
 			return nil, err
 		}
@@ -250,7 +257,7 @@ func (q *Queries) FetchDueJobs(ctx context.Context, arg FetchDueJobsParams) ([]T
 }
 
 const getJobByID = `-- name: GetJobByID :one
-select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key from tiny.job
 where id = $1
 and executor = $2 
 limit 1
@@ -281,12 +288,13 @@ func (q *Queries) GetJobByID(ctx context.Context, arg GetJobByIDParams) (TinyJob
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
 
 const getJobByName = `-- name: GetJobByName :one
-select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key from tiny.job
 where name = $1 
 and executor = $2
 limit 1
@@ -317,6 +325,7 @@ func (q *Queries) GetJobByName(ctx context.Context, arg GetJobByNameParams) (Tin
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -393,7 +402,7 @@ set status = 'READY',
 where id = $1
 and executor = $2
 and status = 'PAUSED'
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type RestartJobParams struct {
@@ -421,12 +430,13 @@ func (q *Queries) RestartJob(ctx context.Context, arg RestartJobParams) (TinyJob
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
 
 const searchJobs = `-- name: SearchJobs :many
-select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key from tiny.job
 where (name like concat($4::text, '%')
   or name like concat('%', $4::text))
 and executor = $3 
@@ -472,6 +482,7 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 			&i.State,
 			&i.Executor,
 			&i.Owner,
+			&i.DeduplicationKey,
 		); err != nil {
 			return nil, err
 		}
@@ -485,7 +496,7 @@ func (q *Queries) SearchJobs(ctx context.Context, arg SearchJobsParams) ([]TinyJ
 
 const searchJobsByMeta = `-- name: SearchJobsByMeta :many
 with jobs as (
-  select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner from tiny.job
+  select id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key from tiny.job
   where meta::jsonb @> ($3::text)::jsonb
   and status::text = any(string_to_array($4::text, ','))
   and created_at > $5::timestamptz
@@ -499,7 +510,7 @@ with jobs as (
 total as (
   select count(*) as total_count from jobs
 )
-select jobs.id, jobs.expr, jobs.run_at, jobs.last_run_at, jobs.created_at, jobs.updated_at, jobs.start_at, jobs.execution_amount, jobs.retries, jobs.name, jobs.meta, jobs.timeout, jobs.status, jobs.state, jobs.executor, jobs.owner, total_count from jobs, total
+select jobs.id, jobs.expr, jobs.run_at, jobs.last_run_at, jobs.created_at, jobs.updated_at, jobs.start_at, jobs.execution_amount, jobs.retries, jobs.name, jobs.meta, jobs.timeout, jobs.status, jobs.state, jobs.executor, jobs.owner, jobs.deduplication_key, total_count from jobs, total
 order by last_run_at desc
 limit $2::int
 offset $1::int
@@ -518,23 +529,24 @@ type SearchJobsByMetaParams struct {
 }
 
 type SearchJobsByMetaRow struct {
-	ID              int64              `json:"id"`
-	Expr            string             `json:"expr"`
-	RunAt           pgtype.Timestamptz `json:"run_at"`
-	LastRunAt       pgtype.Timestamptz `json:"last_run_at"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
-	StartAt         pgtype.Timestamptz `json:"start_at"`
-	ExecutionAmount int32              `json:"execution_amount"`
-	Retries         int32              `json:"retries"`
-	Name            string             `json:"name"`
-	Meta            []byte             `json:"meta"`
-	Timeout         int32              `json:"timeout"`
-	Status          TinyStatus         `json:"status"`
-	State           string             `json:"state"`
-	Executor        string             `json:"executor"`
-	Owner           string             `json:"owner"`
-	TotalCount      int64              `json:"total_count"`
+	ID               int64              `json:"id"`
+	Expr             string             `json:"expr"`
+	RunAt            pgtype.Timestamptz `json:"run_at"`
+	LastRunAt        pgtype.Timestamptz `json:"last_run_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	StartAt          pgtype.Timestamptz `json:"start_at"`
+	ExecutionAmount  int32              `json:"execution_amount"`
+	Retries          int32              `json:"retries"`
+	Name             string             `json:"name"`
+	Meta             []byte             `json:"meta"`
+	Timeout          int32              `json:"timeout"`
+	Status           TinyStatus         `json:"status"`
+	State            string             `json:"state"`
+	Executor         string             `json:"executor"`
+	Owner            string             `json:"owner"`
+	DeduplicationKey pgtype.Text        `json:"deduplication_key"`
+	TotalCount       int64              `json:"total_count"`
 }
 
 func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaParams) ([]SearchJobsByMetaRow, error) {
@@ -573,6 +585,7 @@ func (q *Queries) SearchJobsByMeta(ctx context.Context, arg SearchJobsByMetaPara
 			&i.State,
 			&i.Executor,
 			&i.Owner,
+			&i.DeduplicationKey,
 			&i.TotalCount,
 		); err != nil {
 			return nil, err
@@ -592,7 +605,7 @@ set status = 'PAUSED',
 where id = $1
 and executor = $2
 and status not in ('FAILURE', 'SUCCESS', 'PENDING')
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type StopJobParams struct {
@@ -622,6 +635,7 @@ func (q *Queries) StopJob(ctx context.Context, arg StopJobParams) (TinyJob, erro
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -632,7 +646,7 @@ set expr = coalesce(nullif($3, ''), expr),
   updated_at = now()
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type UpdateExprByIDParams struct {
@@ -661,6 +675,7 @@ func (q *Queries) UpdateExprByID(ctx context.Context, arg UpdateExprByIDParams) 
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -678,7 +693,7 @@ set expr = coalesce(nullif($3, ''), expr),
   )
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type UpdateJobByIDParams struct {
@@ -715,6 +730,7 @@ func (q *Queries) UpdateJobByID(ctx context.Context, arg UpdateJobByIDParams) (T
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -732,7 +748,7 @@ set expr = coalesce(nullif($3, ''), expr),
   )
 where name = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type UpdateJobByNameParams struct {
@@ -769,6 +785,7 @@ func (q *Queries) UpdateJobByName(ctx context.Context, arg UpdateJobByNameParams
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }
@@ -779,7 +796,7 @@ set state = coalesce(nullif($3, ''), state),
   updated_at = now()
 where id = $1
 and executor = $2 
-returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner
+returning id, expr, run_at, last_run_at, created_at, updated_at, start_at, execution_amount, retries, name, meta, timeout, status, state, executor, owner, deduplication_key
 `
 
 type UpdateStateByIDParams struct {
@@ -808,6 +825,7 @@ func (q *Queries) UpdateStateByID(ctx context.Context, arg UpdateStateByIDParams
 		&i.State,
 		&i.Executor,
 		&i.Owner,
+		&i.DeduplicationKey,
 	)
 	return i, err
 }

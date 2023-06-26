@@ -100,7 +100,7 @@ and executor = $2
 returning *;
 
 -- name: CreateJob :one
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries, deduplication_key)
 values (
   sqlc.arg('expr'),
   coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
@@ -112,14 +112,15 @@ values (
   sqlc.arg('start_at'),
   sqlc.arg('meta'),
   coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
-  coalesce(nullif(sqlc.arg('retries'), 0), 5)
+  coalesce(nullif(sqlc.arg('retries'), 0), 5),
+  sqlc.arg('deduplication_key')
 )
 -- on conflict on constraint job_name_owner_key
 -- do ...
 returning *;
 
 -- name: BatchCreateJobs :batchexec
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries, deduplication_key)
 values (
   sqlc.arg('expr'),
   coalesce(nullif(sqlc.arg('name'), ''), substr(md5(random()::text), 0, 25)),
@@ -131,7 +132,8 @@ values (
   sqlc.arg('start_at'),
   sqlc.arg('meta'),
   coalesce(nullif(sqlc.arg('owner'), ''), 'default'),
-  coalesce(nullif(sqlc.arg('retries'), 0), 5)
+  coalesce(nullif(sqlc.arg('retries'), 0), 5),
+  sqlc.arg('deduplication_key')
 );
 
 -- name: SearchJobs :many

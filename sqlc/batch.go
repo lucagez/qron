@@ -14,7 +14,7 @@ import (
 )
 
 const batchCreateJobs = `-- name: BatchCreateJobs :batchexec
-insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries)
+insert into tiny.job(expr, name, state, status, executor, run_at, timeout, start_at, meta, owner, retries, deduplication_key)
 values (
   $1,
   coalesce(nullif($2, ''), substr(md5(random()::text), 0, 25)),
@@ -26,7 +26,8 @@ values (
   $5,
   $7,
   coalesce(nullif($8, ''), 'default'),
-  coalesce(nullif($9, 0), 5)
+  coalesce(nullif($9, 0), 5),
+  $10
 )
 `
 
@@ -37,15 +38,16 @@ type BatchCreateJobsBatchResults struct {
 }
 
 type BatchCreateJobsParams struct {
-	Expr     string             `json:"expr"`
-	Name     interface{}        `json:"name"`
-	State    string             `json:"state"`
-	Executor string             `json:"executor"`
-	StartAt  pgtype.Timestamptz `json:"start_at"`
-	Timeout  interface{}        `json:"timeout"`
-	Meta     []byte             `json:"meta"`
-	Owner    interface{}        `json:"owner"`
-	Retries  interface{}        `json:"retries"`
+	Expr             string             `json:"expr"`
+	Name             interface{}        `json:"name"`
+	State            string             `json:"state"`
+	Executor         string             `json:"executor"`
+	StartAt          pgtype.Timestamptz `json:"start_at"`
+	Timeout          interface{}        `json:"timeout"`
+	Meta             []byte             `json:"meta"`
+	Owner            interface{}        `json:"owner"`
+	Retries          interface{}        `json:"retries"`
+	DeduplicationKey pgtype.Text        `json:"deduplication_key"`
 }
 
 func (q *Queries) BatchCreateJobs(ctx context.Context, arg []BatchCreateJobsParams) *BatchCreateJobsBatchResults {
@@ -61,6 +63,7 @@ func (q *Queries) BatchCreateJobs(ctx context.Context, arg []BatchCreateJobsPara
 			a.Meta,
 			a.Owner,
 			a.Retries,
+			a.DeduplicationKey,
 		}
 		batch.Queue(batchCreateJobs, vals...)
 	}

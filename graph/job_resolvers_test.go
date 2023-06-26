@@ -451,12 +451,13 @@ func TestProcessing(t *testing.T) {
 
 	t.Run("Should fetch for processing", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-			_, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+			j, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
 				Expr:  "@after 1 second",
 				Name:  fmt.Sprintf("search-%d", i),
 				State: "{}",
 			})
 			assert.Nil(t, err)
+			assert.False(t, j.DeduplicationKey.Valid)
 		}
 
 		time.Sleep(1 * time.Second)
@@ -778,5 +779,35 @@ func TestRetry(t *testing.T) {
 		assert.Equal(t, 0, success)
 		assert.Equal(t, 0, failure)
 		assert.Equal(t, 50, ready)
+	})
+}
+
+func TestDuplicate(t *testing.T) {
+	pool, cleanup := testutil.PG.CreateDb("duplicate_processing")
+	defer cleanup()
+
+	queries := sqlc.New(pool)
+	resolver := Resolver{Queries: queries, DB: pool}
+	ctx := context.Background()
+	executor := "test-executor"
+
+	t.Run("Should retry commit after processing", func(t *testing.T) {
+		var errs []error
+		for i := 0; i < 50; i++ {
+			deduplicationKey := "duplicated"
+			_, err := resolver.Mutation().CreateJob(ctx, executor, model.CreateJobArgs{
+				Expr:             "@after 1 second",
+				Name:             fmt.Sprintf("search-%d", i),
+				State:            "{}",
+				DeduplicationKey: &deduplicationKey,
+			})
+			errs = append(errs, err)
+		}
+
+		assert.Len(t, errs, 50)
+		assert.Nil(t, errs[0])
+		for i := 1; i < 50; i++ {
+			assert.Contains(t, errs[i].Error(), "duplicate key value violates unique constraint \"job_deduplication_key_constraint\"")
+		}
 	})
 }

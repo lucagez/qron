@@ -660,6 +660,7 @@ input CreateJobArgs {
   start_at: Time
   meta: String
   retries: Int
+  deduplication_key: String
 }
 
 input UpdateJobArgs {
@@ -5526,7 +5527,7 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at", "meta", "retries"}
+	fieldsInOrder := [...]string{"expr", "name", "state", "timeout", "start_at", "meta", "retries", "deduplication_key"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5596,6 +5597,15 @@ func (ec *executionContext) unmarshalInputCreateJobArgs(ctx context.Context, obj
 				return it, err
 			}
 			it.Retries = data
+		case "deduplication_key":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deduplication_key"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeduplicationKey = data
 		}
 	}
 

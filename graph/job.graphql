@@ -41,6 +41,7 @@ input CreateJobArgs {
   start_at: Time
   meta: String
   retries: Int
+  deduplication_key: String
 }
 
 input UpdateJobArgs {

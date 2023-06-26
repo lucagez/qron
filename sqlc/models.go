@@ -57,20 +57,21 @@ func (ns NullTinyStatus) Value() (driver.Value, error) {
 }
 
 type TinyJob struct {
-	ID              int64              `json:"id"`
-	Expr            string             `json:"expr"`
-	RunAt           pgtype.Timestamptz `json:"run_at"`
-	LastRunAt       pgtype.Timestamptz `json:"last_run_at"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
-	StartAt         pgtype.Timestamptz `json:"start_at"`
-	ExecutionAmount int32              `json:"execution_amount"`
-	Retries         int32              `json:"retries"`
-	Name            string             `json:"name"`
-	Meta            []byte             `json:"meta"`
-	Timeout         int32              `json:"timeout"`
-	Status          TinyStatus         `json:"status"`
-	State           string             `json:"state"`
-	Executor        string             `json:"executor"`
-	Owner           string             `json:"owner"`
+	ID               int64              `json:"id"`
+	Expr             string             `json:"expr"`
+	RunAt            pgtype.Timestamptz `json:"run_at"`
+	LastRunAt        pgtype.Timestamptz `json:"last_run_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	StartAt          pgtype.Timestamptz `json:"start_at"`
+	ExecutionAmount  int32              `json:"execution_amount"`
+	Retries          int32              `json:"retries"`
+	Name             string             `json:"name"`
+	Meta             []byte             `json:"meta"`
+	Timeout          int32              `json:"timeout"`
+	Status           TinyStatus         `json:"status"`
+	State            string             `json:"state"`
+	Executor         string             `json:"executor"`
+	Owner            string             `json:"owner"`
+	DeduplicationKey pgtype.Text        `json:"deduplication_key"`
 }

@@ -15,13 +15,14 @@ type CommitArgs struct {
 }
 
 type CreateJobArgs struct {
-	Expr    string     `json:"expr"`
-	Name    string     `json:"name"`
-	State   string     `json:"state"`
-	Timeout *int       `json:"timeout,omitempty"`
-	StartAt *time.Time `json:"start_at,omitempty"`
-	Meta    *string    `json:"meta,omitempty"`
-	Retries *int       `json:"retries,omitempty"`
+	Expr             string     `json:"expr"`
+	Name             string     `json:"name"`
+	State            string     `json:"state"`
+	Timeout          *int       `json:"timeout,omitempty"`
+	StartAt          *time.Time `json:"start_at,omitempty"`
+	Meta             *string    `json:"meta,omitempty"`
+	Retries          *int       `json:"retries,omitempty"`
+	DeduplicationKey *string    `json:"deduplication_key,omitempty"`
 }
 
 type QueryJobsArgs struct {
