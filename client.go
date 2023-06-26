@@ -384,3 +384,10 @@ func (j Job) Retry() {
 	j.Status = sqlc.TinyStatusREADY
 	j.ch <- j
 }
+
+func IsDuplicated(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "job_deduplication_key_constraint")
+}
