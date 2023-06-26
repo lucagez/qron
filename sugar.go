@@ -33,13 +33,19 @@ func (j Scheduled[T]) fork() Scheduled[T] {
 		State:        j.State,
 		client:       j.client,
 		args: model.CreateJobArgs{
-			Name:    j.args.Name,
-			Expr:    j.args.Expr,
-			Timeout: j.args.Timeout,
-			StartAt: j.args.StartAt,
-			Retries: j.args.Retries,
+			Name:             j.args.Name,
+			Expr:             j.args.Expr,
+			Timeout:          j.args.Timeout,
+			StartAt:          j.args.StartAt,
+			Retries:          j.args.Retries,
+			DeduplicationKey: j.args.DeduplicationKey,
 		},
 	}
+}
+
+func (j Scheduled[T]) DeduplicationKey(key string) Scheduled[T] {
+	j.args.DeduplicationKey = &key
+	return j.fork()
 }
 
 func (j Scheduled[T]) Name(name string) Scheduled[T] {
@@ -75,12 +81,13 @@ func (j Scheduled[T]) Schedule(ctx context.Context, state T) (sqlc.TinyJob, erro
 	}
 
 	return j.client.CreateJob(ctx, j.ExecutorName, model.CreateJobArgs{
-		Name:    j.args.Name,
-		Expr:    j.args.Expr,
-		Timeout: j.args.Timeout,
-		StartAt: j.args.StartAt,
-		Retries: j.args.Retries,
-		State:   string(buf),
+		Name:             j.args.Name,
+		Expr:             j.args.Expr,
+		Timeout:          j.args.Timeout,
+		StartAt:          j.args.StartAt,
+		Retries:          j.args.Retries,
+		State:            string(buf),
+		DeduplicationKey: j.args.DeduplicationKey,
 	})
 }
 

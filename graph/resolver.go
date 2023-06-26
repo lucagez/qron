@@ -29,6 +29,8 @@ import (
 // [] add partitioning to jobs table
 // [] rename `FAILURE` to `FAILED`
 // [] rename `TinyJob` to `Job`
+// [] Job deduplication can use a window of time instead of absolute, this can also be solved client side as
+//    hashes can be created with e.g. a time bucket, by minute or by hour, etc..
 
 type Resolver struct {
 	Queries *sqlc.Queries
